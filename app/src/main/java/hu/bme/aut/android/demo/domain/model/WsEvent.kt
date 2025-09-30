@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.models
+package hu.bme.aut.android.demo.domain.model
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName

@@ -1,7 +1,7 @@
-package hu.bme.aut.android.demo
+package hu.bme.aut.android.demo.data.network
 
 import android.util.Log
-import hu.bme.aut.android.demo.models.WsEvent
+import hu.bme.aut.android.demo.domain.model.WsEvent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.json.Json
@@ -36,7 +36,7 @@ class PlayersWebSocketClient {
                     val event = json.decodeFromString(WsEvent.serializer(), text)
 
                     val emitted = _events.tryEmit(event)
-                    // Ez a log mostantól "true" kell legyen!
+
                     Log.i("WS", "Event emitted to flow: $emitted, Event: ${event.javaClass.simpleName}")
 
                 } catch (e: Exception) {

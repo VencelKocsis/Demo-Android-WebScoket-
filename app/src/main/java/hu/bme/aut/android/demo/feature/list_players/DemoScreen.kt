@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo
+package hu.bme.aut.android.demo.feature.list_players
 
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -9,7 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import hu.bme.aut.android.demo.models.PlayerDTO
+import hu.bme.aut.android.demo.domain.model.PlayerDTO
 
 @Composable
 fun DemoScreen(viewModel: PlayersViewModel) {

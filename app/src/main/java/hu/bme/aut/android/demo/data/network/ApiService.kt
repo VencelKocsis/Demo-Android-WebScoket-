@@ -1,7 +1,7 @@
-package hu.bme.aut.android.demo
+package hu.bme.aut.android.demo.data.network
 
-import hu.bme.aut.android.demo.models.NewPlayerDTO
-import hu.bme.aut.android.demo.models.PlayerDTO
+import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
+import hu.bme.aut.android.demo.domain.model.PlayerDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET

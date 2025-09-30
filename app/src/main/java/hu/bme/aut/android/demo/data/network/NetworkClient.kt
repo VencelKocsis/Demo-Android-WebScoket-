@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo
+package hu.bme.aut.android.demo.data.network
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

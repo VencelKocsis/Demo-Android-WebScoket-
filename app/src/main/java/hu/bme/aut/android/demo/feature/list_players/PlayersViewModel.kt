@@ -1,18 +1,20 @@
-package hu.bme.aut.android.demo
+package hu.bme.aut.android.demo.feature.list_players
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import hu.bme.aut.android.demo.models.NewPlayerDTO
-import hu.bme.aut.android.demo.models.PlayerDTO
-import hu.bme.aut.android.demo.models.WsEvent
+import hu.bme.aut.android.demo.data.network.NetworkClient
+import hu.bme.aut.android.demo.data.network.PlayersWebSocketClient
+import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
+import hu.bme.aut.android.demo.domain.model.PlayerDTO
+import hu.bme.aut.android.demo.domain.model.WsEvent
 import kotlinx.coroutines.launch
-import kotlin.collections.filter
 
 class PlayersViewModel : ViewModel() {
-    val players = androidx.compose.runtime.mutableStateOf<List<PlayerDTO>>(emptyList())
-    val loading = androidx.compose.runtime.mutableStateOf(false)
-    val error = androidx.compose.runtime.mutableStateOf<String?>(null)
+    val players = mutableStateOf<List<PlayerDTO>>(emptyList())
+    val loading = mutableStateOf(false)
+    val error = mutableStateOf<String?>(null)
 
     private val wsClient = PlayersWebSocketClient()
 
