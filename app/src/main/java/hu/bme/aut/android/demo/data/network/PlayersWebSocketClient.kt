@@ -10,14 +10,11 @@ import okhttp3.Request
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
-class PlayersWebSocketClient {
-    private val client = OkHttpClient()
-    private var ws: WebSocket? = null
-
-    private val json = Json {
-        classDiscriminator = "type"
-        ignoreUnknownKeys = true
-    }
+class PlayersWebSocketClient(
+    private val client: OkHttpClient,
+            private val json: Json
+) {
+    private var ws : WebSocket? = null
 
     private val _events = MutableSharedFlow<WsEvent>(extraBufferCapacity = 5)
     val events = _events.asSharedFlow()

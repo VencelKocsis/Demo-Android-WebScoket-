@@ -1,70 +1,81 @@
 package hu.bme.aut.android.demo.feature.list_players
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import hu.bme.aut.android.demo.data.network.NetworkClient
-import hu.bme.aut.android.demo.data.network.PlayersWebSocketClient
+import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.model.PlayerDTO
 import hu.bme.aut.android.demo.domain.model.WsEvent
+import hu.bme.aut.android.demo.domain.usecases.AddPlayerUseCase
+import hu.bme.aut.android.demo.domain.usecases.DeletePlayerUseCase
+import hu.bme.aut.android.demo.domain.usecases.GetInitialPlayersUseCase // Ezt fogjuk használni a lista lekérésére
+import hu.bme.aut.android.demo.domain.usecases.ObservePlayersEventsUseCase
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class PlayersViewModel : ViewModel() {
+@HiltViewModel
+class PlayersViewModel @Inject constructor(
+    // A Hilt injektálja a Domain réteg Use Case-eit
+    private val getInitialPlayersUseCase: GetInitialPlayersUseCase,
+    private val observePlayersEventsUseCase: ObservePlayersEventsUseCase,
+    private val addPlayerUseCase: AddPlayerUseCase,
+    private val deletePlayerUseCase: DeletePlayerUseCase
+) : ViewModel() {
+
+    // A lista tartalmát a Use Case-től kapott Flow-ból töltjük fel
     val players = mutableStateOf<List<PlayerDTO>>(emptyList())
+
+    // A loading/error state maradhat mutableStateOf, mivel ez UI-specifikus
     val loading = mutableStateOf(false)
     val error = mutableStateOf<String?>(null)
 
-    private val wsClient = PlayersWebSocketClient()
-
     init {
         viewModelScope.launch {
-            wsClient.events.collect { event ->
-                Log.w("VM", "Received WsEvent: ${event.javaClass.simpleName}. Updating list...")
+            loading.value = true
+            error.value = null
 
-                when (event) {
-                    is WsEvent.PlayerAdded -> {
-                        players.value = players.value + event.player
-                        Log.w("VM", "Player added, new list size: ${players.value.size}")
-                    }
-                    is WsEvent.PlayerDeleted -> {
-                        players.value = players.value.filter { it.id != event.id }
-                        Log.w("VM", "Player deleted, new list size: ${players.value.size}")
+            try {
+                // 1. HTTP hívás a kezdeti listáért
+                val initialList = getInitialPlayersUseCase()
+                players.value = initialList
+            } catch (e: Exception) {
+                // ... hiba kezelése ...
+            } finally {
+                loading.value = false
+            }
+
+            // 2. WS események figyelése a lista frissítéséhez
+            observePlayersEventsUseCase()
+                .collect { event ->
+                    // Ez a logika maradhat a ViewModelben, mert UI-állapot kezelés
+                    when (event) {
+                        is WsEvent.PlayerAdded -> {
+                            players.value = players.value + event.player
+                        }
+                        is WsEvent.PlayerDeleted -> {
+                            players.value = players.value.filter { it.id != event.id }
+                        }
                     }
                 }
-            }
         }
-        wsClient.connect()
     }
 
     override fun onCleared() {
         super.onCleared()
-        wsClient.close()
+        // Eltávolítva: wsClient.close()
+        // Megjegyzés: A Repository-nak kell majd hívnia a close()-t, ha szükséges
     }
 
-    fun loadPlayers() {
-        viewModelScope.launch {
-            loading.value = true
-            error.value = null
-            try {
-                val fetchedPlayers = NetworkClient.api.getPlayers()
-                players.value = fetchedPlayers
-            } catch (e: Exception) {
-                e.printStackTrace()
-                error.value = "Hiba: ${e.message}"
-            } finally {
-                loading.value = false
-            }
-        }
-    }
+    // Eltávolítva: fun loadPlayers() - Az init blokkban történt a feladat átvétele
 
     fun addPlayer(name: String, age: Int?) {
         viewModelScope.launch {
             try {
-                NetworkClient.api.addPlayer(NewPlayerDTO(name, age))
+                // A Use Case-t használjuk a hálózati hívás helyett
+                addPlayerUseCase(NewPlayerDTO(name, age))
+                // Megjegyzés: Nincs szükség a lista frissítésére, mert a WS frissíti
             } catch (e: Exception) {
-                e.printStackTrace()
                 error.value = "Hiba hozzáadáskor: ${e.message}"
             }
         }
@@ -73,9 +84,10 @@ class PlayersViewModel : ViewModel() {
     fun deletePlayer(id: Int) {
         viewModelScope.launch {
             try {
-                NetworkClient.api.deletePlayer(id)
+                // A Use Case-t használjuk a hálózati hívás helyett
+                deletePlayerUseCase(id)
+                // Megjegyzés: Nincs szükség a lista frissítésére, mert a WS frissíti
             } catch (e: Exception) {
-                e.printStackTrace()
                 error.value = "Hiba törléskor: ${e.message}"
             }
         }

@@ -10,9 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import hu.bme.aut.android.demo.domain.model.PlayerDTO
+import androidx.lifecycle.viewmodel.compose.viewModel // Szükséges, ha nem hiltViewModel() a hívó
 
 @Composable
 fun DemoScreen(viewModel: PlayersViewModel) {
+    // Ezek a State-ek a ViewModelben lévő mutableStateOf-ra hivatkoznak.
     val players by viewModel.players
     val loading by viewModel.loading
     val error by viewModel.error
@@ -20,7 +22,6 @@ fun DemoScreen(viewModel: PlayersViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
-
     var playerToDelete by remember { mutableStateOf<PlayerDTO?>(null) }
 
     Scaffold(
@@ -31,17 +32,19 @@ fun DemoScreen(viewModel: PlayersViewModel) {
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
-            Button(onClick = { viewModel.loadPlayers() }, modifier = Modifier.fillMaxWidth()) {
-                Text("Lekérdezés")
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Eltávolítva: A Lekérdezés gomb és a viewModel.loadPlayers() hívás.
+            // Az adatok automatikusan töltődnek a ViewModel init blokkjában.
 
+            // Hagyunk helyet a loading/error jelzésnek
             if (loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
+            Spacer(modifier = Modifier.height(12.dp))
+
             LazyColumn {
                 items(players) { p ->
+                    // A többi UI logika (Card, LongPress, stb.) tökéletes!
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -49,7 +52,7 @@ fun DemoScreen(viewModel: PlayersViewModel) {
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onLongPress = {
-                                        playerToDelete = p // csak eltároljuk, és mutatjuk a dialogot
+                                        playerToDelete = p
                                     }
                                 )
                             },
@@ -66,11 +69,13 @@ fun DemoScreen(viewModel: PlayersViewModel) {
 
     // --- Új játékos hozzáadó dialog ---
     if (showAddDialog) {
+        // ... (Kód változatlan)
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
             confirmButton = {
                 TextButton(onClick = {
                     if (name.isNotBlank()) {
+                        // A hívások a Use Case-eket használják a ViewModelben, ez helyes
                         viewModel.addPlayer(name, age.toIntOrNull())
                         showAddDialog = false
                         name = ""
@@ -84,27 +89,21 @@ fun DemoScreen(viewModel: PlayersViewModel) {
             title = { Text("Új játékos hozzáadása") },
             text = {
                 Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Név") }
-                    )
+                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Név") })
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = age,
-                        onValueChange = { age = it },
-                        label = { Text("Kor") }
-                    )
+                    OutlinedTextField(value = age, onValueChange = { age = it }, label = { Text("Kor") })
                 }
             }
         )
     }
 
+    // --- Törlés megerősítő dialog ---
     playerToDelete?.let { player ->
         AlertDialog(
             onDismissRequest = { playerToDelete = null },
             confirmButton = {
                 TextButton(onClick = {
+                    // A hívások a Use Case-eket használják a ViewModelben, ez helyes
                     viewModel.deletePlayer(player.id)
                     playerToDelete = null
                 }) { Text("Törlés") }
