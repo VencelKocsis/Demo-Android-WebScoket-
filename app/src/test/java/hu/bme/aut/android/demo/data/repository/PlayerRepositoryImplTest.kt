@@ -6,12 +6,16 @@ import hu.bme.aut.android.demo.domain.model.PlayerDTO
 import hu.bme.aut.android.demo.domain.model.WsEvent
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.* // minden assert innen jön
+import org.junit.Assert.*
 
 class PlayerRepositoryImplTest {
 
@@ -26,7 +30,9 @@ class PlayerRepositoryImplTest {
         mockApiService = mockk()
         mockWsClient = mockk()
 
+        // Mockoljuk az events flow-t és a connect hívást
         coEvery { mockWsClient.events } returns testWsEvents
+        every { mockWsClient.connect() } just runs
 
         repository = PlayerRepositoryImpl(mockApiService, mockWsClient)
     }
@@ -44,9 +50,19 @@ class PlayerRepositoryImplTest {
 
     @Test
     fun getWsEventsFlow_callsConnectAndReturnsClientFlow() = runTest {
+        // When
         val flow = repository.getWsEventsFlow()
 
+        // Then: connect() meghívódott
         io.mockk.verify(exactly = 1) { mockWsClient.connect() }
         assertNotNull(flow)
+
+        // Extra: itt ténylegesen emitálunk valamit a tesztelt flow-ba
+        val expectedEvent = WsEvent.PlayerDeleted(123)
+        testWsEvents.emit(expectedEvent)
+
+        // Most már biztonságosan olvashatjuk, mert tudjuk hogy jön érték
+        val collected = flow.first()
+        assertEquals(expectedEvent, collected)
     }
 }

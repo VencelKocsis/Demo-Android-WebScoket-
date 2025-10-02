@@ -24,13 +24,11 @@ class PlayersWebSocketClientTest {
             ignoreUnknownKeys = true
         }
         mockOkHttpClient = mockk(relaxed = true)
-
         wsClient = PlayersWebSocketClient(mockOkHttpClient, json)
     }
 
     @Test
     fun onMessage_PlayerAdded_decodesCorrectly() = runTest {
-        // Given
         val rawJson = """
             {"type": "PlayerAdded", "player": {"id": 1, "name": "Béla", "age": 25}}
         """.trimIndent()
@@ -38,12 +36,15 @@ class PlayersWebSocketClientTest {
         val listener = wsClient.playerWebSocketListener
         val mockWs = mockk<WebSocket>(relaxed = true)
 
-        // When
+        // When: Megküldjük a nyers üzenetet (hívja a tryEmit-et)
         listener.onMessage(mockWs, rawJson)
 
+        // JAVÍTÁS: Kényszerítjük a Coroutine Scheduler-t az emit azonnali feldolgozására
+        testScheduler.runCurrent()
+
+        // Assert: Első event kiolvasása
         val emittedEvent = wsClient.events.first()
 
-        // Then
         assertTrue(emittedEvent is WsEvent.PlayerAdded)
         val added = emittedEvent as WsEvent.PlayerAdded
         assertEquals(1, added.player.id)
@@ -53,10 +54,7 @@ class PlayersWebSocketClientTest {
 
     @Test
     fun onMessage_PlayerDeleted_decodesCorrectly() = runTest {
-        // Given
-        val rawJson = """
-            {"type": "PlayerDeleted", "id": 42}
-        """.trimIndent()
+        val rawJson = """{"type": "PlayerDeleted", "id": 42}"""
 
         val listener = wsClient.playerWebSocketListener
         val mockWs = mockk<WebSocket>(relaxed = true)
@@ -64,9 +62,12 @@ class PlayersWebSocketClientTest {
         // When
         listener.onMessage(mockWs, rawJson)
 
+        // JAVÍTÁS: Kényszerítjük a Coroutine Scheduler-t az emit azonnali feldolgozására
+        testScheduler.runCurrent()
+
+        // Assert
         val emittedEvent = wsClient.events.first()
 
-        // Then
         assertTrue(emittedEvent is WsEvent.PlayerDeleted)
         val deleted = emittedEvent as WsEvent.PlayerDeleted
         assertEquals(42, deleted.id)
