@@ -12,35 +12,37 @@ import okhttp3.WebSocketListener
 
 class PlayersWebSocketClient(
     private val client: OkHttpClient,
-            private val json: Json
+    private val json: Json
 ) {
     private var ws : WebSocket? = null
 
     private val _events = MutableSharedFlow<WsEvent>(extraBufferCapacity = 5)
     val events = _events.asSharedFlow()
 
+    internal val playerWebSocketListener = object : WebSocketListener() {
+
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            try {
+                Log.d("WS", "Received raw: $text")
+
+                val event = json.decodeFromString(WsEvent.serializer(), text)
+
+                val emitted = _events.tryEmit(event)
+
+                Log.i("WS", "Event emitted to flow: $emitted, Event: ${event.javaClass.simpleName}")
+
+            } catch (e: Exception) {
+                Log.e("WS", "Hiba az üzenet feldolgozásakor: ${e.message}", e)
+            }
+        }
+    }
+
     fun connect() {
         val request = Request.Builder()
             .url("ws://10.0.2.2:8080/ws/players")
             .build()
 
-        ws = client.newWebSocket(request, object : WebSocketListener() {
-
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                try {
-                    Log.d("WS", "Received raw: $text")
-
-                    val event = json.decodeFromString(WsEvent.serializer(), text)
-
-                    val emitted = _events.tryEmit(event)
-
-                    Log.i("WS", "Event emitted to flow: $emitted, Event: ${event.javaClass.simpleName}")
-
-                } catch (e: Exception) {
-                    Log.e("WS", "Hiba az üzenet feldolgozásakor: ${e.message}", e)
-                }
-            }
-        })
+        ws = client.newWebSocket(request, playerWebSocketListener)
     }
 
     fun close() {
