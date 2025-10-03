@@ -43,13 +43,15 @@ fun DemoScreen(viewModel: PlayersViewModel) {
             Spacer(modifier = Modifier.height(12.dp))
 
             LazyColumn {
-                items(players) { p ->
-                    // A többi UI logika (Card, LongPress, stb.) tökéletes!
+                // JAVÍTÁS: Hozzáadtam a 'key' paramétert az items-hez.
+                // Ez biztosítja, hogy a Compose az ID-t használja a listaelemek azonosítására,
+                // még akkor is, ha a lista indexei megváltoznak (pl. törléskor).
+                items(players, key = { it.id }) { p ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 6.dp)
-                            .pointerInput(Unit) {
+                            .pointerInput(p.id) { // KEY JAVÍTÁS is: a pointerInput is frissül, ha az ID megváltozik
                                 detectTapGestures(
                                     onLongPress = {
                                         playerToDelete = p
