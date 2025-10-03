@@ -16,4 +16,7 @@ interface PlayerRepository {
 
     // HTTP DELETE
     suspend fun deletePlayer(id: Int)
+
+    // HTTP PUT
+    suspend fun updatePlayer(id: Int, player: NewPlayerDTO)
 }

@@ -12,4 +12,8 @@ sealed class WsEvent {
     @Serializable
     @SerialName("PlayerDeleted")
     data class PlayerDeleted(val id: Int) : WsEvent()
+
+    @Serializable
+    @SerialName("PlayerUpdated")
+    data class PlayerUpdated(val player: PlayerDTO) : WsEvent()
 }

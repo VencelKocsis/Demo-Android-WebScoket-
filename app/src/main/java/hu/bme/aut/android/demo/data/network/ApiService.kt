@@ -6,6 +6,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ApiService {
@@ -17,4 +18,7 @@ interface ApiService {
 
     @DELETE("players/{id}")
     suspend fun deletePlayer(@Path("id") id: Int)
+
+    @PUT("players/{id}")
+    suspend fun updatePlayer(@Path("id") id: Int, @Body player: NewPlayerDTO)
 }

@@ -41,4 +41,10 @@ class PlayerRepositoryImpl @Inject constructor(
         apiService.deletePlayer(id)
         // A Ktor backend küldi a WS eseményt
     }
+
+    override suspend fun updatePlayer(id: Int, player: NewPlayerDTO) {
+        // Hívjuk a REST API-t az ApiService-en keresztül
+        apiService.updatePlayer(id, player)
+        // A Ktor backend küldi a WS eseményt
+    }
 }

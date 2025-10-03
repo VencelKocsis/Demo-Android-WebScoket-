@@ -54,6 +54,12 @@ class PlayersViewModel @Inject constructor(
                         is WsEvent.PlayerDeleted -> {
                             players.value = players.value.filter { it.id != event.id }
                         }
+
+                        is WsEvent.PlayerUpdated -> {
+                            players.value = players.value.map {
+                                if (it.id == event.player.id) event.player else it
+                            }
+                        }
                     }
                 }
         }
