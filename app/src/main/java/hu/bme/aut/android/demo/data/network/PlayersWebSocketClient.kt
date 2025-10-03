@@ -21,7 +21,8 @@ class PlayersWebSocketClient(
 
     fun connect() {
         val request = Request.Builder()
-            .url("ws://10.0.2.2:8080/ws/players")
+            //.url("ws://10.0.2.2:8080/ws/players")
+            .url("ws://192.168.0.66:8080/ws/players")
             .build()
 
         ws = client.newWebSocket(request, object : WebSocketListener() {
