@@ -13,6 +13,6 @@ class DeletePlayerUseCase @Inject constructor(
     suspend operator fun invoke(id: Int) {
         // A hívás továbbítva a Repository-nak.
         repository.deletePlayer(id)
-        // A törlés után a Repository indítja a WS broadcastot (ezt a RepositoryImpl-ben kell kezelni).
+        // A törlés után a Repository indítja a WS broadcastot
     }
 }

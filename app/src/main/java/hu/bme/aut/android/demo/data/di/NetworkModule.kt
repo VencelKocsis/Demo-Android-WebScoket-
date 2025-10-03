@@ -27,9 +27,7 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
-        // A ws kliens mostantól ezt a Singleton OkHttpClient-et fogja használni
         return OkHttpClient.Builder()
-            // Itt adhatsz hozzá interceptorokat, timeout beállításokat stb.
             .build()
     }
 
@@ -39,18 +37,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        // GSON inicializálása (a régi NetworkClient miatt)
         val gson = Gson()
 
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            // A Singleton OkHttpClient használata
             .client(okHttpClient)
-
-            // Konverterek hozzáadása (a régi NetworkClient alapján):
-            // 1. Scalars (DELETE végpontokhoz)
             .addConverterFactory(ScalarsConverterFactory.create())
-            // 2. GSON (a JSON DTO-khoz, mivel ez volt a régi kódodban)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
@@ -67,7 +59,6 @@ object NetworkModule {
     // ----------------------------------------------------
     // 4. PlayersWebSocketClient (WS kapcsolat)
     // ----------------------------------------------------
-    // Ennek a kliensnek KÉT függőségre van szüksége: az OkHttpClient-re és a Json objektumra.
     @Provides
     @Singleton
     fun providePlayersWebSocketClient(okHttpClient: OkHttpClient): PlayersWebSocketClient {

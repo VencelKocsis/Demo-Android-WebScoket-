@@ -12,8 +12,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    // A Hiltnek megmondjuk, hogy ha valaki a PlayerRepository interfészt kéri,
-    // adja vissza a PlayerRepositoryImpl példányát.
     @Binds
     @Singleton
     abstract fun bindPlayerRepository(

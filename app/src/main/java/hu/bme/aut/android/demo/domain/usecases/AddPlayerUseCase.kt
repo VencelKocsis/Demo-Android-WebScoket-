@@ -14,7 +14,6 @@ class AddPlayerUseCase @Inject constructor(
      * @return A szerver által generált ID-val ellátott PlayerDTO-t adja vissza.
      */
     suspend operator fun invoke(newPlayer: NewPlayerDTO): PlayerDTO {
-        // A ViewModel csak a Use Case-t hívja meg, nem ismeri a hálózati hívásokat.
         return repository.addPlayer(newPlayer)
     }
 }

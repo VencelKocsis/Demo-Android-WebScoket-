@@ -9,7 +9,7 @@ import hu.bme.aut.android.demo.domain.model.PlayerDTO
 import hu.bme.aut.android.demo.domain.model.WsEvent
 import hu.bme.aut.android.demo.domain.usecases.AddPlayerUseCase
 import hu.bme.aut.android.demo.domain.usecases.DeletePlayerUseCase
-import hu.bme.aut.android.demo.domain.usecases.GetInitialPlayersUseCase // Ezt fogjuk használni a lista lekérésére
+import hu.bme.aut.android.demo.domain.usecases.GetInitialPlayersUseCase
 import hu.bme.aut.android.demo.domain.usecases.ObservePlayersEventsUseCase
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,7 +26,6 @@ class PlayersViewModel @Inject constructor(
     // A lista tartalmát a Use Case-től kapott Flow-ból töltjük fel
     val players = mutableStateOf<List<PlayerDTO>>(emptyList())
 
-    // A loading/error state maradhat mutableStateOf, mivel ez UI-specifikus
     val loading = mutableStateOf(false)
     val error = mutableStateOf<String?>(null)
 
@@ -48,7 +47,6 @@ class PlayersViewModel @Inject constructor(
             // 2. WS események figyelése a lista frissítéséhez
             observePlayersEventsUseCase()
                 .collect { event ->
-                    // Ez a logika maradhat a ViewModelben, mert UI-állapot kezelés
                     when (event) {
                         is WsEvent.PlayerAdded -> {
                             players.value = players.value + event.player
@@ -63,11 +61,7 @@ class PlayersViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        // Eltávolítva: wsClient.close()
-        // Megjegyzés: A Repository-nak kell majd hívnia a close()-t, ha szükséges
     }
-
-    // Eltávolítva: fun loadPlayers() - Az init blokkban történt a feladat átvétele
 
     fun addPlayer(name: String, age: Int?) {
         viewModelScope.launch {
