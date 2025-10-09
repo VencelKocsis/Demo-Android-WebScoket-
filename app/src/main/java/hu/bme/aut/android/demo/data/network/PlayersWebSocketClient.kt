@@ -21,8 +21,7 @@ class PlayersWebSocketClient(
 
     fun connect() {
         val request = Request.Builder()
-            //.url("ws://10.0.2.2:8080/ws/players")
-            .url("ws://192.168.0.66:8080/ws/players")
+            .url("wss://ktor-demo-c3yb.onrender.com/ws/players")
             .build()
 
         ws = client.newWebSocket(request, object : WebSocketListener() {
@@ -30,16 +29,20 @@ class PlayersWebSocketClient(
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try {
                     Log.d("WS", "Received raw: $text")
-
                     val event = json.decodeFromString(WsEvent.serializer(), text)
-
                     val emitted = _events.tryEmit(event)
-
                     Log.i("WS", "Event emitted to flow: $emitted, Event: ${event.javaClass.simpleName}")
-
                 } catch (e: Exception) {
                     Log.e("WS", "Hiba az üzenet feldolgozásakor: ${e.message}", e)
                 }
+            }
+
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+                Log.e("WS", "WebSocket failure: ${t.message}")
+            }
+
+            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                Log.w("WS", "WebSocket closed: $reason ($code)")
             }
         })
     }

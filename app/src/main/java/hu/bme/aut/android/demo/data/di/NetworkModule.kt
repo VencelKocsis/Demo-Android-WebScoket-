@@ -20,7 +20,8 @@ object NetworkModule {
 
     // Az URL a 10.0.2.2:8080/ (Android emulátor localhost-ja)
     //private const val BASE_URL = "http://10.0.2.2:8080/"
-    private const val BASE_URL = "http://192.168.0.66:8080/" // <-- Saját gép IP címe
+    //private const val BASE_URL = "http://192.168.0.66:8080/" // <-- Saját gép IP címe
+    private const val BASE_URL = "https://ktor-demo-c3yb.onrender.com/"
 
     // ----------------------------------------------------
     // 1. OkHttpClient (Minden hálózati forgalomhoz: REST és WS)
