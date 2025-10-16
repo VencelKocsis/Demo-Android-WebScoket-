@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.domain.model
+package hu.bme.aut.android.demo.domain.websocket.model
 
 import kotlinx.serialization.Serializable
 

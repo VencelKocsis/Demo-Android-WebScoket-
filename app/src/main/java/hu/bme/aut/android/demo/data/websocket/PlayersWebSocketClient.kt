@@ -1,18 +1,19 @@
-package hu.bme.aut.android.demo.data.network
+package hu.bme.aut.android.demo.data.websocket
 
 import android.util.Log
-import hu.bme.aut.android.demo.domain.model.WsEvent
+import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
 class PlayersWebSocketClient(
     private val client: OkHttpClient,
-            private val json: Json
+    private val json: Json
 ) {
     private var ws : WebSocket? = null
 
@@ -37,7 +38,7 @@ class PlayersWebSocketClient(
                 }
             }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 Log.e("WS", "WebSocket failure: ${t.message}")
             }
 

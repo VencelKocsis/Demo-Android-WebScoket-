@@ -1,8 +1,8 @@
-package hu.bme.aut.android.demo.domain.repository
+package hu.bme.aut.android.demo.domain.websocket.repository
 
-import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.model.PlayerDTO
-import hu.bme.aut.android.demo.domain.model.WsEvent
+import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
 import kotlinx.coroutines.flow.Flow
 
 interface PlayerRepository {
@@ -19,4 +19,6 @@ interface PlayerRepository {
 
     // HTTP PUT
     suspend fun updatePlayer(id: Int, player: NewPlayerDTO)
+
+    suspend fun registerFcmToken(userId: String, token: String)
 }

@@ -1,16 +1,15 @@
-package hu.bme.aut.android.demo.data.di
+package hu.bme.aut.android.demo.data.network.di
 
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import hu.bme.aut.android.demo.data.network.ApiService
-import hu.bme.aut.android.demo.data.network.PlayersWebSocketClient
+import hu.bme.aut.android.demo.data.network.api.ApiService
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory // <-- GSON importálva
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import javax.inject.Singleton
 
@@ -19,12 +18,10 @@ import javax.inject.Singleton
 object NetworkModule {
 
     // Az URL a 10.0.2.2:8080/ (Android emulátor localhost-ja)
-    //private const val BASE_URL = "http://10.0.2.2:8080/"
-    //private const val BASE_URL = "http://192.168.0.66:8080/" // <-- Saját gép IP címe
     private const val BASE_URL = "https://ktor-demo-c3yb.onrender.com/"
 
     // ----------------------------------------------------
-    // 1. OkHttpClient (Minden hálózati forgalomhoz: REST és WS)
+    // 1. OkHttpClient (Minden hálózati forgalomhoz)
     // ----------------------------------------------------
     @Provides
     @Singleton
@@ -58,22 +55,13 @@ object NetworkModule {
         return retrofit.create(ApiService::class.java)
     }
 
-    // ----------------------------------------------------
-    // 4. PlayersWebSocketClient (WS kapcsolat)
-    // ----------------------------------------------------
+    // 4. Json Serializer (Ezt a WS-hez használjuk, de közös beállítás lehet)
     @Provides
     @Singleton
-    fun providePlayersWebSocketClient(okHttpClient: OkHttpClient): PlayersWebSocketClient {
-        // Létrehozzuk a kotlinx.serialization Json példányt,
-        // amit a WS kliens a DTO-k dekódolásához használ
-        val json = Json {
+    fun provideJsonSerializer(): Json {
+        return Json {
             classDiscriminator = "type"
             ignoreUnknownKeys = true
         }
-
-        // Itt át kell majd alakítanod a PlayersWebSocketClient konstruktorát!
-        // A Hilt injektálja a Singleton OkHttpClient-et és a Json-t.
-        // Ezt a lépést lent részletezem!
-        return PlayersWebSocketClient(okHttpClient, json)
     }
 }

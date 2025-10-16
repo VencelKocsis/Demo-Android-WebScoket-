@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+
+    id("com.google.gms.google-services") version "4.4.1"
 }
 
 android {
@@ -61,6 +63,12 @@ dependencies {
     implementation(libs.okhttp3)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.retrofit.converter.scalars)
+
+    // ----- ÚJ: Firebase Függőségek -----
+    // Firebase BOM használata a verziókezeléshez (libs.firebase.bom a toml-ból)
+    implementation(platform(libs.firebase.bom))
+    // FCM Messaging
+    implementation(libs.firebase.messaging)
 
     // Hilt
     implementation(libs.hilt.android)

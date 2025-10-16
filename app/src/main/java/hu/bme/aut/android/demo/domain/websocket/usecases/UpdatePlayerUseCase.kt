@@ -1,7 +1,7 @@
-package hu.bme.aut.android.demo.domain.usecases
+package hu.bme.aut.android.demo.domain.websocket.usecases
 
-import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.repository.PlayerRepository
+import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.repository.PlayerRepository
 import javax.inject.Inject
 
 class UpdatePlayerUseCase @Inject constructor(

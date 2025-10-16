@@ -9,7 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import hu.bme.aut.android.demo.domain.model.PlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 
 @Composable
 fun DemoScreen(viewModel: PlayersViewModel) {

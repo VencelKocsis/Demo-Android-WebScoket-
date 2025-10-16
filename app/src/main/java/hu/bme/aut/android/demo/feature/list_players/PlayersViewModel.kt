@@ -1,18 +1,25 @@
 package hu.bme.aut.android.demo.feature.list_players
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging // <-- ÚJ IMPORT: FCM eléréshez
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.model.PlayerDTO
-import hu.bme.aut.android.demo.domain.model.WsEvent
-import hu.bme.aut.android.demo.domain.usecases.AddPlayerUseCase
-import hu.bme.aut.android.demo.domain.usecases.DeletePlayerUseCase
-import hu.bme.aut.android.demo.domain.usecases.GetInitialPlayersUseCase
-import hu.bme.aut.android.demo.domain.usecases.ObservePlayersEventsUseCase
+import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
+import hu.bme.aut.android.demo.domain.websocket.usecases.AddPlayerUseCase
+import hu.bme.aut.android.demo.domain.websocket.usecases.DeletePlayerUseCase
+import hu.bme.aut.android.demo.domain.websocket.usecases.GetInitialPlayersUseCase
+import hu.bme.aut.android.demo.domain.websocket.usecases.ObservePlayersEventsUseCase
+import hu.bme.aut.android.demo.domain.fcm.usecases.RegisterFcmTokenUseCase
+import hu.bme.aut.android.demo.domain.websocket.usecases.UpdatePlayerUseCase
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await // <-- ÚJ IMPORT: await() funkcióhoz
 import javax.inject.Inject
+
+private const val TAG = "PlayersViewModel"
 
 @HiltViewModel
 class PlayersViewModel @Inject constructor(
@@ -20,7 +27,13 @@ class PlayersViewModel @Inject constructor(
     private val getInitialPlayersUseCase: GetInitialPlayersUseCase,
     private val observePlayersEventsUseCase: ObservePlayersEventsUseCase,
     private val addPlayerUseCase: AddPlayerUseCase,
-    private val deletePlayerUseCase: DeletePlayerUseCase
+    private val deletePlayerUseCase: DeletePlayerUseCase,
+
+    // Use Case a játékos szerkesztéséhez
+    private val updatePlayerUseCase: UpdatePlayerUseCase,
+
+    // Use Case az FCM token regisztrálásához
+    private val registerFcmTokenUseCase: RegisterFcmTokenUseCase
 ) : ViewModel() {
 
     // A lista tartalmát a Use Case-től kapott Flow-ból töltjük fel
@@ -31,6 +44,10 @@ class PlayersViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+
+            // FCM token regisztrálása az alkalmazás indulásakor
+            registerFcmToken()
+
             loading.value = true
             error.value = null
 
@@ -38,8 +55,10 @@ class PlayersViewModel @Inject constructor(
                 // 1. HTTP hívás a kezdeti listáért
                 val initialList = getInitialPlayersUseCase()
                 players.value = initialList
+                Log.d(TAG, "Initial players loaded: ${initialList.size}")
             } catch (e: Exception) {
-                // ... hiba kezelése ...
+                Log.e(TAG, "Error loading initial list", e)
+                error.value = "Hiba a játékosok betöltésekor: ${e.message}"
             } finally {
                 loading.value = false
             }
@@ -49,13 +68,16 @@ class PlayersViewModel @Inject constructor(
                 .collect { event ->
                     when (event) {
                         is WsEvent.PlayerAdded -> {
+                            Log.i(TAG, "WS: PlayerAdded - ${event.player.name}")
                             players.value = players.value + event.player
                         }
                         is WsEvent.PlayerDeleted -> {
+                            Log.i(TAG, "WS: PlayerDeleted - ID: ${event.id}")
                             players.value = players.value.filter { it.id != event.id }
                         }
 
                         is WsEvent.PlayerUpdated -> {
+                            Log.i(TAG, "WS: PlayerUpdated - ID: ${event.player.id}")
                             players.value = players.value.map {
                                 if (it.id == event.player.id) event.player else it
                             }
@@ -65,18 +87,34 @@ class PlayersViewModel @Inject constructor(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
+    // --- FCM Funkció ---
+    private fun registerFcmToken() {
+        viewModelScope.launch {
+            try {
+                val token = FirebaseMessaging.getInstance().token.await()
+                val userId = "test-user-fcm-target" // Ezt dinamikusan add meg (pl. bejelentkezett userből)
+
+                Log.d(TAG, "Lekért FCM token: $token")
+
+                registerFcmTokenUseCase(userId, token)
+
+                Log.i(TAG, "FCM token sikeresen elküldve a backendnek.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Hiba az FCM token regisztráció indítása során: ${e.message}")
+            }
+        }
     }
+
+
+    // --- CRUD Funkciók ---
 
     fun addPlayer(name: String, age: Int?) {
         viewModelScope.launch {
             try {
-                // A Use Case-t használjuk a hálózati hívás helyett
                 addPlayerUseCase(NewPlayerDTO(name, age))
-                // Megjegyzés: Nincs szükség a lista frissítésére, mert a WS frissíti
             } catch (e: Exception) {
                 error.value = "Hiba hozzáadáskor: ${e.message}"
+                Log.e(TAG, "Hiba hozzáadáskor", e)
             }
         }
     }
@@ -84,11 +122,24 @@ class PlayersViewModel @Inject constructor(
     fun deletePlayer(id: Int) {
         viewModelScope.launch {
             try {
-                // A Use Case-t használjuk a hálózati hívás helyett
                 deletePlayerUseCase(id)
-                // Megjegyzés: Nincs szükség a lista frissítésére, mert a WS frissíti
             } catch (e: Exception) {
                 error.value = "Hiba törléskor: ${e.message}"
+                Log.e(TAG, "Hiba törléskor", e)
+            }
+        }
+    }
+
+    // Játékos frissítése
+    fun updatePlayer(id: Int, name: String, age: Int?) {
+        viewModelScope.launch {
+            try {
+                val newPlayer = NewPlayerDTO(name, age)
+                updatePlayerUseCase(id, newPlayer)
+                // Megjegyzés: Nincs szükség a lista frissítésére, mert a WS esemény (PlayerUpdated) megteszi
+            } catch (e: Exception) {
+                error.value = "Hiba frissítéskor: ${e.message}"
+                Log.e(TAG, "Hiba frissítéskor", e)
             }
         }
     }

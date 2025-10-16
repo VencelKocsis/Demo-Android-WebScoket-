@@ -1,11 +1,12 @@
-package hu.bme.aut.android.demo.data.repository
+package hu.bme.aut.android.demo.data.websocket.repository
 
-import hu.bme.aut.android.demo.data.network.ApiService
-import hu.bme.aut.android.demo.data.network.PlayersWebSocketClient
-import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.model.PlayerDTO
-import hu.bme.aut.android.demo.domain.model.WsEvent
-import hu.bme.aut.android.demo.domain.repository.PlayerRepository
+import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.websocket.PlayersWebSocketClient
+import hu.bme.aut.android.demo.data.fcm.model.FcmToken
+import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
+import hu.bme.aut.android.demo.domain.websocket.repository.PlayerRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -25,6 +26,14 @@ class PlayerRepositoryImpl @Inject constructor(
 
     override suspend fun getInitialPlayers(): List<PlayerDTO> {
         return apiService.getPlayers()
+    }
+
+    // ----------------------------------------------------
+    // FCM MŰVELETEK (HTTP)
+    // ----------------------------------------------------
+
+    override suspend fun registerFcmToken(userId: String, token: String) {
+        apiService.registerFcmToken(FcmToken(userId, token))
     }
 
     // ----------------------------------------------------

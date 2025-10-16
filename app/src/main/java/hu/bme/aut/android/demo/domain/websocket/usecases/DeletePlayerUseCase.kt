@@ -1,6 +1,6 @@
-package hu.bme.aut.android.demo.domain.usecases
+package hu.bme.aut.android.demo.domain.websocket.usecases
 
-import hu.bme.aut.android.demo.domain.repository.PlayerRepository
+import hu.bme.aut.android.demo.domain.websocket.repository.PlayerRepository
 import javax.inject.Inject
 
 class DeletePlayerUseCase @Inject constructor(

@@ -1,7 +1,8 @@
-package hu.bme.aut.android.demo.data.network
+package hu.bme.aut.android.demo.data.network.api
 
-import hu.bme.aut.android.demo.domain.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.model.PlayerDTO
+import hu.bme.aut.android.demo.data.fcm.model.FcmToken
+import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
+import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -21,4 +22,7 @@ interface ApiService {
 
     @PUT("players/{id}")
     suspend fun updatePlayer(@Path("id") id: Int, @Body player: NewPlayerDTO)
+
+    @POST("register_fcm_token")
+    suspend fun registerFcmToken(@Body registration: FcmToken)
 }
