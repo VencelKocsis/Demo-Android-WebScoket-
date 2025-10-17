@@ -13,8 +13,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import hu.bme.aut.android.demo.feature.list_players.DemoScreen
+import hu.bme.aut.android.demo.feature.auth.AuthViewModel
+import hu.bme.aut.android.demo.feature.auth.AuthState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.Composable
+import androidx.compose.material3.Text
+import hu.bme.aut.android.demo.feature.auth.AuthScreen
 import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
+// IMPORTÁLJUK AZ ÚJ DEMOSCREEN-T a list_players csomagból
+import hu.bme.aut.android.demo.feature.list_players.DemoScreen
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -22,7 +31,6 @@ class MainActivity : ComponentActivity() {
     private val CHANNEL_ID = "DEMO_CHANNEL"
     private val CHANNEL_NAME = "Demó Értesítések"
 
-    // 1. Engedélykérő inicializálása
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -37,12 +45,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         createNotificationChannel()
-        requestNotificationPermission() // 2. Engedély kérésének meghívása
+        requestNotificationPermission()
 
         setContent {
             MaterialTheme {
-                val vm: PlayersViewModel = hiltViewModel()
-                DemoScreen(viewModel = vm)
+                // AuthViewModel beolvasása, ami kezeli a hitelesítést
+                val authViewModel: AuthViewModel = hiltViewModel()
+
+                // A bejelentkezési állapot figyelése
+                val authState by authViewModel.authState.collectAsState()
+
+                // Az alkalmazás gyökér komponense, ami a hitelesítési állapot alapján vált
+                AppNavHost(
+                    authState = authState,
+                    authViewModel = authViewModel
+                )
             }
         }
     }
@@ -70,7 +87,6 @@ class MainActivity : ComponentActivity() {
      */
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13 (TIRAMISU) vagy újabb esetén kérünk engedélyt
             if (!getSystemService(NotificationManager::class.java).areNotificationsEnabled()) {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             } else {
@@ -79,3 +95,45 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+/**
+ * A gyökér navigációs komponens, ami az AuthState alapján választ képernyőt.
+ */
+@Composable
+fun AppNavHost(
+    authState: AuthState,
+    authViewModel: AuthViewModel
+) {
+    when (authState) {
+        AuthState.UNKNOWN -> LoadingScreen() // Töltőképernyő (kezdeti ellenőrzés alatt)
+
+        AuthState.UNAUTHENTICATED -> {
+            AuthScreen(
+                viewModel = authViewModel,
+                onAuthSuccess = { user -> Log.d("Auth", "Sikeres hitelesítés: ${user.uid}") }
+            )
+        }
+
+        AuthState.AUTHENTICATED -> {
+            // A Fő tartalmi képernyő helyett a teljes DemoScreen-t használjuk
+            val playersViewModel: PlayersViewModel = hiltViewModel()
+            DemoScreen(
+                viewModel = playersViewModel,
+                onLogout = authViewModel::signOut // Kijelentkezés
+            )
+        }
+    }
+}
+
+// --- HELYESEN DEFINIÁLT PLACEHOLDER Képernyők ---
+
+@Composable
+fun LoadingScreen() {
+    Text("Betöltés...")
+}
+
+/*
+ * Eltávolítva a placeholder AuthenticatedContent, helyette a DemoScreen van használatban.
+@Composable
+fun AuthenticatedContent(...) { ... }
+*/
