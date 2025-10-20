@@ -14,6 +14,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
+import kotlinx.coroutines.delay
 
 /**
  * Játékoslista képernyő, amely megjeleníti a játékosokat,
@@ -30,6 +31,8 @@ fun DemoScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     // Lokális UI állapotok
     var showAddDialog by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
@@ -38,14 +41,17 @@ fun DemoScreen(
     var playerToDelete by remember { mutableStateOf<PlayerDTO?>(null) }
 
     LaunchedEffect(uiState.error) {
-        if (uiState.error != null) {
-            // Itt megjelenhetne egy Snackbar a hibaüzenettel
-            // ... (pl. val snackbarHostState = remember { SnackbarHostState() })
-            // snackbarHostState.showSnackbar(uiState.error)
+        uiState.error?.let { errorMessage ->
+            // Megjelenítjük a Snackbar-t a hibaüzenettel
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                actionLabel = "OK", // Lehetőség a manuális bezárásra
+                duration = SnackbarDuration.Indefinite // Addig marad, amíg a kód el nem tünteti
+            )
 
-            // Hiba elrejthető 5 másodperc múlva:
-            // delay(5000L)
-            // viewModel.clearError() // Vagy amíg a felhasználó le nem OK-zza
+            // 5 másodperc (5000ms) múlva automatikusan töröljük a hibát
+            delay(5000L)
+            viewModel.clearError()
         }
     }
 
@@ -59,6 +65,9 @@ fun DemoScreen(
                     }
                 }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -76,15 +85,6 @@ fun DemoScreen(
                 // Ideiglenesen a progress indicator-t egy egyszerű Spacer-re cserélve kiküszöbölhető a hiba,
                 // de a helyes megoldás a Compose verziók szinkronizálása a Gradle fájlban.
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
-
-            // Hibaüzenet
-            uiState.error?.let {
-                Text(
-                    it,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
             }
 
             // Játékoslista
