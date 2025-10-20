@@ -62,18 +62,26 @@ class PlayersViewModel @Inject constructor(
                         when (event) {
                             is WsEvent.PlayerAdded -> {
                                 Log.i(TAG, "WS: PlayerAdded - ${event.player.name}")
-                                currentState.copy(
-                                    players = currentState.players + event.player
-                                )
+
+                                // 🔑 JAVÍTÁS: CSAK AKKOR ADJA HOZZÁ, HA AZ ID MÉG NEM LÉTEZIK
+                                if (currentState.players.none { it.id == event.player.id }) {
+                                    currentState.copy(
+                                        players = currentState.players + event.player
+                                    )
+                                } else {
+                                    // Ha az ID már létezik (duplikátum), visszatérünk a jelenlegi állapottal
+                                    Log.w(TAG, "Figyelem: Duplikált PlayerAdded esemény érkezett. ID: ${event.player.id}")
+                                    currentState
+                                }
                             }
                             is WsEvent.PlayerDeleted -> {
-                                Log.i(TAG, "WS: PlayerDeleted - ID: ${event.id}")
+                                // ... (logika nem változik)
                                 currentState.copy(
                                     players = currentState.players.filter { it.id != event.id }
                                 )
                             }
                             is WsEvent.PlayerUpdated -> {
-                                Log.i(TAG, "WS: PlayerUpdated - ID: ${event.player.id}")
+                                // ... (logika nem változik)
                                 currentState.copy(
                                     players = currentState.players.map {
                                         if (it.id == event.player.id) event.player else it
@@ -83,7 +91,7 @@ class PlayersViewModel @Inject constructor(
                         }
                     }
                 }
-                .launchIn(viewModelScope) // Elindítjuk a WS gyűjtését háttérben
+                .launchIn(viewModelScope)
 
             // 2. HTTP hívás a kezdeti listáért
             try {
