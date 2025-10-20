@@ -16,6 +16,12 @@ import hu.bme.aut.android.demo.domain.websocket.usecases.ObservePlayersEventsUse
 import hu.bme.aut.android.demo.domain.fcm.usecases.RegisterFcmTokenUseCase
 import hu.bme.aut.android.demo.domain.fcm.usecases.SendPushNotificationUseCase
 import hu.bme.aut.android.demo.domain.websocket.usecases.UpdatePlayerUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await // <-- ÚJ IMPORT: await() funkcióhoz
 import javax.inject.Inject
@@ -38,66 +44,73 @@ class PlayersViewModel @Inject constructor(
     private val sendPushNotificationUseCase: SendPushNotificationUseCase
 ) : ViewModel() {
 
+    private val _uiState = MutableStateFlow(PlayersUiState(loading = true))
+    val uiState: StateFlow<PlayersUiState> = _uiState.asStateFlow()
+
     // A lista tartalmát a Use Case-től kapott Flow-ból töltjük fel
     val players = mutableStateOf<List<PlayerDTO>>(emptyList())
 
-    val loading = mutableStateOf(false)
-    val error = mutableStateOf<String?>(null)
 
     init {
         viewModelScope.launch {
 
-            loading.value = true
-            error.value = null
-
-            try {
-                // 1. HTTP hívás a kezdeti listáért
-                val initialList = getInitialPlayersUseCase()
-                players.value = initialList
-                Log.d(TAG, "Initial players loaded: ${initialList.size}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading initial list", e)
-                error.value = "Hiba a játékosok betöltésekor: ${e.message}"
-            } finally {
-                loading.value = false
-            }
-
-            // 2. WS események figyelése a lista frissítéséhez
-            observePlayersEventsUseCase()
-                .collect { event ->
-                    when (event) {
-                        is WsEvent.PlayerAdded -> {
-                            Log.i(TAG, "WS: PlayerAdded - ${event.player.name}")
-                            players.value = players.value + event.player
-                        }
-                        is WsEvent.PlayerDeleted -> {
-                            Log.i(TAG, "WS: PlayerDeleted - ID: ${event.id}")
-                            players.value = players.value.filter { it.id != event.id }
-                        }
-
-                        is WsEvent.PlayerUpdated -> {
-                            Log.i(TAG, "WS: PlayerUpdated - ID: ${event.player.id}")
-                            players.value = players.value.map {
-                                if (it.id == event.player.id) event.player else it
+            // 1. WebSocket események figyelése a lista frissítéséhez
+            val wsFlow = observePlayersEventsUseCase()
+                .onEach { event ->
+                    // Frissítjük a lista állapotát a WS események alapján
+                    _uiState.update { currentState ->
+                        when (event) {
+                            is WsEvent.PlayerAdded -> {
+                                Log.i(TAG, "WS: PlayerAdded - ${event.player.name}")
+                                currentState.copy(
+                                    players = currentState.players + event.player
+                                )
+                            }
+                            is WsEvent.PlayerDeleted -> {
+                                Log.i(TAG, "WS: PlayerDeleted - ID: ${event.id}")
+                                currentState.copy(
+                                    players = currentState.players.filter { it.id != event.id }
+                                )
+                            }
+                            is WsEvent.PlayerUpdated -> {
+                                Log.i(TAG, "WS: PlayerUpdated - ID: ${event.player.id}")
+                                currentState.copy(
+                                    players = currentState.players.map {
+                                        if (it.id == event.player.id) event.player else it
+                                    }
+                                )
                             }
                         }
                     }
                 }
+                .launchIn(viewModelScope) // Elindítjuk a WS gyűjtését háttérben
+
+            // 2. HTTP hívás a kezdeti listáért
+            try {
+                val initialList = getInitialPlayersUseCase()
+                Log.d(TAG, "Initial players loaded: ${initialList.size}")
+
+                // Frissítjük a StateFlow-t a kezdeti listával és eltávolítjuk a loading állapotot
+                _uiState.update { it.copy(players = initialList, loading = false, error = null) }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading initial list", e)
+                _uiState.update { it.copy(loading = false, error = "Hiba a játékosok betöltésekor: ${e.message}") }
+            }
         }
     }
 
     // --- FCM Funkció ---
-    fun registerFcmTokenForUser(userEmail: String) {
+    private fun registerFcmTokenForUser(userEmail: String) {
         viewModelScope.launch {
             try {
                 val token = FirebaseMessaging.getInstance().token.await()
-
                 Log.d(TAG, "Lekért FCM token: $token, Email: $userEmail")
                 registerFcmTokenUseCase(userEmail, token)
-
                 Log.i(TAG, "FCM token sikeresen elküldve a backendnek: $userEmail")
             } catch (e: Exception) {
-                Log.e(TAG, "Hiba az FCM token regisztráció indítása során: ${e.message}")
+                Log.e(TAG, "Hiba az FCM token regisztrációja során: ${e.message}", e)
+                // Figyelem: A hiba csak a logba megy, nem jelenik meg a UI-n
             }
         }
     }
@@ -113,6 +126,7 @@ class PlayersViewModel @Inject constructor(
                 Log.i(TAG, "Push notification elküldve: $targetEmail")
             } catch (e: Exception) {
                 Log.e(TAG, "Push notification küldési hiba", e)
+                // Hiba jelzése a UI-n, ha szükséges (jelenleg nincs UI esemény ehhez)
             }
         }
     }
@@ -122,11 +136,12 @@ class PlayersViewModel @Inject constructor(
     fun addPlayer(name: String, age: Int?, email: String) {
         viewModelScope.launch {
             try {
-                addPlayerUseCase(NewPlayerDTO(name, age, email))
-                registerFcmTokenForUser(email)
+                val newPlayer = NewPlayerDTO(name, age, email)
+                addPlayerUseCase(newPlayer)
 
+                registerFcmTokenForUser(email)
             } catch (e: Exception) {
-                error.value = "Hiba hozzáadáskor: ${e.message}"
+                _uiState.update { it.copy(error = "Hiba hozzáadáskor: ${e.message}") }
                 Log.e(TAG, "Hiba hozzáadáskor", e)
             }
         }
@@ -137,7 +152,7 @@ class PlayersViewModel @Inject constructor(
             try {
                 deletePlayerUseCase(id)
             } catch (e: Exception) {
-                error.value = "Hiba törléskor: ${e.message}"
+                _uiState.update { it.copy(error = "Hiba törléskor: ${e.message}") }
                 Log.e(TAG, "Hiba törléskor", e)
             }
         }
@@ -151,9 +166,13 @@ class PlayersViewModel @Inject constructor(
                 updatePlayerUseCase(id, newPlayer)
                 // Megjegyzés: Nincs szükség a lista frissítésére, mert a WS esemény (PlayerUpdated) megteszi
             } catch (e: Exception) {
-                error.value = "Hiba frissítéskor: ${e.message}"
+                _uiState.update { it.copy(error = "Hiba frissítéskor: ${e.message}") }
                 Log.e(TAG, "Hiba frissítéskor", e)
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 }

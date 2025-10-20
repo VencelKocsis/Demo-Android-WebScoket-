@@ -28,10 +28,7 @@ fun DemoScreen(
     viewModel: PlayersViewModel,
     onLogout: () -> Unit
 ) {
-    // ViewModel állapotok figyelése a 'by' kulcsszóval (mutableStateOf-hoz)
-    val players by viewModel.players
-    val loading by viewModel.loading
-    val error by viewModel.error
+    val uiState by viewModel.uiState.collectAsState()
 
     // Lokális UI állapotok
     var showAddDialog by remember { mutableStateOf(false) }
@@ -39,6 +36,18 @@ fun DemoScreen(
     var age by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var playerToDelete by remember { mutableStateOf<PlayerDTO?>(null) }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) {
+            // Itt megjelenhetne egy Snackbar a hibaüzenettel
+            // ... (pl. val snackbarHostState = remember { SnackbarHostState() })
+            // snackbarHostState.showSnackbar(uiState.error)
+
+            // Hiba elrejthető 5 másodperc múlva:
+            // delay(5000L)
+            // viewModel.clearError() // Vagy amíg a felhasználó le nem OK-zza
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -63,14 +72,14 @@ fun DemoScreen(
                 .padding(padding) // A tartalom elhelyezése a TopBar alatt
         ) {
             // Betöltési indikátor (Ez okozta a hibát a verzió-ütközés miatt)
-            if (loading) {
+            if (uiState.loading) {
                 // Ideiglenesen a progress indicator-t egy egyszerű Spacer-re cserélve kiküszöbölhető a hiba,
                 // de a helyes megoldás a Compose verziók szinkronizálása a Gradle fájlban.
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
             // Hibaüzenet
-            error?.let {
+            uiState.error?.let {
                 Text(
                     it,
                     color = MaterialTheme.colorScheme.error,
@@ -85,7 +94,7 @@ fun DemoScreen(
                     .padding(horizontal = 16.dp),
                 contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
             ) {
-                items(players, key = { it.id }) { p ->
+                items(uiState.players, key = { it.id }) { p ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
