@@ -37,6 +37,7 @@ fun DemoScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var playerToDelete by remember { mutableStateOf<PlayerDTO?>(null) }
 
     Scaffold(
@@ -109,6 +110,15 @@ fun DemoScreen(
                             Column {
                                 Text(p.name, style = MaterialTheme.typography.titleMedium)
                                 Text("Kor: ${p.age ?: "-"}", style = MaterialTheme.typography.bodyMedium)
+                                Text("Email: ${p.email}", style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            // 🔹 ÚJ GOMB: push notification küldés
+                            Button(
+                                onClick = { viewModel.sendPushNotification(p.email) },
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Text("Értesítés")
                             }
                         }
                     }
@@ -126,13 +136,14 @@ fun DemoScreen(
             onDismissRequest = { showAddDialog = false },
             confirmButton = {
                 TextButton(onClick = {
-                    if (name.isNotBlank()) {
-                        viewModel.addPlayer(name, age.toIntOrNull())
+                    if (name.isNotBlank() && email.isNotBlank()) {
+                        viewModel.addPlayer(name, age.toIntOrNull(), email)
                         showAddDialog = false
                         name = ""
                         age = ""
+                        email = ""
                     }
-                }, enabled = name.isNotBlank()) {
+                }, enabled = name.isNotBlank() && email.isNotBlank()) {
                     Text("Mentés")
                 }
             },
@@ -147,6 +158,15 @@ fun DemoScreen(
                         onValueChange = { name = it },
                         label = { Text("Név") },
                         singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField( // 🔑 ÚJ: Email mező
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("E-mail") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))

@@ -3,6 +3,7 @@ package hu.bme.aut.android.demo.data.fcm.service
 import android.app.NotificationManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,8 +21,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private val CHANNEL_ID = "DEMO_CHANNEL"
     private val NOTIFICATION_ID = 101
 
-    // Feltételezve, hogy ez az a monokróm ikon, amit az Image Asset Studio generáltál!
-    // Kérlek, ellenőrizd a 'R.drawable' alatti ikonnevet, hogy megegyezik-e a generálttal.
     private val SMALL_ICON_RES_ID = R.drawable.ic_notification_tt
 
     @Inject
@@ -66,16 +65,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     /**
      * FCM tokent küld a szerverre.
-     * ÁTÍRVA: A fix "test-user-fcm-target" ID-t használja.
      */
     private fun sendTokenToServer(token: String) {
         serviceScope.launch {
             try {
-                // A Ktor backendez már ezt az ID-t várja.
-                val userId = "test-user-fcm-target"
+                val email = FirebaseAuth.getInstance().currentUser?.email ?: return@launch
+                Log.i(TAG, "Aktuális felhasználó e-mail: $email, token: $token")
 
-                Log.i(TAG, "FCM token regisztrálása user=$userId, token=$token")
-                registerFcmTokenUseCase(userId, token)
+                registerFcmTokenUseCase(email, token)
                 Log.i(TAG, "✅ FCM token sikeresen regisztrálva.")
             } catch (e: Exception) {
                 Log.e(TAG, "Hiba az FCM token regisztrálása során: ${e.message}", e)

@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class PlayerDTO(
     val id: Int,
     val name: String,
-    val age: Int?
+    val age: Int?,
+    val email: String
 )

@@ -20,5 +20,5 @@ interface PlayerRepository {
     // HTTP PUT
     suspend fun updatePlayer(id: Int, player: NewPlayerDTO)
 
-    suspend fun registerFcmToken(userId: String, token: String)
+    suspend fun registerFcmToken(email: String, token: String)
 }

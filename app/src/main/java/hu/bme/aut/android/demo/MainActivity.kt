@@ -131,9 +131,3 @@ fun AppNavHost(
 fun LoadingScreen() {
     Text("Betöltés...")
 }
-
-/*
- * Eltávolítva a placeholder AuthenticatedContent, helyette a DemoScreen van használatban.
-@Composable
-fun AuthenticatedContent(...) { ... }
-*/

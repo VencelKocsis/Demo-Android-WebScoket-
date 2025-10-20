@@ -32,8 +32,8 @@ class PlayerRepositoryImpl @Inject constructor(
     // FCM MŰVELETEK (HTTP)
     // ----------------------------------------------------
 
-    override suspend fun registerFcmToken(userId: String, token: String) {
-        apiService.registerFcmToken(FcmToken(userId, token))
+    override suspend fun registerFcmToken(email: String, token: String) {
+        apiService.registerFcmToken(FcmToken(email, token))
     }
 
     // ----------------------------------------------------

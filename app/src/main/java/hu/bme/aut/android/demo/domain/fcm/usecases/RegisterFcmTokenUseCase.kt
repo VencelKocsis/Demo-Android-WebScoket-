@@ -9,7 +9,7 @@ class RegisterFcmTokenUseCase @Inject constructor(
     /**
      * @param token a Firebase Cloud Messaging által generált egyedi regisztrációs token.
      */
-    suspend operator fun invoke(userId: String, token: String) {
-        repository.registerFcmToken(userId, token)
+    suspend operator fun invoke(email: String, token: String) {
+        repository.registerFcmToken(email, token)
     }
 }

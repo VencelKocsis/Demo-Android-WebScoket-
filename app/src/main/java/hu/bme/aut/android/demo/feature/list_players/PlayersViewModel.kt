@@ -14,6 +14,7 @@ import hu.bme.aut.android.demo.domain.websocket.usecases.DeletePlayerUseCase
 import hu.bme.aut.android.demo.domain.websocket.usecases.GetInitialPlayersUseCase
 import hu.bme.aut.android.demo.domain.websocket.usecases.ObservePlayersEventsUseCase
 import hu.bme.aut.android.demo.domain.fcm.usecases.RegisterFcmTokenUseCase
+import hu.bme.aut.android.demo.domain.fcm.usecases.SendPushNotificationUseCase
 import hu.bme.aut.android.demo.domain.websocket.usecases.UpdatePlayerUseCase
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await // <-- ÚJ IMPORT: await() funkcióhoz
@@ -33,7 +34,8 @@ class PlayersViewModel @Inject constructor(
     private val updatePlayerUseCase: UpdatePlayerUseCase,
 
     // Use Case az FCM token regisztrálásához
-    private val registerFcmTokenUseCase: RegisterFcmTokenUseCase
+    private val registerFcmTokenUseCase: RegisterFcmTokenUseCase,
+    private val sendPushNotificationUseCase: SendPushNotificationUseCase
 ) : ViewModel() {
 
     // A lista tartalmát a Use Case-től kapott Flow-ból töltjük fel
@@ -44,9 +46,6 @@ class PlayersViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-
-            // FCM token regisztrálása az alkalmazás indulásakor
-            registerFcmToken()
 
             loading.value = true
             error.value = null
@@ -88,30 +87,44 @@ class PlayersViewModel @Inject constructor(
     }
 
     // --- FCM Funkció ---
-    private fun registerFcmToken() {
+    fun registerFcmTokenForUser(userEmail: String) {
         viewModelScope.launch {
             try {
                 val token = FirebaseMessaging.getInstance().token.await()
-                val userId = "test-user-fcm-target" // Ezt dinamikusan add meg (pl. bejelentkezett userből)
 
-                Log.d(TAG, "Lekért FCM token: $token")
+                Log.d(TAG, "Lekért FCM token: $token, Email: $userEmail")
+                registerFcmTokenUseCase(userEmail, token)
 
-                registerFcmTokenUseCase(userId, token)
-
-                Log.i(TAG, "FCM token sikeresen elküldve a backendnek.")
+                Log.i(TAG, "FCM token sikeresen elküldve a backendnek: $userEmail")
             } catch (e: Exception) {
                 Log.e(TAG, "Hiba az FCM token regisztráció indítása során: ${e.message}")
             }
         }
     }
 
+    fun sendPushNotification(targetEmail: String) {
+        viewModelScope.launch {
+            try {
+                sendPushNotificationUseCase(
+                    targetEmail = targetEmail,
+                    title = "Új értesítés 🎾",
+                    body = "Helló, $targetEmail! Értesítést kaptál."
+                )
+                Log.i(TAG, "Push notification elküldve: $targetEmail")
+            } catch (e: Exception) {
+                Log.e(TAG, "Push notification küldési hiba", e)
+            }
+        }
+    }
 
     // --- CRUD Funkciók ---
 
-    fun addPlayer(name: String, age: Int?) {
+    fun addPlayer(name: String, age: Int?, email: String) {
         viewModelScope.launch {
             try {
-                addPlayerUseCase(NewPlayerDTO(name, age))
+                addPlayerUseCase(NewPlayerDTO(name, age, email))
+                registerFcmTokenForUser(email)
+
             } catch (e: Exception) {
                 error.value = "Hiba hozzáadáskor: ${e.message}"
                 Log.e(TAG, "Hiba hozzáadáskor", e)
@@ -131,10 +144,10 @@ class PlayersViewModel @Inject constructor(
     }
 
     // Játékos frissítése
-    fun updatePlayer(id: Int, name: String, age: Int?) {
+    fun updatePlayer(id: Int, name: String, age: Int?, email: String) {
         viewModelScope.launch {
             try {
-                val newPlayer = NewPlayerDTO(name, age)
+                val newPlayer = NewPlayerDTO(name, age, email)
                 updatePlayerUseCase(id, newPlayer)
                 // Megjegyzés: Nincs szükség a lista frissítésére, mert a WS esemény (PlayerUpdated) megteszi
             } catch (e: Exception) {

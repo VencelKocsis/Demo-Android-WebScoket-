@@ -25,4 +25,7 @@ interface ApiService {
 
     @POST("register_fcm_token")
     suspend fun registerFcmToken(@Body registration: FcmToken)
+
+    @POST("send_fcm_notification")
+    suspend fun sendPushNotification(@Body payload: Map<String, String>)
 }

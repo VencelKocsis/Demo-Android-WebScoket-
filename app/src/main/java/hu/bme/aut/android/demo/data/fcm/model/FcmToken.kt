@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FcmToken(
-    val userId: String,
+    val email: String,
     val token: String
 )
