@@ -59,6 +59,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.ktx)
 
+    // Ikonok bővített készlete (EmojiEvents, Group, History, stb.)
+    implementation(libs.androidx.material.icons.extended)
+
     // COMPOSE: BOM és komponensek
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

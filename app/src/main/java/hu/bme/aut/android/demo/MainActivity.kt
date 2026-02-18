@@ -10,20 +10,10 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.MaterialTheme
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import hu.bme.aut.android.demo.feature.auth.AuthViewModel
-import hu.bme.aut.android.demo.feature.auth.AuthState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.Composable
-import androidx.compose.material3.Text
-import hu.bme.aut.android.demo.feature.auth.AuthScreen
-import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
-// IMPORTÁLJUK AZ ÚJ DEMOSCREEN-T a list_players csomagból
-import hu.bme.aut.android.demo.feature.list_players.DemoScreen
-
+import hu.bme.aut.android.demo.navigation.AppNavHost
+import hu.bme.aut.android.demo.ui.theme.DemoTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -48,18 +38,15 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermission()
 
         setContent {
-            MaterialTheme {
-                // AuthViewModel beolvasása, ami kezeli a hitelesítést
-                val authViewModel: AuthViewModel = hiltViewModel()
+            // A saját témánkat használjuk (DemoTheme), ami a ui/theme mappában van
+            DemoTheme {
+                // 1. Létrehozzuk a NavController-t, ami kezeli a navigációt
+                val navController = rememberNavController()
 
-                // A bejelentkezési állapot figyelése
-                val authState by authViewModel.authState.collectAsState()
-
-                // Az alkalmazás gyökér komponense, ami a hitelesítési állapot alapján vált
-                AppNavHost(
-                    authState = authState,
-                    authViewModel = authViewModel
-                )
+                // 2. Meghívjuk a KÜLÖN fájlban lévő AppNavHost-ot (navigation package)
+                // Fontos: Itt NEM kérünk le ViewModelt vagy AuthState-et,
+                // mert azt az AppNavHost.kt intézi belül Hilt segítségével.
+                AppNavHost(navController = navController)
             }
         }
     }
@@ -94,40 +81,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-/**
- * A gyökér navigációs komponens, ami az AuthState alapján választ képernyőt.
- */
-@Composable
-fun AppNavHost(
-    authState: AuthState,
-    authViewModel: AuthViewModel
-) {
-    when (authState) {
-        AuthState.UNKNOWN -> LoadingScreen() // Töltőképernyő (kezdeti ellenőrzés alatt)
-
-        AuthState.UNAUTHENTICATED -> {
-            AuthScreen(
-                viewModel = authViewModel,
-                onAuthSuccess = { user -> Log.d("Auth", "Sikeres hitelesítés: ${user.uid}") }
-            )
-        }
-
-        AuthState.AUTHENTICATED -> {
-            // A Fő tartalmi képernyő helyett a teljes DemoScreen-t használjuk
-            val playersViewModel: PlayersViewModel = hiltViewModel()
-            DemoScreen(
-                viewModel = playersViewModel,
-                onLogout = authViewModel::signOut // Kijelentkezés
-            )
-        }
-    }
-}
-
-// --- HELYESEN DEFINIÁLT PLACEHOLDER Képernyők ---
-
-@Composable
-fun LoadingScreen() {
-    Text("Betöltés...")
 }

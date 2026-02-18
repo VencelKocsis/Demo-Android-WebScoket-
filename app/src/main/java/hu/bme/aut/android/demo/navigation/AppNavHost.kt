@@ -12,6 +12,7 @@ import hu.bme.aut.android.demo.feature.list_players.DemoScreen
 import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
+import hu.bme.aut.android.demo.feature.main.MainScreen
 
 /**
  * Az alkalmazás fő navigációs konténere.
@@ -35,7 +36,7 @@ fun AppNavHost(
         // Amíg az állapot ismeretlen (pl. token ellenőrzés fut), a Login útvonallal indulunk.
         AuthState.UNKNOWN -> Screen.Login.route
         // Ha be van jelentkezve, a Players képernyővel (DemoScreen) indul.
-        AuthState.AUTHENTICATED -> Screen.Players.route
+        AuthState.AUTHENTICATED -> Screen.Main.route
         // Ha nincs bejelentkezve, a Login képernyővel indul.
         AuthState.UNAUTHENTICATED -> Screen.Login.route
     }
@@ -63,21 +64,13 @@ fun AppNavHost(
                 )
             }
 
-            // --- 2. Players Képernyő (DemoScreen) ---
-            composable(Screen.Players.route) {
-                // A PlayersViewModel beszerzése Hilt-tel
-                val playersViewModel: PlayersViewModel = hiltViewModel()
-
-                DemoScreen(
-                    viewModel = playersViewModel,
+            // --- 2. FőKépernyő (MainScreen) ---
+            composable(Screen.Main.route) {
+                MainScreen(
                     onLogout = {
-                        // Kijelentkezés hívása a ViewModel-en. Ez megváltoztatja az AuthState-et UNAUTHENTICATED-re.
                         authViewModel.signOut()
-
-                        // Navigáció a LoginScreen-re kijelentkezés után,
-                        // eltávolítva a PlayersScreen-t a back stack-ből.
                         navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Players.route) {
+                            popUpTo(Screen.Main.route) {
                                 inclusive = true
                             }
                         }
