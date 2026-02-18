@@ -87,7 +87,6 @@ class PlayerUseCasesTest {
         val mockFlow = flowOf<WsEvent>()
         every { repository.getWsEventsFlow() } returns mockFlow
 
-        // --- EZ IS HIÁNYZOTT: ---
         val useCase = ObservePlayersEventsUseCase(repository)
 
         // WHEN
