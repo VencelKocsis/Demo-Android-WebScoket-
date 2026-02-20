@@ -36,7 +36,7 @@ fun AppNavHost(
         // Amíg az állapot ismeretlen (pl. token ellenőrzés fut), a Login útvonallal indulunk.
         AuthState.UNKNOWN -> Screen.Login.route
         // Ha be van jelentkezve, a Players képernyővel (DemoScreen) indul.
-        AuthState.AUTHENTICATED -> Screen.Main.route
+        AuthState.AUTHENTICATED -> Screen.Main.route // TODO TEMP Players
         // Ha nincs bejelentkezve, a Login képernyővel indul.
         AuthState.UNAUTHENTICATED -> Screen.Login.route
     }
@@ -55,10 +55,25 @@ fun AppNavHost(
                     onAuthSuccess = {
                         // Navigáció a PlayersScreen-re bejelentkezés után,
                         // eltávolítva a LoginScreen-t a back stack-ből.
-                        navController.navigate(Screen.Players.route) {
+                        navController.navigate(Screen.Players.route) { // TODO to Main.route
                             popUpTo(Screen.Login.route) {
                                 inclusive = true // Az LoginScreen-t is eltávolítja
                             }
+                        }
+                    }
+                )
+            }
+
+            // --- HIÁNYZOTT: A Demo/Players Képernyő ---
+            composable(Screen.Players.route) {
+                // Itt kérjük le a ViewModelt, aminek hatására lefut az init blokk!
+                val playersViewModel: PlayersViewModel = hiltViewModel()
+                DemoScreen(
+                    viewModel = playersViewModel,
+                    onLogout = {
+                        authViewModel.signOut()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Players.route) { inclusive = true }
                         }
                     }
                 )
