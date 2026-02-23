@@ -5,7 +5,7 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.android.demo.data.team.repository.TeamRepositoryImpl
-import hu.bme.aut.android.demo.domain.team.repository.TeamRepository
+import hu.bme.aut.android.demo.data.team.repository.TeamRepository
 import javax.inject.Singleton
 
 @Module

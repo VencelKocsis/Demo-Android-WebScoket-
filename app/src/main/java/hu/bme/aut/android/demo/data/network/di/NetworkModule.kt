@@ -5,7 +5,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -51,8 +51,8 @@ object NetworkModule {
     // ----------------------------------------------------
     @Provides
     @Singleton
-    fun provideApiService(retrofit: Retrofit): ApiService {
-        return retrofit.create(ApiService::class.java)
+    fun provideApiService(retrofit: Retrofit): RetrofitApi {
+        return retrofit.create(RetrofitApi::class.java)
     }
 
     // 4. Json Serializer (Ezt a WS-hez használjuk, de közös beállítás lehet)

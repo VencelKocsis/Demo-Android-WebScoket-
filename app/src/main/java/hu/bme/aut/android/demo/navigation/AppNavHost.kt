@@ -77,7 +77,7 @@ fun AppNavHost(
                         }
                     }
                 )
-            }
+            } // TODO new navigation implementation, check: mobweb tárgy új EA
 
             // --- 2. FőKépernyő (MainScreen) ---
             composable(Screen.Main.route) {

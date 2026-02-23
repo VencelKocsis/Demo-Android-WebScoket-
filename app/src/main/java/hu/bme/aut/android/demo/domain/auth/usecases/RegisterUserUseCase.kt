@@ -1,7 +1,7 @@
 package hu.bme.aut.android.demo.domain.auth.usecases
 
 import com.google.firebase.auth.FirebaseUser
-import hu.bme.aut.android.demo.domain.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
 import javax.inject.Inject
 
 /**

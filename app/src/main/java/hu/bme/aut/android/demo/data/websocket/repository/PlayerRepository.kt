@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.domain.websocket.repository
+package hu.bme.aut.android.demo.data.websocket.repository
 
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO

@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.domain.auth.repository
+package hu.bme.aut.android.demo.data.auth.repository
 
 import com.google.firebase.auth.FirebaseUser
 

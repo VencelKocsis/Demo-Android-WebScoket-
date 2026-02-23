@@ -7,7 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.android.demo.data.auth.repository.AuthRepositoryImpl
-import hu.bme.aut.android.demo.domain.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
 import javax.inject.Singleton
 
 /**

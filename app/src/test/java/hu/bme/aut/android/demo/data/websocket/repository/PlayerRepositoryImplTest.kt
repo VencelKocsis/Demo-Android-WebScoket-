@@ -1,7 +1,7 @@
 package hu.bme.aut.android.demo.data.websocket.repository
 
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
-import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import hu.bme.aut.android.demo.data.websocket.PlayersWebSocketClient
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
@@ -19,7 +19,7 @@ import org.junit.Test
 
 class PlayerRepositoryImplTest {
 
-    private val apiService = mockk<ApiService>()
+    private val retrofitApi = mockk<RetrofitApi>()
     // A WebSocket kilenst 'relaxed'-re állítjuk, hogy ne kellen mindent mockolni benne
     private val wsClient = mockk<PlayersWebSocketClient>(relaxed = true)
 
@@ -28,20 +28,20 @@ class PlayerRepositoryImplTest {
 
     @Before
     fun setup() {
-        repository = PlayerRepositoryImpl(apiService, wsClient)
+        repository = PlayerRepositoryImpl(retrofitApi, wsClient)
     }
 
     @Test
     fun `getInitialPlayers calls ApiService`() = runTest {
         // GIVEN
         val mockPlayers = listOf(PlayerDTO(1, "Test", 20, "test@test.com"))
-        coEvery { apiService.getPlayers() } returns mockPlayers
+        coEvery { retrofitApi.getPlayers() } returns mockPlayers
 
         // WHEN
         val result = repository.getInitialPlayers()
 
         // THEN
-        coVerify { apiService.getPlayers() }
+        coVerify { retrofitApi.getPlayers() }
     }
 
     @Test
@@ -50,26 +50,26 @@ class PlayerRepositoryImplTest {
         val newPlayer = NewPlayerDTO("New", 10, "new@test.com")
         val returnPlayer = PlayerDTO(1, "New", 10, "new@test.com")
 
-        coEvery { apiService.addPlayer(newPlayer) } returns returnPlayer
+        coEvery { retrofitApi.addPlayer(newPlayer) } returns returnPlayer
 
         // WHEN
         val result = repository.addPlayer(newPlayer)
 
         // THEN
         assertEquals(returnPlayer, result)
-        coVerify { apiService.addPlayer(newPlayer) }
+        coVerify { retrofitApi.addPlayer(newPlayer) }
     }
 
     @Test
     fun `deletePlayer calls ApiService`() = runTest {
         // GIVEN
-        coEvery { apiService.deletePlayer(any()) } returns Unit
+        coEvery { retrofitApi.deletePlayer(any()) } returns Unit
 
         // WHEN
         repository.deletePlayer(1)
 
         // THEN
-        coVerify { apiService.deletePlayer(1) }
+        coVerify { retrofitApi.deletePlayer(1) }
     }
 
     @Test
@@ -79,14 +79,14 @@ class PlayerRepositoryImplTest {
         val token = "xyz_token"
         val expectedDto = FcmToken(email, token)
 
-        coEvery { apiService.registerFcmToken(any()) } returns Unit
+        coEvery { retrofitApi.registerFcmToken(any()) } returns Unit
 
         // WHEN
         repository.registerFcmToken(email, token)
 
         // THEN
         // Ellenőrizzük, hogy a repository helyesen csomagolta-e be az adatokat FcmToken objektumba
-        coVerify { apiService.registerFcmToken(expectedDto) }
+        coVerify { retrofitApi.registerFcmToken(expectedDto) }
     }
 
     @Test

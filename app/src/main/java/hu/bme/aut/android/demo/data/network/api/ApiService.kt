@@ -4,32 +4,14 @@ import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.model.TeamWithMembersDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
 
 interface ApiService {
-    @GET("players")
     suspend fun getPlayers(): List<PlayerDTO>
+    suspend fun addPlayer(player: NewPlayerDTO): PlayerDTO
+    suspend fun deletePlayer(id: Int)
+    suspend fun updatePlayer(id: Int, player: NewPlayerDTO)
+    suspend fun registerFcmToken(registration: FcmToken)
+    suspend fun sendPushNotification(payload: Map<String, String>)
 
-    @POST("players")
-    suspend fun addPlayer(@Body player: NewPlayerDTO): PlayerDTO
-
-    @DELETE("players/{id}")
-    suspend fun deletePlayer(@Path("id") id: Int)
-
-    @PUT("players/{id}")
-    suspend fun updatePlayer(@Path("id") id: Int, @Body player: NewPlayerDTO)
-
-    @POST("register_fcm_token")
-    suspend fun registerFcmToken(@Body registration: FcmToken)
-
-    @POST("send_fcm_notification")
-    suspend fun sendPushNotification(@Body payload: Map<String, String>)
-
-    @GET("teams")
     suspend fun getTeams(): List<TeamWithMembersDTO>
 }

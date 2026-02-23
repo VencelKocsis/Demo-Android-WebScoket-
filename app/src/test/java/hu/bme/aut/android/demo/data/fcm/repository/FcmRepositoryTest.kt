@@ -1,6 +1,6 @@
 package hu.bme.aut.android.demo.data.fcm.repository
 
-import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -11,8 +11,8 @@ import org.junit.Test
 
 class FcmRepositoryTest {
 
-    private val apiService = mockk<ApiService>()
-    private val repository = FcmRepository(apiService)
+    private val retrofitApi = mockk<RetrofitApi>()
+    private val repository = FcmRepository(retrofitApi)
 
     @Test
     fun `sendPushNotification constructs correct payload`() = runTest {
@@ -23,7 +23,7 @@ class FcmRepositoryTest {
 
         // Slot segítségével elkapjuk, mit küldött a repo az API-nak (Map<String, String>)
         val payloadSlot = slot<Map<String, String>>()
-        coEvery { apiService.sendPushNotification(capture(payloadSlot)) } returns Unit
+        coEvery { retrofitApi.sendPushNotification(capture(payloadSlot)) } returns Unit
 
         // WHEN
         repository.sendPushNotification(email, title, body)
@@ -34,6 +34,6 @@ class FcmRepositoryTest {
         assertEquals(title, payload["title"])
         assertEquals(body, payload["body"])
 
-        coVerify { apiService.sendPushNotification(any()) }
+        coVerify { retrofitApi.sendPushNotification(any()) }
     }
 }

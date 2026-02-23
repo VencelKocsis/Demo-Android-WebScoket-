@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.domain.team.repository
+package hu.bme.aut.android.demo.data.team.repository
 
 import hu.bme.aut.android.demo.data.network.model.TeamWithMembersDTO
 

@@ -1,10 +1,10 @@
 package hu.bme.aut.android.demo.data.fcm.repository
 
-import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import javax.inject.Inject
 
 class FcmRepository @Inject constructor(
-    private val apiService: ApiService
+    private val retrofitApi: RetrofitApi
 ) {
     suspend fun sendPushNotification(targetEmail: String, title: String, body: String) {
         val payload = mapOf(
@@ -12,6 +12,6 @@ class FcmRepository @Inject constructor(
             "title" to title,
             "body" to body
         )
-        apiService.sendPushNotification(payload)
+        retrofitApi.sendPushNotification(payload)
     }
 }

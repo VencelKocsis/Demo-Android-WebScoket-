@@ -3,7 +3,7 @@ package hu.bme.aut.android.demo.domain.websocket.usecases
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
-import hu.bme.aut.android.demo.domain.websocket.repository.PlayerRepository
+import hu.bme.aut.android.demo.data.websocket.repository.PlayerRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

@@ -137,7 +137,6 @@ fun TeamScreenContent(
                     ) {
                         state.teamList.forEach { team ->
                             DropdownMenuItem(
-                                // team.name most már a te Domain modelledből jön
                                 text = { Text(text = team.name) },
                                 onClick = {
                                     onEvent(TeamScreenEvent.OnTeamSelected(team.id))

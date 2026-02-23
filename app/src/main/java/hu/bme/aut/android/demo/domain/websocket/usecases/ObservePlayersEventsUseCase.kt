@@ -1,7 +1,7 @@
 package hu.bme.aut.android.demo.domain.websocket.usecases
 
 import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
-import hu.bme.aut.android.demo.domain.websocket.repository.PlayerRepository
+import hu.bme.aut.android.demo.data.websocket.repository.PlayerRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
