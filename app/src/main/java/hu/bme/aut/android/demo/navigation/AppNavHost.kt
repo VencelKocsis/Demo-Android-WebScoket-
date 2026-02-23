@@ -36,7 +36,7 @@ fun AppNavHost(
         // Amíg az állapot ismeretlen (pl. token ellenőrzés fut), a Login útvonallal indulunk.
         AuthState.UNKNOWN -> Screen.Login.route
         // Ha be van jelentkezve, a Players képernyővel (DemoScreen) indul.
-        AuthState.AUTHENTICATED -> Screen.Main.route // TODO TEMP Players
+        AuthState.AUTHENTICATED -> Screen.Main.route // TODO TEMP Players will be: Screen.Main.route
         // Ha nincs bejelentkezve, a Login képernyővel indul.
         AuthState.UNAUTHENTICATED -> Screen.Login.route
     }

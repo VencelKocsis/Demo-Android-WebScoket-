@@ -1,9 +1,12 @@
 package hu.bme.aut.android.demo.feature.team
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import hu.bme.aut.android.demo.data.network.model.toDomainDetails
+import hu.bme.aut.android.demo.domain.team.model.TeamDetails
+import hu.bme.aut.android.demo.domain.team.model.TeamMember
+import hu.bme.aut.android.demo.domain.team.model.toSimpleTeam
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,52 +26,64 @@ data class TeamUiState(
 class TeamViewModel @Inject constructor(
     private val getTeamsUseCase: GetTeamsUseCase
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(TeamUiState())
-    val uiState: StateFlow<TeamUiState> = _uiState.asStateFlow()
+
+    // Fontos: Itt a TeamScreenState-et használjuk, amit a UI-ban is definiáltál
+    private val _uiState = MutableStateFlow(TeamScreenState(isLoading = true))
+    val uiState: StateFlow<TeamScreenState> = _uiState.asStateFlow()
+
+    // Itt tároljuk el a nyers domain listát, hogy ne kelljen újra lekérdezni a hálózatról
+    private var allTeamsDomain: List<TeamDetails> = emptyList()
 
     init {
-        loadTeams()
+        onEvent(TeamScreenEvent.LoadInitialData)
+    }
+
+    fun onEvent(event: TeamScreenEvent) {
+        when (event) {
+            is TeamScreenEvent.LoadInitialData -> loadTeams()
+            is TeamScreenEvent.OnTeamSelected -> selectTeam(event.teamId)
+        }
     }
 
     private fun loadTeams() {
         viewModelScope.launch {
             try {
-                Log.d("TeamViewModel", "⏳ Csapatok lekérdezése indult...")
-                val teams = getTeamsUseCase()
-                Log.d("TeamViewModel", "✅ Kaptunk ${teams.size} csapatot a backendtől.")
+                _uiState.update { it.copy(isLoading = true) }
 
-                // Egyenlőre kiválasztjuk az első csapatot (pl. BEAC I.) a megjelenítéshez
-                val firstTeam = teams.firstOrNull()
+                // 1. A backendtől DTO listát kapunk
+                val teamDTOs = getTeamsUseCase()
 
-                if (firstTeam != null) {
-                    Log.d("TeamViewModel", "Kiválasztott csapat: ${firstTeam.teamName}, Tagok: ${firstTeam.members.size}")
+                // 2. Itt alakítjuk át a DTO-kat Domain modellekké (TeamDetails)
+                val domainTeams = teamDTOs.map { it.toDomainDetails() }
+                allTeamsDomain = domainTeams
 
-                    // Átalakítjuk a DTO-t a UI által várt TeamMember listára
-                    val mappedMembers = firstTeam.members.map { memberDTO ->
-                        TeamMember(
-                            name = memberDTO.name,
-                            isCaptain = memberDTO.isCaptain,
-                            stats = PlayerStats(wins = 0, losses = 0) // Egyenlőre 0 a statisztika
-                        )
-                    }
+                if (domainTeams.isNotEmpty()) {
+                    // 3. A legördülő menühöz való egyszerűsített lista
+                    val dropdownList = domainTeams.map { it.toSimpleTeam() }
+
+                    // 4. Az első csapat kiválasztása
+                    val firstTeam = domainTeams.first()
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = null,
-                            teamName = firstTeam.teamName,
-                            members = mappedMembers
+                            teamList = dropdownList,
+                            selectedTeam = firstTeam,
+                            errorMessage = null
                         )
                     }
-
                 } else {
-                    Log.w("TeamViewModel", "Üres a csapatok listája!")
-                    _uiState.update { it.copy(isLoading = false, error = "Nincsenek csapatok") }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = "Nincsenek csapatok") }
                 }
-
             } catch (e: Exception) {
-                Log.e("TeamViewModel", "❌ Hiba a csapatok lekérdezésekor: ${e.message}", e)
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
             }
         }
+    }
+
+    private fun selectTeam(teamId: Int) {
+        // Megkeressük a már letöltött listában a megfelelő ID-jú csapatot
+        val selected = allTeamsDomain.find { it.id == teamId }
+        _uiState.update { it.copy(selectedTeam = selected) }
     }
 }
