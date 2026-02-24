@@ -3,7 +3,8 @@ package hu.bme.aut.android.demo.data.auth.repository
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
-import hu.bme.aut.android.demo.data.network.model.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import javax.inject.Inject
@@ -40,5 +41,9 @@ class ApiServiceImpl @Inject constructor(
 
     override suspend fun getTeams(): List<TeamWithMembersDTO> {
         return retrofitApi.getTeams()
+    }
+
+    override suspend fun getTeamMatches(): List<TeamMatchDTO> {
+        return retrofitApi.getTeamMatches()
     }
 }

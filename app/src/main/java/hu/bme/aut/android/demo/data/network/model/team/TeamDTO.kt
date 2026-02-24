@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.data.network.model
+package hu.bme.aut.android.demo.data.network.model.team
 
 import kotlinx.serialization.Serializable
 

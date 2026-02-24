@@ -14,7 +14,7 @@ import hu.bme.aut.android.demo.feature.history.HistoryScreen
 import hu.bme.aut.android.demo.feature.history.demoData
 import hu.bme.aut.android.demo.feature.profile.ProfileScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
-import hu.bme.aut.android.demo.feature.tournament.TournamentScreen
+import hu.bme.aut.android.demo.feature.tournament.TeamMatchScreen
 import hu.bme.aut.android.demo.navigation.Screen
 
 @Composable
@@ -65,7 +65,7 @@ fun MainScreen(
                 startDestination = Screen.Tournament.route
             ) {
                 composable(Screen.Tournament.route) {
-                    TournamentScreen() // Paramétereket később bekötjük ViewModelből
+                    TeamMatchScreen()
                 }
                 composable(Screen.Team.route) {
                     TeamScreen()

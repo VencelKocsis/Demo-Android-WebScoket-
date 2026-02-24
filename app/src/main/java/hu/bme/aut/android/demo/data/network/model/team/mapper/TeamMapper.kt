@@ -1,5 +1,7 @@
-package hu.bme.aut.android.demo.data.network.model
+package hu.bme.aut.android.demo.data.network.model.team.mapper
 
+import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
+import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
 import hu.bme.aut.android.demo.domain.team.model.TeamMember
 

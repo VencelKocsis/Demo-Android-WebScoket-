@@ -1,0 +1,16 @@
+package hu.bme.aut.android.demo.domain.teammatch.model
+
+data class TeamMatch(
+    val id: Int,
+    val seasonId: Int,
+    val roundNumber: Int,
+    val homeTeamId: Int,
+    val guestTeamId: Int,
+    val homeTeamName: String,
+    val guestTeamName: String,
+    val homeTeamScore: Int,
+    val guestTeamScore: Int,
+    val location: String?,
+    val matchDate: String?,
+    val status: String
+)

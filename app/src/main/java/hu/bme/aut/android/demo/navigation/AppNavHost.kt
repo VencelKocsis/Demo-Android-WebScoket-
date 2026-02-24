@@ -13,6 +13,7 @@ import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
+import hu.bme.aut.android.demo.feature.tournament.TeamMatchScreen
 
 /**
  * Az alkalmazás fő navigációs konténere.
@@ -64,7 +65,6 @@ fun AppNavHost(
                 )
             }
 
-            // --- HIÁNYZOTT: A Demo/Players Képernyő ---
             composable(Screen.Players.route) {
                 // Itt kérjük le a ViewModelt, aminek hatására lefut az init blokk!
                 val playersViewModel: PlayersViewModel = hiltViewModel()
@@ -77,7 +77,7 @@ fun AppNavHost(
                         }
                     }
                 )
-            } // TODO new navigation implementation, check: mobweb tárgy új EA
+            } // TODO new navigation implementation, on navigation3 branch (build failed because of gradle versions)
 
             // --- 2. FőKépernyő (MainScreen) ---
             composable(Screen.Main.route) {

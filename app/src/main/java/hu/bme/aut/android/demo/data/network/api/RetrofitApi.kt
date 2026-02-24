@@ -1,7 +1,8 @@
 package hu.bme.aut.android.demo.data.network.api
 
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
-import hu.bme.aut.android.demo.data.network.model.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
+import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import retrofit2.http.Body
@@ -32,4 +33,7 @@ interface RetrofitApi {
 
     @GET("teams")
     suspend fun getTeams(): List<TeamWithMembersDTO>
+
+    @GET("matches")
+    suspend fun getTeamMatches(): List<TeamMatchDTO>
 }

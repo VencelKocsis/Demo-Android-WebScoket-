@@ -3,9 +3,7 @@ package hu.bme.aut.android.demo.feature.team
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.network.model.toDomainDetails
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
-import hu.bme.aut.android.demo.domain.team.model.TeamMember
 import hu.bme.aut.android.demo.domain.team.model.toSimpleTeam
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,13 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class TeamUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
-    val teamName: String = "",
-    val members: List<TeamMember> = emptyList()
-)
 
 @HiltViewModel
 class TeamViewModel @Inject constructor(
@@ -50,11 +41,8 @@ class TeamViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true) }
 
-                // 1. A backendtől DTO listát kapunk
-                val teamDTOs = getTeamsUseCase()
+                val domainTeams = getTeamsUseCase()
 
-                // 2. Itt alakítjuk át a DTO-kat Domain modellekké (TeamDetails)
-                val domainTeams = teamDTOs.map { it.toDomainDetails() }
                 allTeamsDomain = domainTeams
 
                 if (domainTeams.isNotEmpty()) {
