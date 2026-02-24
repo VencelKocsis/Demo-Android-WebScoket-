@@ -6,16 +6,17 @@ import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 fun TeamMatchDTO.toDomain(): TeamMatch {
     return TeamMatch(
         id = this.id,
-        seasonId = this.seasonId,
         roundNumber = this.roundNumber,
-        homeTeamId = this.homeTeamId,
-        guestTeamId = this.guestTeamId,
         homeTeamName = this.homeTeamName,
         guestTeamName = this.guestTeamName,
-        homeTeamScore = this.homeTeamScore,
-        guestTeamScore = this.guestTeamScore,
+        homeTeamScore = this.homeScore,
+        guestTeamScore = this.guestScore,
+        matchDate = this.date,
+        status = this.status,
         location = this.location,
-        matchDate = this.matchDate,
-        status = this.status
+        seasonId = this.seasonId,
+        homeTeamId = this.homeTeamId,
+        guestTeamId = this.guestTeamId
+        // TODO home and guest team members list
     )
 }

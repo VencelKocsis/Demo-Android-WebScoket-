@@ -1,7 +1,6 @@
 package hu.bme.aut.android.demo.data.teammatch.repository
 
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
-import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.mapper.toDomain
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import javax.inject.Inject

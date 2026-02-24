@@ -13,7 +13,6 @@ import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
-import hu.bme.aut.android.demo.feature.tournament.TeamMatchScreen
 
 /**
  * Az alkalmazás fő navigációs konténere.
