@@ -10,7 +10,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import hu.bme.aut.android.demo.navigation.AppNavHost
 import hu.bme.aut.android.demo.ui.theme.DemoTheme
@@ -41,12 +40,11 @@ class MainActivity : ComponentActivity() {
             // A saját témánkat használjuk (DemoTheme), ami a ui/theme mappában van
             DemoTheme {
                 // 1. Létrehozzuk a NavController-t, ami kezeli a navigációt
-                val navController = rememberNavController()
 
                 // 2. Meghívjuk a KÜLÖN fájlban lévő AppNavHost-ot (navigation package)
                 // Fontos: Itt NEM kérünk le ViewModelt vagy AuthState-et,
                 // mert azt az AppNavHost.kt intézi belül Hilt segítségével.
-                AppNavHost(navController = navController)
+                AppNavHost()
             }
         }
     }

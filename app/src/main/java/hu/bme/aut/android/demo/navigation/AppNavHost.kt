@@ -1,12 +1,14 @@
 package hu.bme.aut.android.demo.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.ui.NavDisplay
 import hu.bme.aut.android.demo.feature.auth.AuthState
 import hu.bme.aut.android.demo.feature.list_players.DemoScreen
 import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
@@ -14,84 +16,78 @@ import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
 
-/**
- * Az alkalmazás fő navigációs konténere.
- * Kezeli az útvonalak közti váltást és a kezdőképernyő beállítását
- * a felhasználó bejelentkezési állapota alapján.
- *
- * @param navController A NavHostController, ami az aktuális képernyő állapotát kezeli.
- */
-@Composable
-fun AppNavHost(
-    navController: NavHostController
-) {
-    // Az AuthViewModel Hilt általi beszerzése
-    val authViewModel: AuthViewModel = hiltViewModel()
+// --- 1. TÍPUSBIZTOS ÚTVONALAK DEFINIÁLÁSA ---
+// Ez váltja le a régi String alapú "Screen.Login.route" megoldást.
+sealed interface AppRoute {
+    data object Login : AppRoute
+    data object Players : AppRoute
+    data object Main : AppRoute
+}
 
-    // A bejelentkezési állapot figyelése lifecycle-aware módon
+// FIGYELEM: Már NEM kell átadni NavHostController paramétert!
+@Composable
+fun AppNavHost() {
+    val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-    // A kezdőképernyő eldöntése a hitelesítési állapot alapján
-    val startDestination = when (authState) {
-        // Amíg az állapot ismeretlen (pl. token ellenőrzés fut), a Login útvonallal indulunk.
-        AuthState.UNKNOWN -> Screen.Login.route
-        // Ha be van jelentkezve, a Players képernyővel (DemoScreen) indul.
-        AuthState.AUTHENTICATED -> Screen.Main.route // TODO TEMP Players will be: Screen.Main.route
-        // Ha nincs bejelentkezve, a Login képernyővel indul.
-        AuthState.UNAUTHENTICATED -> Screen.Login.route
-    }
+    // --- 2. A NAVIGÁCIÓS BACK STACK (LISTA) ---
+    // Az egész navigáció mindössze egy memóriában lévő lista!
+    val backStack = remember { mutableStateListOf<AppRoute>() }
 
-    // Amíg az állapot UNKNOWN (ismeretlen), nem renderelünk NavHost-ot, hogy elkerüljük a gyorsan váltó képernyőket.
-    // Ha az állapot már AUTHENTICATED vagy UNAUTHENTICATED, elindul a NavHost.
-    if (authState != AuthState.UNKNOWN) {
-        NavHost(
-            navController = navController,
-            startDestination = startDestination
-        ) {
-            // --- 1. Login Képernyő ---
-            composable(Screen.Login.route) {
-                LoginScreen(
-                    viewModel = authViewModel,
-                    onAuthSuccess = {
-                        // Navigáció a PlayersScreen-re bejelentkezés után,
-                        // eltávolítva a LoginScreen-t a back stack-ből.
-                        navController.navigate(Screen.Players.route) { // TODO to Main.route
-                            popUpTo(Screen.Login.route) {
-                                inclusive = true // Az LoginScreen-t is eltávolítja
-                            }
-                        }
-                    }
-                )
-            }
-
-            // --- HIÁNYZOTT: A Demo/Players Képernyő ---
-            composable(Screen.Players.route) {
-                // Itt kérjük le a ViewModelt, aminek hatására lefut az init blokk!
-                val playersViewModel: PlayersViewModel = hiltViewModel()
-                DemoScreen(
-                    viewModel = playersViewModel,
-                    onLogout = {
-                        authViewModel.signOut()
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Players.route) { inclusive = true }
-                        }
-                    }
-                )
-            } // TODO new navigation implementation, check: mobweb tárgy új EA
-
-            // --- 2. FőKépernyő (MainScreen) ---
-            composable(Screen.Main.route) {
-                MainScreen(
-                    onLogout = {
-                        authViewModel.signOut()
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Main.route) {
-                                inclusive = true
-                            }
-                        }
-                    }
-                )
+    // --- 3. KEZDŐÁLLAPOT BEÁLLÍTÁSA ---
+    // Ha az AuthState betöltött, beállítjuk a lista első elemét.
+    LaunchedEffect(authState) {
+        if (backStack.isEmpty()) {
+            when (authState) {
+                AuthState.AUTHENTICATED -> backStack.add(AppRoute.Main)
+                AuthState.UNAUTHENTICATED -> backStack.add(AppRoute.Login)
+                AuthState.UNKNOWN -> { /* Splash screen jöhet ide később */ }
             }
         }
+    }
+
+    // Csak akkor indul a UI, ha a lista nem üres
+    if (backStack.isNotEmpty()) {
+
+        // --- 4. NAVDISPLAY RENDEREZÉSE ---
+        NavDisplay(backStack = backStack,
+            entryProvider = { route ->
+                when (route) {
+                    is AppRoute.Login -> NavEntry(route) {
+                        LoginScreen(
+                            viewModel = authViewModel,
+                            onAuthSuccess = {
+                                // Navigáció: Csak lecseréljük a listát!
+                                backStack.clear()
+                                backStack.add(AppRoute.Main) // TODO temp Players
+                            }
+                        )
+                    }
+
+                    is AppRoute.Players -> NavEntry(route) {
+                        // A hiltViewModel() tökéletesen működik a NavEntry-n belül is!
+                        val playersViewModel: PlayersViewModel = hiltViewModel()
+                        DemoScreen(
+                            viewModel = playersViewModel,
+                            onLogout = {
+                                authViewModel.signOut()
+                                backStack.clear()
+                                backStack.add(AppRoute.Login)
+                            }
+                        )
+                    }
+
+                    is AppRoute.Main -> NavEntry(route) {
+                        MainScreen (
+                            onLogout = {
+                                authViewModel.signOut()
+                                backStack.clear()
+                                backStack.add(AppRoute.Login)
+                            }
+                        )
+                    }
+                }
+            }
+        )
     }
 }
