@@ -1,6 +1,8 @@
 package hu.bme.aut.android.demo.data.network.model.teamMatch.mapper
 
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
+import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
+import hu.bme.aut.android.demo.domain.teammatch.model.MatchParticipant
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 
 fun TeamMatchDTO.toDomain(): TeamMatch {
@@ -16,7 +18,23 @@ fun TeamMatchDTO.toDomain(): TeamMatch {
         location = this.location,
         seasonId = this.seasonId,
         homeTeamId = this.homeTeamId,
-        guestTeamId = this.guestTeamId
-        // TODO home and guest team members list
+        guestTeamId = this.guestTeamId,
+        individualMatches = this.individualMatches?.map { dto ->
+            IndividualMatch(
+                homePlayerName = dto.homePlayerName,
+                guestPlayerName = dto.guestPlayerName,
+                homeScore = dto.homeScore,
+                guestScore = dto.guestScore
+            )
+        } ?: emptyList(),
+
+        participants = this.participants?.map { dto ->
+            MatchParticipant(
+                id = dto.id,
+                playerName = dto.playerName,
+                teamSide = dto.teamSide,
+                status = dto.status
+            )
+        } ?: emptyList()
     )
 }

@@ -15,6 +15,7 @@ data class TeamMatchDTO(
     val location: String? = null,
     val seasonId: Int = 0,
     val homeTeamId: Int = 0,
-    val guestTeamId: Int = 0
-    // TODO home and guest team members list
+    val guestTeamId: Int = 0,
+    val individualMatches: List<IndividualMatchDTO>? = emptyList(),
+    val participants: List<MatchParticipantDTO>? = emptyList()
 )

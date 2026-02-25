@@ -1,5 +1,7 @@
 package hu.bme.aut.android.demo.feature.tournament
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
@@ -43,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -166,12 +170,31 @@ fun RoundHeader(roundNumber: Int) {
 
 @Composable
 fun TeamMatchItemCard(teamMatch: TeamMatch) {
+    val context = LocalContext.current
+
+    fun openMap(location: String) {
+        val uri = Uri.parse("geo:0,0?q=${Uri.encode(location)}")
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        intent.setPackage("com.google.android.apps.maps")
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val genericIntent = Intent(Intent.ACTION_VIEW, uri)
+                context.startActivity(genericIntent)
+            } catch (e2: Exception) {
+                e2.printStackTrace()
+            }
+        }
+    }
+
     // Színkódolás státusz alapján
     val statusColor = when (teamMatch.status) {
-        "scheduled" -> Color(0xFF4CAF50).copy(alpha = 0.2f) // Zöldes
-        "in_progress" -> Color(0xFFFFC107).copy(alpha = 0.2f) // Sárgás
-        "finished" -> Color(0xFF9E9E9E).copy(alpha = 0.2f)    // Szürke
-        "cancelled" -> Color(0xFFFF5252).copy(alpha = 0.2f)   // Piros
+        "scheduled" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+        "in_progress" -> Color(0xFFFFC107).copy(alpha = 0.1f)
+        "finished" -> Color(0xFF9E9E9E).copy(alpha = 0.1f)
+        "cancelled" -> Color(0xFFFF5252).copy(alpha = 0.1f)
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
@@ -183,17 +206,30 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
         colors = CardDefaults.cardColors(containerColor = statusColor)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Fejléc: Csapatnevek és lenyitó nyíl
+            // --- FEJLÉC ---
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable { expanded = !expanded }
             ) {
-                Text(
-                    text = "${teamMatch.homeTeamName} vs ${teamMatch.guestTeamName}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                Column(
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    Text(
+                        text = "${teamMatch.homeTeamName} vs ${teamMatch.guestTeamName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Ha befejeződött, itt is kiírjuk az eredményt
+                    if (teamMatch.status == "finished") {
+                        Text(
+                            text = "Végeredmény: ${teamMatch.homeTeamScore} - ${teamMatch.guestTeamScore}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = "Részletek"
@@ -202,22 +238,13 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Információk
-            if (!teamMatch.location.isNullOrEmpty()) {
-                Text("Helyszín: ${teamMatch.location}", style = MaterialTheme.typography.bodyMedium)
-            }
-            if (!teamMatch.matchDate.isNullOrEmpty()) {
-                Text("Dátum: ${teamMatch.matchDate}", style = MaterialTheme.typography.bodyMedium)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Gombok és Státusz
+            // --- INFÓK (Dátum, Helyszín) ---
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Térkép gomb
+
+                // --- ÚJ: Térkép gomb bekötése ---
                 if (!teamMatch.location.isNullOrEmpty()) {
                     OutlinedButton(
-                        onClick = { /* TODO: Térkép */ },
+                        onClick = { openMap(teamMatch.location) }, // Itt hívjuk meg a függvényt
                         contentPadding = PaddingValues(horizontal = 8.dp),
                         modifier = Modifier.height(32.dp)
                     ) {
@@ -227,39 +254,113 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
                     }
                 }
 
-                // Státuszfüggő tartalom
+                // Státuszfüggő gombok
                 when (teamMatch.status) {
                     "scheduled" -> {
                         Button(
-                            onClick = { /* TODO */ },
+                            onClick = { /* TODO: Jelentkezés */ },
                             modifier = Modifier.height(32.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp)
                         ) {
                             Text("Jelentkezés", style = MaterialTheme.typography.labelSmall)
                         }
                     }
-                    "finished" -> {
-                        Text(
-                            text = "${teamMatch.homeTeamScore} - ${teamMatch.guestTeamScore}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        )
+                    // ... többi státusz ...TODO
+                }
+            }
+            // --- LENYÍLÓ TARTALOM ---
+            if (expanded) {
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // DÖNTÉS: Eredményeket vagy Résztvevőket mutassunk?
+                if (teamMatch.status == "finished") {
+                    // 1. ESET: Befejezett meccs -> Eredmények (individualMatches)
+                    if (teamMatch.individualMatches.isNotEmpty()) {
+                        Text("Részletes eredmények:", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        teamMatch.individualMatches.forEach { game ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("${game.homePlayerName} vs ${game.guestPlayerName}", style = MaterialTheme.typography.bodyMedium)
+                                Text("${game.homeScore} - ${game.guestScore}", fontWeight = FontWeight.Bold)
+                            }
+                            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.2f))
+                        }
+                    } else {
+                        Text("Nincsenek feltöltve részletes eredmények.", style = MaterialTheme.typography.bodySmall, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                    }
+
+                } else {
+                    // 2. ESET: Jövőbeli meccs -> Keretek / Résztvevők (participants)
+                    if (teamMatch.participants.isNotEmpty()) {
+                        Text("Csapatkeretek:", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Kétoszlopos elrendezés: Hazai vs Vendég
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            // Hazai oszlop
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Hazai", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                                teamMatch.participants.filter { it.teamSide == "HOME" }.forEach { p ->
+                                    ParticipantItem(name = p.playerName, status = p.status)
+                                }
+                            }
+
+                            // Függőleges elválasztó
+                            Box(modifier = Modifier.width(1.dp).height(50.dp).background(Color.LightGray))
+
+                            // Vendég oszlop
+                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                                Text("Vendég", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                                teamMatch.participants.filter { it.teamSide == "GUEST" }.forEach { p ->
+                                    ParticipantItem(name = p.playerName, status = p.status)
+                                }
+                            }
+                        }
+                    } else {
+                        Text("Még senki nem jelentkezett a meccsre.", style = MaterialTheme.typography.bodySmall, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+
+                        // Itt lehetne a "Jelentkezés" gomb, ha üres a lista
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { /* TODO: Jelentkezés logika */ }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            Text("Jelentkezés")
+                        }
                     }
                 }
             }
-
-            // Lenyíló részletek
-            if (expanded) {
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Részletes eredmények hamarosan...",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-            }
         }
+    }
+}
+
+@Composable
+fun ParticipantItem(name: String, status: String) {
+    val isSelected = status == "SELECTED"
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 2.dp)
+    ) {
+        // Ha kiválasztották, zöld pipát vagy vastag betűt kap
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Kiválasztva",
+                tint = Color(0xFF4CAF50), // Zöld
+                modifier = Modifier.height(16.dp).width(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Gray
+        )
     }
 }

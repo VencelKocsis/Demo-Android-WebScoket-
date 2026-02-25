@@ -12,5 +12,7 @@ data class TeamMatch(
     val guestTeamScore: Int,
     val location: String?,
     val matchDate: String?,
-    val status: String
+    val status: String,
+    val participants: List<MatchParticipant>,
+    val individualMatches: List<IndividualMatch>
 )
