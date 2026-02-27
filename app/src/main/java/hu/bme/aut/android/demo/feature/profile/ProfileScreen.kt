@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SportsTennis
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,10 +30,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,8 +44,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.racketEditor.Blade
 import hu.bme.aut.android.demo.feature.racketEditor.Racket
 import hu.bme.aut.android.demo.feature.racketEditor.Rubber
@@ -69,19 +75,37 @@ fun stringToColor(colorName: String): Color {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    userName: String = "Kovács Péter",
-    email: String = "peter@example.com",
-    birthDate: String = "1995-07-12",
-    teamName: String = "Rapid Pong",
-    seasonName: String = "2025 tavaszi szezon",
-    matchesPlayed: Int = 18,
-    matchesWon: Int = 12
+    authViewModel: AuthViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    onLogoutClick: () -> Unit
 ) {
-    val winRate = if (matchesPlayed > 0) {
-        (matchesWon * 100) / matchesPlayed
-    } else 0
+    // 1. Lekérjük a bejelentkezett felhasználót az AuthViewModel-ből
+    val authState by authViewModel.uiState.collectAsStateWithLifecycle()
+    val backendUser = authState.backendUser
+
+    // 2. Amint megérkezik a backendUser (pl. betölt a hálózatról), átadjuk a ProfileViewModel-nek!
+    LaunchedEffect(backendUser) {
+        if (backendUser != null) {
+            profileViewModel.setUser(backendUser)
+        }
+    }
+
+    val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
+    val user = uiState.user
 
     var showMenu by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    // Ideiglenes változók a dialoghoz
+    var editFirstName by remember { mutableStateOf("") }
+    var editLastName by remember { mutableStateOf("") }
+
+    // Dummy adatok, amiket később a backendről húzunk be
+    val teamName = "Saját Csapat (TODO)"
+    val seasonName = "2026 Tavasz"
+    val matchesPlayed = 0
+    val matchesWon = 0
+    val winRate = if (matchesPlayed > 0) (matchesWon * 100) / matchesPlayed else 0
 
     Scaffold(
         topBar = {
@@ -102,8 +126,10 @@ fun ProfileScreen(
                         DropdownMenuItem(
                             text = { Text("Profil szerkesztése") },
                             onClick = {
-                                /* TODO: Szerkesztés */
                                 showMenu = false
+                                editFirstName = user?.firstName ?: ""
+                                editLastName = user?.lastName ?: ""
+                                showEditDialog = true
                             },
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             // TODO add edit and delete rackets functionality
@@ -112,8 +138,8 @@ fun ProfileScreen(
                         DropdownMenuItem(
                             text = { Text("Kijelentkezés") },
                             onClick = {
-                                /* TODO: Kijelentkezés */
                                 showMenu = false
+                                onLogoutClick()
                             }
                         )
                     }
@@ -129,6 +155,7 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp), // Fix térköz a blokkok között
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // --- FELHASZNÁLÓI ALAPADATOK ---
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -139,15 +166,20 @@ fun ProfileScreen(
                     modifier = Modifier.size(120.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
-
-                Text(userName, style = MaterialTheme.typography.headlineSmall)
-                Text(email, style = MaterialTheme.typography.bodyMedium)
-                Text("Születési dátum: $birthDate", style = MaterialTheme.typography.bodyMedium)
+                // Ha van betöltött user, az ő nevét mutatjuk, különben "Töltés..."
+                Text(
+                    text = if (user != null) "${user.lastName} ${user.firstName}" else "Töltés...",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = user?.email ?: "Nincs email",
+                    style = MaterialTheme.typography.bodyMedium
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Csapat: $teamName", style = MaterialTheme.typography.titleMedium)
 
-                Spacer(modifier = Modifier.height(16.dp))
+                // --- STATISZTIKA (TODO) ---
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -166,6 +198,8 @@ fun ProfileScreen(
                     }
                 }
             }
+
+            // --- ÜTŐK (Dummy maradt egyelőre) ---
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -247,10 +281,43 @@ fun ProfileScreen(
             }
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun ProfileScreenPreview() {
-    ProfileScreen()
+    // --- SZERKESZTŐ DIALOG ---
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Profil szerkesztése") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = editLastName,
+                        onValueChange = { editLastName = it },
+                        label = { Text("Vezetéknév") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = editFirstName,
+                        onValueChange = { editFirstName = it },
+                        label = { Text("Keresztnév") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        profileViewModel.updateUser(editFirstName, editLastName)
+                        showEditDialog = false
+                    }
+                ) {
+                    Text("Mentés")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Mégse")
+                }
+            }
+        )
+    }
 }

@@ -1,5 +1,6 @@
 package hu.bme.aut.android.demo.data.network.api
 
+import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
@@ -23,4 +24,7 @@ interface ApiService {
 
     //SingleMatch
 
+
+    suspend fun syncUser(user: UserDTO): UserDTO
+    suspend fun updateUser(user: UserDTO): UserDTO
 }

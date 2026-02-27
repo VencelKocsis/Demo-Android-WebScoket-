@@ -13,6 +13,7 @@ import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
+import hu.bme.aut.android.demo.feature.profile.ProfileScreen
 
 /**
  * Az alkalmazás fő navigációs konténere.
@@ -55,7 +56,7 @@ fun AppNavHost(
                     onAuthSuccess = {
                         // Navigáció a PlayersScreen-re bejelentkezés után,
                         // eltávolítva a LoginScreen-t a back stack-ből.
-                        navController.navigate(Screen.Players.route) { // TODO to Main.route
+                        navController.navigate(Screen.Main.route) { // TODO to Main.route
                             popUpTo(Screen.Login.route) {
                                 inclusive = true // Az LoginScreen-t is eltávolítja
                             }
@@ -81,6 +82,7 @@ fun AppNavHost(
             // --- 2. FőKépernyő (MainScreen) ---
             composable(Screen.Main.route) {
                 MainScreen(
+                    authViewModel = authViewModel,
                     onLogout = {
                         authViewModel.signOut()
                         navController.navigate(Screen.Login.route) {

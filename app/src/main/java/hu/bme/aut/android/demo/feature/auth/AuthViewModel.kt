@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.domain.auth.usecase.SignInUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecase.SignOutUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecases.RegisterUserUseCase
@@ -17,10 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// A navigációs események kezelésére szolgáló lambda (pl. navigálás a főképernyőre)
-// Itt definiáljuk, hogy elkerüljük a Redeclaration hibát.
-//typealias OnAuthSuccess = (FirebaseUser) -> Unit
-
 // Adatmodell a bejelentkezési képernyő állapotához
 data class AuthUiState(
     val emailInput: String = "",
@@ -28,7 +26,8 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val isAuthenticated: Boolean = false,
-    val currentUser: FirebaseUser? = null
+    val currentUser: FirebaseUser? = null,
+    val backendUser: UserDTO? = null
 )
 
 @HiltViewModel
@@ -38,10 +37,11 @@ class AuthViewModel @Inject constructor(
     // Use Case-ek injektálása
     private val registerUserUseCase: RegisterUserUseCase,
     private val signInUserUseCase: SignInUserUseCase,
-    private val signOutUserUseCase: SignOutUserUseCase
+    private val signOutUserUseCase: SignOutUserUseCase,
+    private val apiService: ApiService
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AuthUiState(currentUser = authRepository.getCurrentUser()))
+    private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
     /**
@@ -61,11 +61,20 @@ class AuthViewModel @Inject constructor(
 
 
     init {
-        // Kezdeti állapot ellenőrzése (ha már be van jelentkezve)
-        _uiState.update {
-            it.copy(
-                isAuthenticated = it.currentUser != null
-            )
+        // 1. Kezdeti állapot ellenőrzése: Be van már jelentkezve a felhasználó?
+        val currentUser = authRepository.getCurrentUser()
+        if (currentUser != null) {
+            _uiState.update { it.copy(isAuthenticated = true, currentUser = currentUser) }
+
+            viewModelScope.launch {
+                try {
+                    val dto = UserDTO(id = 0, email = currentUser.email ?: "", firstName = "", lastName = "")
+                    val backendUser = apiService.syncUser(dto)
+                    _uiState.update { it.copy(backendUser = backendUser) }
+                } catch (e: Exception) {
+                    e.printStackTrace() // Kisebb hiba esetén nem léptetjük ki, de logolhatjuk
+                }
+            }
         }
     }
 
@@ -101,25 +110,32 @@ class AuthViewModel @Inject constructor(
                 password = uiState.value.passwordInput
             )
 
-            // Csak az állapotkezelés van itt
-            _uiState.update { state ->
-                result.fold(
-                    onSuccess = { user ->
-                        state.copy(
-                            isLoading = false,
-                            isAuthenticated = true,
-                            currentUser = user,
-                            error = null
-                        )
-                    },
-                    onFailure = { exception ->
-                        state.copy(
-                            isLoading = false,
-                            isAuthenticated = false,
-                            error = exception.message
+            result.onSuccess { firebaseUser ->
+                // 1. Firebase sikeres! Szinkronizáljunk a Ktorral!
+                try {
+                    val dto = UserDTO(
+                        id = 0,
+                        email = firebaseUser.email ?: "",
+                        firstName = "Új",
+                        lastName = "Játékos"
+                    )
+
+                    // 2. Ktor hívás (Az Interceptor itt már hozzáteszi a friss tokent!)
+                    val backendUser = apiService.syncUser(dto)
+
+                    // 3. Mentjük a teljes sikert
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false, isAuthenticated = true,
+                            currentUser = firebaseUser, backendUser = backendUser
                         )
                     }
-                )
+
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(isLoading = false, isAuthenticated = false, error = "Backend szinkronizációs hiba: ${e.message}") }
+                }
+            }.onFailure { exception ->
+                _uiState.update { it.copy(isLoading = false, isAuthenticated = false, error = exception.message) }
             }
         }
     }
@@ -138,25 +154,33 @@ class AuthViewModel @Inject constructor(
                 password = uiState.value.passwordInput
             )
 
-            // Csak az állapotkezelés van itt
-            _uiState.update { state ->
-                result.fold(
-                    onSuccess = { user ->
-                        state.copy(
-                            isLoading = false,
-                            isAuthenticated = true,
-                            currentUser = user,
-                            error = null
-                        )
-                    },
-                    onFailure = { exception ->
-                        state.copy(
-                            isLoading = false,
-                            isAuthenticated = false,
-                            error = exception.message
+            result.onSuccess { firebaseUser ->
+                // 1. Firebase sikeres! Szinkronizáljunk a Ktorral!
+                try {
+                    val dto = UserDTO(
+                        id = 0,
+                        email = firebaseUser.email ?: "",
+                        firstName = "",
+                        lastName = ""
+                    )
+
+                    // 2. Ktor hívás (Az Interceptor itt már hozzáteszi a friss tokent!)
+                    val backendUser = apiService.syncUser(dto)
+
+                    // 3. Mentjük a teljes sikert
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false, isAuthenticated = true,
+                            currentUser = firebaseUser, backendUser = backendUser
                         )
                     }
-                )
+
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(isLoading = false, isAuthenticated = false, error = "Backend szinkronizációs hiba: ${e.message}") }
+                }
+
+            }.onFailure { exception ->
+                _uiState.update { it.copy(isLoading = false, isAuthenticated = false, error = exception.message) }
             }
         }
     }
@@ -169,11 +193,11 @@ class AuthViewModel @Inject constructor(
         // A Use Case hívása
         signOutUserUseCase()
 
-        // Csak az állapotkezelés van itt
         _uiState.update {
             it.copy(
                 isAuthenticated = false,
                 currentUser = null,
+                backendUser = null,
                 emailInput = "",
                 passwordInput = ""
             )

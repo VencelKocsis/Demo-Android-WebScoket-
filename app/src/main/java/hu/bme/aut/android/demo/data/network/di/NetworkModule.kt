@@ -6,6 +6,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import hu.bme.aut.android.demo.data.auth.repository.ApiServiceImpl
+import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import hu.bme.aut.android.demo.data.network.interceptor.AuthInterceptor
 import kotlinx.serialization.json.Json
@@ -74,7 +76,9 @@ object NetworkModule {
         return retrofit.create(RetrofitApi::class.java)
     }
 
+    // ----------------------------------------------------
     // 4. Json Serializer (Ezt a WS-hez használjuk, de közös beállítás lehet)
+    // ----------------------------------------------------
     @Provides
     @Singleton
     fun provideJsonSerializer(): Json {
@@ -82,5 +86,18 @@ object NetworkModule {
             classDiscriminator = "type"
             ignoreUnknownKeys = true
         }
+    }
+
+    // ----------------------------------------------------
+    // 5. ApiService (A saját interfészünk bekötése a ViewModel számára)
+    // ----------------------------------------------------
+    @Provides
+    @Singleton
+    fun provideApiServiceImpl(
+        // Fontos: Itt az implementációdat kérjük el (amit a Hilt az @Inject constructor miatt már ismer)
+        apiServiceImpl: ApiServiceImpl
+    ): ApiService {
+        // És visszaadjuk, mint ApiService interfész!
+        return apiServiceImpl
     }
 }

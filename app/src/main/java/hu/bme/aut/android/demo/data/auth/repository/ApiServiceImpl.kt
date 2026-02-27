@@ -1,5 +1,6 @@
 package hu.bme.aut.android.demo.data.auth.repository
 
+import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
@@ -45,5 +46,13 @@ class ApiServiceImpl @Inject constructor(
 
     override suspend fun getTeamMatches(): List<TeamMatchDTO> {
         return retrofitApi.getTeamMatches()
+    }
+
+    override suspend fun syncUser(user: UserDTO): UserDTO {
+        return retrofitApi.syncUser(user)
+    }
+
+    override suspend fun updateUser(user: UserDTO): UserDTO {
+        return retrofitApi.updateUser(user)
     }
 }

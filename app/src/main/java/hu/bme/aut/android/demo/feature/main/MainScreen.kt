@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.history.HistoryScreen
 import hu.bme.aut.android.demo.feature.history.demoData
 import hu.bme.aut.android.demo.feature.profile.ProfileScreen
@@ -19,7 +20,8 @@ import hu.bme.aut.android.demo.navigation.Screen
 
 @Composable
 fun MainScreen(
-    onLogout: () -> Unit // Callback a kijelentkezéshez (a Profilról érhető el)
+    onLogout: () -> Unit, // Callback a kijelentkezéshez (a Profilról érhető el)
+    authViewModel: AuthViewModel
 ) {
     // Külön NavController a belső (alsó menüs) navigációhoz
     val bottomNavController = rememberNavController()
@@ -74,11 +76,12 @@ fun MainScreen(
                     HistoryScreen(results = demoData) // TODO: ViewModelből adatok
                 }
                 composable(Screen.Profile.route) {
-                    ProfileScreen()
-                    // TODO: A ProfileScreen-be bele kell majd drótozni az onLogout hívást
+                    ProfileScreen(
+                        authViewModel = authViewModel,
+                        onLogoutClick = onLogout
+                    )
                 }
             }
         }
     }
 }
-

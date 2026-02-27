@@ -1,5 +1,6 @@
 package hu.bme.aut.android.demo.data.network.api
 
+import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
@@ -36,4 +37,10 @@ interface RetrofitApi {
 
     @GET("matches")
     suspend fun getTeamMatches(): List<TeamMatchDTO>
+
+    @POST("/auth/sync")
+    suspend fun syncUser(@Body user: UserDTO): UserDTO
+
+    @PUT("/auth/me")
+    suspend fun updateUser(@Body user: UserDTO): UserDTO
 }
