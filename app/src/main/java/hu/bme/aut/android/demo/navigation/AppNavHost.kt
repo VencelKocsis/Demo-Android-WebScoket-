@@ -37,7 +37,7 @@ fun AppNavHost(
         AuthState.UNKNOWN -> Screen.Login.route
         // Ha be van jelentkezve, a Players képernyővel (DemoScreen) indul.
         AuthState.AUTHENTICATED -> Screen.Main.route // TODO TEMP Players will be: Screen.Main.route
-        // Ha nincs bejelentkezve, a Login képernyővel indul.
+        // Ha nincs bejelentkezve, a Login képernyővel indul. // TODO 3 dot options: user gets notified of starting round before a week, and can customize time before
         AuthState.UNAUTHENTICATED -> Screen.Login.route
     }
 
