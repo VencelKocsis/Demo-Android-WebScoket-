@@ -1,13 +1,16 @@
 package hu.bme.aut.android.demo.data.network.di
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
+import hu.bme.aut.android.demo.data.network.interceptor.AuthInterceptor
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
@@ -20,13 +23,29 @@ object NetworkModule {
     // Az URL a 10.0.2.2:8080/ (Android emulátor localhost-ja)
     private const val BASE_URL = "https://ktor-demo-c3yb.onrender.com/"
 
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(auth: FirebaseAuth): AuthInterceptor {
+        return AuthInterceptor(auth)
+    }
+
     // ----------------------------------------------------
     // 1. OkHttpClient (Minden hálózati forgalomhoz)
     // ----------------------------------------------------
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor
+    ): OkHttpClient {
+
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            // A Level.BODY mindent kiír: URL, Fejlécek (itt lesz a Token!) és a JSON test is.
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 

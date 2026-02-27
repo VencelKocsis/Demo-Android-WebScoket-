@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.okhttp3)
+    implementation(libs.okhttp3.logging)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.retrofit.converter.scalars)
 

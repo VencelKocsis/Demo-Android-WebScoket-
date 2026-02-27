@@ -241,10 +241,9 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
             // --- INFÓK (Dátum, Helyszín) ---
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                // --- ÚJ: Térkép gomb bekötése ---
                 if (!teamMatch.location.isNullOrEmpty()) {
                     OutlinedButton(
-                        onClick = { openMap(teamMatch.location) }, // Itt hívjuk meg a függvényt
+                        onClick = { openMap(teamMatch.location) },
                         contentPadding = PaddingValues(horizontal = 8.dp),
                         modifier = Modifier.height(32.dp)
                     ) {
@@ -252,6 +251,15 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Térkép", style = MaterialTheme.typography.labelSmall)
                     }
+                }
+
+                teamMatch.matchDate?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(6.dp)
+                    )
                 }
 
                 // Státuszfüggő gombok
