@@ -7,6 +7,7 @@ import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import retrofit2.http.Body
@@ -37,6 +38,15 @@ interface RetrofitApi {
 
     @GET("teams")
     suspend fun getTeams(): List<TeamWithMembersDTO>
+
+    @POST("matches/{matchId}/apply")
+    suspend fun applyToMatch(@Path("matchId") matchId: Int)
+
+    @PUT("matches/participants/{participantId}/status")
+    suspend fun updateParticipantStatus(
+        @Path("participantId") participantId: Int,
+        @Body statusUpdate: ParticipantStatusUpdateDTO
+    )
 
     @GET("matches")
     suspend fun getTeamMatches(): List<TeamMatchDTO>

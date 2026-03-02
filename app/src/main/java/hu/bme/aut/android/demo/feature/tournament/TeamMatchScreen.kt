@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -60,13 +61,19 @@ data class TeamMatchUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     // A meccsek fordulók szerint csoportosítva (Map<FordulóSzám, MeccsLista>)
-    val teamMatchesByRound: Map<Int, List<TeamMatch>> = emptyMap()
+    val teamMatchesByRound: Map<Int, List<TeamMatch>> = emptyMap(),
+
+    // Jogosultságok
+    val currentUserName: String = "",
+    val userTeamIds: List<Int> = emptyList(),
+    val userCaptainTeamIds: List<Int> = emptyList()
 )
 
 // --- 2. EVENTS (Események) ---
 sealed class TeamMatchScreenEvent {
     object LoadTeamMatches : TeamMatchScreenEvent()
-    // Itt bővítheted később: pl. data class OnMatchClicked(val id: Int) : MatchScreenEvent()
+    data class OnApplyForMatch(val matchId: Int) : TeamMatchScreenEvent()
+    data class OnToggleParticipantStatus(val participantId: Int, val currentStatus: String) : TeamMatchScreenEvent()
 }
 
 // --- 3. STATEFUL COMPOSABLE (A ViewModel bekötése) ---
@@ -154,7 +161,11 @@ fun TeamMatchScreenContent(
 
                         // Csapatmeccsek listázása
                         items(teamMatches) { teamMatch ->
-                            TeamMatchItemCard(teamMatch = teamMatch)
+                            TeamMatchItemCard(
+                                teamMatch = teamMatch,
+                                state = state,
+                                onEvent = onEvent
+                            )
                         }
                     }
                 }
@@ -183,8 +194,13 @@ fun RoundHeader(roundNumber: Int) {
 }
 
 @Composable
-fun TeamMatchItemCard(teamMatch: TeamMatch) {
+fun TeamMatchItemCard(
+    teamMatch: TeamMatch,
+    state: TeamMatchUiState,
+    onEvent: (TeamMatchScreenEvent) -> Unit
+) {
     val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
 
     fun openMap(location: String) {
         val uri = Uri.parse("geo:0,0?q=${Uri.encode(location)}")
@@ -212,7 +228,10 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
-    var expanded by remember { mutableStateOf(false) }
+    // --- Jogosultságok ---
+    val isUserInvolved = state.userTeamIds.contains(teamMatch.homeTeamId) || state.userTeamIds.contains(teamMatch.guestTeamId)
+    val myParticipantData = teamMatch.participants.find { it.playerName == state.currentUserName }
+    val hasApplied = myParticipantData != null
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -252,7 +271,7 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // --- INFÓK (Dátum, Helyszín) ---
+            // --- INFÓK ÉS JELENTKEZÉS GOMB ---
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
                 if (!teamMatch.location.isNullOrEmpty()) {
@@ -276,18 +295,21 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
                     )
                 }
 
-                // Státuszfüggő gombok
-                when (teamMatch.status) {
-                    "scheduled" -> {
+                // JELENTKEZÉS LOGIKA
+                if (teamMatch.status == "scheduled" && isUserInvolved) {
+                    if (!hasApplied) {
                         Button(
-                            onClick = { /* TODO: Jelentkezés */ },
+                            onClick = { onEvent(TeamMatchScreenEvent.OnApplyForMatch(teamMatch.id)) },
                             modifier = Modifier.height(32.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp)
                         ) {
                             Text("Jelentkezés", style = MaterialTheme.typography.labelSmall)
                         }
+                    } else {
+                        val statusText = if (myParticipantData?.status == "SELECTED") "Kiválasztva" else "Jelentkezve"
+                        val textColor = if (myParticipantData?.status == "SELECTED") Color(0xFF4CAF50) else Color.Gray
+                        Text(text = statusText, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.padding(start = 8.dp))
                     }
-                    // ... többi státusz ...TODO
                 }
             }
             // --- LENYÍLÓ TARTALOM ---
@@ -325,22 +347,31 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
 
                         // Kétoszlopos elrendezés: Hazai vs Vendég
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            // Hazai oszlop
+                            // HAZAI OSZLOP
+                            val isHomeCaptain = state.userCaptainTeamIds.contains(teamMatch.homeTeamId)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("Hazai", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                                 teamMatch.participants.filter { it.teamSide == "HOME" }.forEach { p ->
-                                    ParticipantItem(name = p.playerName, status = p.status)
+                                    ParticipantItem(
+                                        name = p.playerName,
+                                        status = p.status,
+                                        isCaptainView = isHomeCaptain,
+                                        onToggleStatus = { onEvent(TeamMatchScreenEvent.OnToggleParticipantStatus(p.id, p.status)) }
+                                    )
                                 }
                             }
-
-                            // Függőleges elválasztó
                             Box(modifier = Modifier.width(1.dp).height(50.dp).background(Color.LightGray))
-
-                            // Vendég oszlop
+                            // VENDÉG OSZLOP
+                            val isGuestCaptain = state.userCaptainTeamIds.contains(teamMatch.guestTeamId)
                             Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                                 Text("Vendég", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                                 teamMatch.participants.filter { it.teamSide == "GUEST" }.forEach { p ->
-                                    ParticipantItem(name = p.playerName, status = p.status)
+                                    ParticipantItem(
+                                        name = p.playerName,
+                                        status = p.status,
+                                        isCaptainView = isGuestCaptain,
+                                        onToggleStatus = { onEvent(TeamMatchScreenEvent.OnToggleParticipantStatus(p.id, p.status)) }
+                                    )
                                 }
                             }
                         }
@@ -360,29 +391,31 @@ fun TeamMatchItemCard(teamMatch: TeamMatch) {
 }
 
 @Composable
-fun ParticipantItem(name: String, status: String) {
+fun ParticipantItem(
+    name: String,
+    status: String,
+    isCaptainView: Boolean = false,
+    onToggleStatus: () -> Unit
+    ) {
     val isSelected = status == "SELECTED"
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 2.dp)
+        modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Ha kiválasztották, zöld pipát vagy vastag betűt kap
-        if (isSelected) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = "Kiválasztva",
-                tint = Color(0xFF4CAF50), // Zöld
-                modifier = Modifier.height(16.dp).width(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            if (isSelected) {
+                Icon(Icons.Default.Check, contentDescription = "Kiválasztva", tint = Color(0xFF4CAF50), modifier = Modifier.height(16.dp).width(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+            Text(text = name, style = MaterialTheme.typography.bodyMedium, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Gray)
         }
 
-        Text(
-            text = name,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Gray
-        )
+        if (isCaptainView) {
+            TextButton(onClick = onToggleStatus, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(24.dp)) {
+                Text(text = if (isSelected) "Kivesz" else "Betesz", style = MaterialTheme.typography.labelSmall, color = if (isSelected) Color.Red else MaterialTheme.colorScheme.primary)
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
@@ -71,6 +72,14 @@ class ApiServiceImpl @Inject constructor(
 
     override suspend fun getTeamMatches(): List<TeamMatchDTO> {
         return retrofitApi.getTeamMatches()
+    }
+
+    override suspend fun applyForMatch(matchId: Int) {
+        retrofitApi.applyToMatch(matchId)
+    }
+
+    override suspend fun updateParticipantStatus(participantId: Int, status: String) {
+        retrofitApi.updateParticipantStatus(participantId, ParticipantStatusUpdateDTO(status))
     }
 
     override suspend fun syncUser(user: UserDTO): UserDTO {

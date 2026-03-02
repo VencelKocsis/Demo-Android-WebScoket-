@@ -9,3 +9,6 @@ data class MatchParticipantDTO(
     val teamSide: String, // HOME or GUEST
     val status: String, // APPLIED or SELECTED
 )
+
+@Serializable
+data class ParticipantStatusUpdateDTO(val status: String)
