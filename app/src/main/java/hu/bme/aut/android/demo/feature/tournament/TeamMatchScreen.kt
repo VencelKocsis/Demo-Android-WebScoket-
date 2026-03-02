@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.feature.tournament
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -235,8 +236,9 @@ fun TeamMatchItemCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = statusColor)
+        elevation = CardDefaults.cardElevation(0.dp),
+        colors = CardDefaults.cardColors(containerColor = statusColor),
+        border = BorderStroke(2.dp, statusColor.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             // --- FEJLÉC ---
