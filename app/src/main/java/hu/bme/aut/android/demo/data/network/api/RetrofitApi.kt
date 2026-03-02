@@ -2,6 +2,9 @@ package hu.bme.aut.android.demo.data.network.api
 
 import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
+import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
+import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
+import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
@@ -43,4 +46,17 @@ interface RetrofitApi {
 
     @PUT("/auth/me")
     suspend fun updateUser(@Body user: UserDTO): UserDTO
+
+    // --- Csapat szerkesztése ---
+    @PUT("teams/{id}")
+    suspend fun updateTeam(@Path("id") teamId: Int, @Body team: TeamUpdateDTO)
+
+    @GET("users/available")
+    suspend fun getAvailableUsers(): List<MemberDTO>
+
+    @POST("teams/{id}/members")
+    suspend fun addTeamMember(@Path("id") teamId: Int, @Body member: TeamMemberOperationDTO)
+
+    @DELETE("teams/{id}/members/{userId}")
+    suspend fun removeTeamMember(@Path("id") teamId: Int, @Path("userId") userId: Int)
 }

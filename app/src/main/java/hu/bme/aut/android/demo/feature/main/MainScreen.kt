@@ -21,7 +21,8 @@ import hu.bme.aut.android.demo.navigation.Screen
 @Composable
 fun MainScreen(
     onLogout: () -> Unit, // Callback a kijelentkezéshez (a Profilról érhető el)
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToTeamEditor: (Int) -> Unit = {}
 ) {
     // Külön NavController a belső (alsó menüs) navigációhoz
     val bottomNavController = rememberNavController()
@@ -70,7 +71,9 @@ fun MainScreen(
                     TeamMatchScreen()
                 }
                 composable(Screen.Team.route) {
-                    TeamScreen()
+                    TeamScreen(
+                        onNavigateToEditor = onNavigateToTeamEditor
+                    )
                 }
                 composable(Screen.History.route) {
                     HistoryScreen(results = demoData) // TODO: ViewModelből adatok

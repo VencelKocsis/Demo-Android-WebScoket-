@@ -20,4 +20,9 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
 
     data object RoundDetails : Screen("round_details")
     data object RacketEditor : Screen("racket_editor")
+    data object TeamEditor : Screen("team_editor") {
+        fun createRoute(teamId: Int): String {
+            return "$route/$teamId"
+        }
+    }
 }

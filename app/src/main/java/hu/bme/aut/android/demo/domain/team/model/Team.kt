@@ -8,6 +8,7 @@ data class Team(
 
 data class TeamMember(
     val id: Int,
+    val uid: String,
     val name: String,
     val isCaptain: Boolean
 )

@@ -23,6 +23,7 @@ fun TeamWithMembersDTO.toDomainDetails(): TeamDetails {
 fun MemberDTO.toDomainMember(): TeamMember {
     return TeamMember(
         id = this.userId,
+        uid = this.firebaseUid,
         name = this.name,
         isCaptain = this.isCaptain
     )

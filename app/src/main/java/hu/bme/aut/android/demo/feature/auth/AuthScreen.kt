@@ -27,7 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AuthScreen(
+fun AuthScreen( // TODO decide if needed
     viewModel: AuthViewModel = hiltViewModel(),
     onAuthSuccess: OnAuthSuccess // Az AuthViewModel.kt fájlból importálva/elérve
 ) {

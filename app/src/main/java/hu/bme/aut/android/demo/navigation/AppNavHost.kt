@@ -5,15 +5,18 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import hu.bme.aut.android.demo.feature.auth.AuthState
 import hu.bme.aut.android.demo.feature.list_players.DemoScreen
 import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
-import hu.bme.aut.android.demo.feature.profile.ProfileScreen
+import hu.bme.aut.android.demo.feature.team.editor.TeamEditorScreen
+import hu.bme.aut.android.demo.feature.team.TeamScreen
 
 /**
  * Az alkalmazás fő navigációs konténere.
@@ -56,7 +59,7 @@ fun AppNavHost(
                     onAuthSuccess = {
                         // Navigáció a PlayersScreen-re bejelentkezés után,
                         // eltávolítva a LoginScreen-t a back stack-ből.
-                        navController.navigate(Screen.Main.route) { // TODO to Main.route
+                        navController.navigate(Screen.Main.route) {
                             popUpTo(Screen.Login.route) {
                                 inclusive = true // Az LoginScreen-t is eltávolítja
                             }
@@ -90,6 +93,31 @@ fun AppNavHost(
                                 inclusive = true
                             }
                         }
+                    },
+                    onNavigateToTeamEditor = { teamId ->
+                        navController.navigate(Screen.TeamEditor.createRoute(teamId))
+                    }
+                )
+            }
+
+            composable(Screen.Team.route) {
+                TeamScreen(
+                    onNavigateToEditor = { teamId ->
+                        navController.navigate(Screen.TeamEditor.createRoute(teamId))
+                    }
+                )
+            }
+
+            // --- 3. Csapatszerkesztő Képernyő ---
+            composable(
+                route = "${Screen.TeamEditor.route}/{teamId}",
+                arguments = listOf(
+                    navArgument("teamId") { type = NavType.IntType } // Megmondjuk, hogy ez egy Int
+                )
+            ) {
+                TeamEditorScreen(
+                    onNavigateBack = {
+                        navController.popBackStack() // Visszalépés az előző képernyőre
                     }
                 )
             }

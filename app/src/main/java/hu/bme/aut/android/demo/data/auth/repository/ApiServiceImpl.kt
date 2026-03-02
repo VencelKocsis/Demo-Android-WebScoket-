@@ -4,6 +4,9 @@ import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
+import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
+import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
+import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
@@ -42,6 +45,28 @@ class ApiServiceImpl @Inject constructor(
 
     override suspend fun getTeams(): List<TeamWithMembersDTO> {
         return retrofitApi.getTeams()
+    }
+
+    override suspend fun updateTeamName(
+        teamId: Int,
+        request: TeamUpdateDTO
+    ) {
+        retrofitApi.updateTeam(teamId, request)
+    }
+
+    override suspend fun getAvailableUsers(): List<MemberDTO> {
+        return retrofitApi.getAvailableUsers()
+    }
+
+    override suspend fun addTeamMember(
+        teamId: Int,
+        request: TeamMemberOperationDTO
+    ) {
+        retrofitApi.addTeamMember(teamId, request)
+    }
+
+    override suspend fun removeTeamMember(teamId: Int, userId: Int) {
+        retrofitApi.removeTeamMember(teamId, userId)
     }
 
     override suspend fun getTeamMatches(): List<TeamMatchDTO> {

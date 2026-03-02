@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -19,6 +20,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -56,6 +58,7 @@ data class TeamScreenState(
     val isLoading: Boolean = false,
     val teamList: List<Team> = emptyList(),
     val selectedTeam: TeamDetails? = null,
+    val isCurrentUserCaptain: Boolean = false,
     val errorMessage: String? = null
 )
 
@@ -67,7 +70,8 @@ sealed class TeamScreenEvent {
 // --- 1. Állapotfüggő (Stateful) Composable ---
 @Composable
 fun TeamScreen(
-    viewModel: TeamViewModel = hiltViewModel()
+    viewModel: TeamViewModel = hiltViewModel(),
+    onNavigateToEditor: (Int) -> Unit = {}
 ) {
     // Állapot kinyerése a ViewModel-ből
     val uiState by viewModel.uiState.collectAsState()
@@ -75,7 +79,8 @@ fun TeamScreen(
     // Továbbítjuk az állapotfüggetlen UI-nak
     TeamScreenContent(
         state = uiState,
-        onEvent = { event -> viewModel.onEvent(event) }
+        onEvent = { event -> viewModel.onEvent(event) },
+        onNavigateToEditor = onNavigateToEditor
     )
 }
 
@@ -84,6 +89,7 @@ fun TeamScreen(
 fun TeamScreenContent(
     state: TeamScreenState,
     onEvent: (TeamScreenEvent) -> Unit,
+    onNavigateToEditor: (Int) -> Unit,
     playedMatches: List<MatchResult> = listOf(
         MatchResult("Asztal Királyai", "2025-09-01", 9, 7, true),
         MatchResult("PingPong Heroes", "2025-09-08", 8, 8, false),
@@ -97,6 +103,16 @@ fun TeamScreenContent(
             TopAppBar(
                 title = { Text("Csapatok áttekintése") }
             )
+        },
+        floatingActionButton = {
+            if (state.isCurrentUserCaptain && state.selectedTeam != null) {
+                FloatingActionButton(
+                    onClick = { onNavigateToEditor(state.selectedTeam.id) },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Csapat szerkesztése")
+                }
+            }
         }
     ) { paddingValues ->
         Column(
