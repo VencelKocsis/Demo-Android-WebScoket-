@@ -19,10 +19,6 @@ class TeamMatchViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TeamMatchUiState(isLoading = true))
     val uiState: StateFlow<TeamMatchUiState> = _uiState.asStateFlow()
 
-    init {
-        onEvent(TeamMatchScreenEvent.LoadTeamMatches)
-    }
-
     fun onEvent(event: TeamMatchScreenEvent) {
         when (event) {
             is TeamMatchScreenEvent.LoadTeamMatches -> LoadTeamMatches()

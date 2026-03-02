@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +50,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 
 // --- 1. UI STATE (Állapot leíró) ---
@@ -73,6 +76,22 @@ fun TeamMatchScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(TeamMatchScreenEvent.LoadTeamMatches)
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     TeamMatchScreenContent(
         state = uiState,
         onEvent = { event -> viewModel.onEvent(event) }
@@ -90,11 +109,6 @@ fun TeamMatchScreenContent(
         topBar = {
             TopAppBar(
                 title = { Text("Bajnokság Mérkőzések") },
-                actions = {
-                    IconButton(onClick = { onEvent(TeamMatchScreenEvent.LoadTeamMatches) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Frissítés")
-                    }
-                }
             )
         }
     ) { paddingValues ->

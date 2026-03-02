@@ -27,10 +27,6 @@ class TeamViewModel @Inject constructor(
     // Itt tároljuk el a nyers domain listát, hogy ne kelljen újra lekérdezni a hálózatról
     private var allTeamsDomain: List<TeamDetails> = emptyList()
 
-    init {
-        onEvent(TeamScreenEvent.LoadInitialData)
-    }
-
     fun onEvent(event: TeamScreenEvent) {
         when (event) {
             is TeamScreenEvent.LoadInitialData -> loadTeams()
