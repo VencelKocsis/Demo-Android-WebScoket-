@@ -56,7 +56,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 
-// --- 1. UI STATE (Állapot leíró) ---
+// --- 1. UI STATE (Állapot leíró) --- // TODO refactor to separate files data class, ui state, events
 data class TeamMatchUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
