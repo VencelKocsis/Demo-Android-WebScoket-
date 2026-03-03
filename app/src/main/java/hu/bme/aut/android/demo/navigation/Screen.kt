@@ -19,5 +19,5 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     data object Profile : Screen("profile", "Profil", Icons.Default.Person)
 
     data object RoundDetails : Screen("round_details")
-    data object RacketEditor : Screen("racket_editor")
+    data object RacketEditor : Screen("racket_editor") // TODO NAV3
 }
