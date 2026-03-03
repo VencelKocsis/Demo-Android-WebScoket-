@@ -38,12 +38,44 @@ class RegistrationAutomatedTest {
     fun createMultipleTestUsers() {
         // Hozzunk létre 3 teszt felhasználót a MAFC II csapatba
         val testUsers = listOf(
+            // BEAC I.
+
+
+            // BEAC II.
+
+            /*
+            // BEAC III. in DB
+            TestUser("Ferenc", "Katus", "KF@test.com", "bestpassword"),
+            TestUser("Fanni", "Takáts", "TF@test.com", "bestpassword"),
+            TestUser("Miklós", "Szabó", "SZM@test.com", "bestpassword"),
+            TestUser("Péter", "Szekulesz", "SZP@test.com", "bestpassword"),
+
+
+            // BEAC IV. in DB
+            TestUser("Zsombor", "Nagy", "NZS@test.com", "bestpassword"),
+            TestUser("Gergő", "Széles", "SZG@test.com", "bestpassword"),
+            TestUser("Áron", "Gulyás", "GA@test.com", "bestpassword"),
+            TestUser("Norbert", "Gábor", "GN@test.com", "bestpassword"),
+            TestUser("Győző", "Szabó", "SZGY@test.com", "bestpassword"),
+
+            // BEAC V. in DB
             TestUser("Dániel", "Molnár", "MD@test.com", "bestpassword"),
             TestUser("Dániel", "Illés", "ID@test.com", "bestpassword"),
             TestUser("Vilmos", "Módos", "MV@test.com", "bestpassword"),
             TestUser("Zsolt", "Tamás", "TZS@test.com", "bestpassword"),
             TestUser("Máté", "Kurucz", "KM@test.com", "bestpassword"),
             TestUser("Péter", "Juhász", "JP@test.com", "bestpassword"),
+            TestUser("Gábor", "Wiener", "WG@test.com", "bestpassword"),
+
+            // BEAC VI. in DB
+            TestUser("Pál", "Kolumbál", "KP@test.com", "bestpassword"),
+            TestUser("Tamás", "Sipos", "ST@test.com", "bestpassword"),
+            TestUser("Tibor", "Tengerdi", "TT@test.com", "bestpassword"),
+            TestUser("Botond", "Böröcz", "BB@test.com", "bestpassword"),
+            TestUser("Balázs", "Reszler", "RB@test.com", "bestpassword")
+             */
+
+            TestUser("firstName", "lastName", "email@test.com", "bestpassword")
         )
 
         testUsers.forEach { user ->
