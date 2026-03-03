@@ -87,7 +87,7 @@ fun TeamScreen(
         val observer = LifecycleEventObserver { _, event ->
             // Ha a képernyő újra fókuszba kerül (ON_RESUME), frissítjük az adatokat!
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.onEvent(TeamScreenEvent.LoadInitialData)
+                viewModel.onEvent(TeamScreenEvent.LoadInitialData) // make it flow, then it automatically refreshes
             }
         }
 
