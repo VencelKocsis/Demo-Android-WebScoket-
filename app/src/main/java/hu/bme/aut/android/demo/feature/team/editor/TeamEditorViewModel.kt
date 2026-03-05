@@ -11,18 +11,19 @@ import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.RemoveTeamMemberUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.UpdateTeamNameUseCase
 import hu.bme.aut.android.demo.util.Resource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.collections.emptyList
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TeamEditorViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -48,20 +49,20 @@ class TeamEditorViewModel @Inject constructor(
     // Explicit loading a mutációs (író) műveletek idejére
     private val _isMutating = MutableStateFlow(false)
 
-    // 3. A tiszta adat-Flow-k, amelyek a trigger hatására lefutnak
-    private val teamDataFlow = _refreshTrigger.flatMapLatest {
-        flow {
-            emit(Resource.loading())
-            val allTeams = getTeamsUseCase()
-            val team = allTeams.find { it.id == teamId }
-            val availableUsers = getAvailableUsersUseCase()
-            emit(Resource.success(Pair(team, availableUsers)))
-        }.catch { e ->
-            emit(Resource.error(e))
-        }
+    // 3. A tiszta adat-Flow-k, mapLatest-el, hogy ne villogjon
+    private val teamDataFlow = _refreshTrigger.mapLatest {
+        val allTeams = getTeamsUseCase()
+        val team = allTeams.find { it.id == teamId }
+        val availableUsers = getAvailableUsersUseCase()
+
+        Resource.success(Pair(team, availableUsers))
+    }.onStart {
+        // Ez csak a legelső betöltésnél teszi ki a töltőikont a képernyő közepére
+        emit(Resource.loading())
+    }.catch { e ->
+        emit(Resource.error(e))
     }
 
-    // 4. A UI Állapot összerakása (combine)
     // 4. A UI Állapot összerakása (Mivel 5-nél több Flow-nk van, csoportosítjuk őket)
     val uiState: StateFlow<TeamEditorState> = combine(
         // Első hármas csoport

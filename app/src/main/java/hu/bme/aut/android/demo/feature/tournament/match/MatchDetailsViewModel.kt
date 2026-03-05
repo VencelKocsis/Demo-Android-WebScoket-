@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -72,15 +74,19 @@ class MatchDetailsViewModel @Inject constructor(
     private val _actionError = MutableStateFlow<String?>(null)
 
     // 2. Adatfolyam (Ktor hívások)
-    private val matchDataFlow = _refreshTrigger.flatMapLatest {
-        flow {
-            emit(Resource.loading())
-            val allTeams = getTeamsUseCase()
-            val allMatches = getTeamMatchesUseCase()
-            emit(Resource.success(Pair(allTeams, allMatches)))
-        }.catch { e ->
-            emit(Resource.error(e))
-        }
+    private val matchDataFlow = _refreshTrigger.mapLatest {
+        // A mapLatest addig "felfüggeszti" (suspend) magát, amíg a hálózat dolgozik.
+        // Ezalatt a StateFlow NEM küld ki új értéket, hanem megtartja az előzőt a képernyőn!
+        val allTeams = getTeamsUseCase()
+        val allMatches = getTeamMatchesUseCase()
+
+        Resource.success(Pair(allTeams, allMatches))
+    }.onStart {
+        // A legelső induláskor viszont (amikor még tényleg nincs adatunk)
+        // ki kell küldeni a töltőképernyőt.
+        emit(Resource.loading())
+    }.catch { e ->
+        emit(Resource.error(e))
     }
 
     // 3. A Végső UI Állapot deklaratív összerakása

@@ -191,8 +191,9 @@ fun TeamMatchSimpleCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }, // KATTINTHATÓ A KÁRTYA
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = statusColor)
+        elevation = CardDefaults.cardElevation(0.dp),
+        colors = CardDefaults.cardColors(containerColor = statusColor),
+        border = CardDefaults.outlinedCardBorder()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(

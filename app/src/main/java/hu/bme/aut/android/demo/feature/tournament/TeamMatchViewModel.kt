@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -49,23 +49,21 @@ class TeamMatchViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
-    // 1. Triggerek a reaktív adatfolyamhoz
-    private val _refreshTrigger = MutableStateFlow(Unit)
+    // 1. Triggerek a reaktív adatfolyamhoz (Unit helyett 0-s számláló!)
+    private val _refreshTrigger = MutableStateFlow(0)
     private val _isMutating = MutableStateFlow(false) // Írási műveletek töltésjelzője
     private val _actionError = MutableStateFlow<String?>(null) // Hibák a gombnyomásoknál
 
-    // 2. Tiszta adat-Flow, ami betölti a csapatokat és a meccseket
-    private val matchDataFlow = _refreshTrigger.flatMapLatest {
-        flow {
-            emit(Resource.loading())
-            // Párhuzamos lekérés helyett egyelőre szekvenciális, de tiszta
-            val allTeams = getTeamsUseCase()
-            val teamMatches = getTeamMatchesUseCase()
-            emit(Resource.success(Pair(allTeams, teamMatches)))
-        }.catch { e ->
-            emit(Resource.error(e))
-        }
-    }
+    // 2. Tiszta adat-Flow, ami betölti a csapatokat és a meccseket (mapLatest + onStart)
+    private val matchDataFlow = _refreshTrigger.mapLatest {
+        val allTeams = getTeamsUseCase()
+        val teamMatches = getTeamMatchesUseCase()
+        Resource.success(Pair(allTeams, teamMatches))
+    }.onStart {
+        emit(Resource.loading())
+    }.catch { e ->
+        emit(Resource.error(e))
+    } // <-- Itt volt a felesleges zárójel a korábbi kódban!
 
     // 3. A Végső UI Állapot összerakása (combine)
     val uiState: StateFlow<TeamMatchUiState> = combine(
@@ -120,7 +118,7 @@ class TeamMatchViewModel @Inject constructor(
         when (event) {
             is TeamMatchScreenEvent.LoadTeamMatches -> {
                 _actionError.value = null
-                _refreshTrigger.value = Unit
+                _refreshTrigger.value += 1 // Növeljük a számlálót
             }
 
             is TeamMatchScreenEvent.OnApplyForMatch -> {
@@ -129,7 +127,7 @@ class TeamMatchViewModel @Inject constructor(
                     _actionError.value = null
                     try {
                         applyForMatchUseCase(event.matchId)
-                        _refreshTrigger.value = Unit // Siker -> Újratöltjük az adatokat!
+                        _refreshTrigger.value += 1 // Siker -> Újratöltjük az adatokat!
                     } catch (e: Exception) {
                         e.printStackTrace()
                         _actionError.value = "Sikertelen jelentkezés: ${e.message}"
@@ -146,7 +144,7 @@ class TeamMatchViewModel @Inject constructor(
                     try {
                         val newStatus = if (event.currentStatus == "SELECTED") "APPLIED" else "SELECTED"
                         updateParticipantStatusUseCase(event.participantId, newStatus)
-                        _refreshTrigger.value = Unit // Siker -> Újratöltjük az adatokat!
+                        _refreshTrigger.value += 1 // Siker -> Újratöltjük az adatokat!
                     } catch (e: Exception) {
                         e.printStackTrace()
                         _actionError.value = "Sikertelen státusz frissítés: ${e.message}"
