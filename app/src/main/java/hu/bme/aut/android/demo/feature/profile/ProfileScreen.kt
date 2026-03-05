@@ -23,6 +23,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,6 +33,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -79,44 +82,57 @@ fun ProfileScreen(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     onLogoutClick: () -> Unit
 ) {
-    // 1. Lekérjük a bejelentkezett felhasználót az AuthViewModel-ből
+    // 1. Lifecycle-aware state gyűjtés
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
+    val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
     val backendUser = authState.backendUser
 
-    // 2. Amint megérkezik a backendUser (pl. betölt a hálózatról), átadjuk a ProfileViewModel-nek!
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 2. Inicializálás, ha megvan a User a hálózatról/AuthViewModel-ből
     LaunchedEffect(backendUser) {
-        if (backendUser != null) {
-            profileViewModel.setUser(backendUser)
-        }
+        profileViewModel.initUser(backendUser)
     }
 
-    val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
-    val user = uiState.user
+    // 3. Hibakezelés megjelenítése a Snackbar-on
+    LaunchedEffect(profileState.error) {
+        profileState.error?.let {
+            snackbarHostState.showSnackbar(it)
+            profileViewModel.clearError() // Ne mutassa újra forgatáskor
+        }
+    }
 
     var showMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
 
-    // Ideiglenes változók a dialoghoz
+    // Dialog változók
     var editFirstName by remember { mutableStateOf("") }
     var editLastName by remember { mutableStateOf("") }
 
-    // Dummy adatok, amiket később a backendről húzunk be
-    val teamName = "Saját Csapat (TODO)"
+    val user = profileState.user
+
+    // --- CSAPATOK MEGJELENÍTÉSE ---
+    val teamNames = profileState.userTeamNames
+    val teamText = if (teamNames.isEmpty()) {
+        "Nincs csapatban"
+    } else {
+        teamNames.joinToString(", ") // Pl. "BEAC V., BEAC VI."
+    }
+
+    // Dummy adatok a statisztikához (később API-ból jön)
     val seasonName = "2026 Tavasz"
     val matchesPlayed = 0
     val matchesWon = 0
     val winRate = if (matchesPlayed > 0) (matchesWon * 100) / matchesPlayed else 0
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Profil") },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Menü"
-                        )
+                        Icon(Icons.Default.MoreVert, contentDescription = "Menü")
                     }
 
                     DropdownMenu(
@@ -132,7 +148,6 @@ fun ProfileScreen(
                                 showEditDialog = true
                             },
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
-                            // TODO add edit and delete rackets functionality
                         )
                         Divider()
                         DropdownMenuItem(
@@ -152,7 +167,7 @@ fun ProfileScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp), // Fix térköz a blokkok között
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // --- FELHASZNÁLÓI ALAPADATOK ---
@@ -160,13 +175,22 @@ fun ProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profil ikon",
-                    modifier = Modifier.size(120.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                // Ha van betöltött user, az ő nevét mutatjuk, különben "Töltés..."
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profil ikon",
+                        modifier = Modifier.size(120.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    // Kis töltésjelző az ikon felett, ha épp adatot módosítunk
+                    if (profileState.isLoading) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+
                 Text(
                     text = if (user != null) "${user.lastName} ${user.firstName}" else "Töltés...",
                     style = MaterialTheme.typography.headlineSmall
@@ -177,10 +201,15 @@ fun ProfileScreen(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Csapat: $teamName", style = MaterialTheme.typography.titleMedium)
 
-                // --- STATISZTIKA (TODO) ---
+                // Dinamikus csapatnév megjelenítés
+                Text(
+                    text = "Csapat: $teamText",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (teamNames.isEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                )
 
+                // --- STATISZTIKA (Dummy) ---
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(2.dp)
@@ -200,16 +229,13 @@ fun ProfileScreen(
             }
 
             // --- ÜTŐK (Dummy maradt egyelőre) ---
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 val forehandRubberExample = Rubber("DHS", "Hurricane 3 NEO", "Inverted", 40, 2.1f, "Black")
-                val backhandRubberExample =
-                    Rubber("Yasaka", "Rakza 7 Soft", "Inverted", 35, 2.0f, "Red")
-                val bladeExample =
-                    Blade("Butterfly", "Regular", 5, 85f, "OFF", 6.0f, "Timo Boll ALC")
+                val backhandRubberExample = Rubber("Yasaka", "Rakza 7 Soft", "Inverted", 35, 2.0f, "Red")
+                val bladeExample = Blade("Butterfly", "Regular", 5, 85f, "OFF", 6.0f, "Timo Boll ALC")
                 val racketExample = Racket(
                     blade = "${bladeExample.manufacturer} ${bladeExample.model}",
                     forehandRubber = "${forehandRubberExample.manufacturer} ${forehandRubberExample.model}",
@@ -245,21 +271,13 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(text = "Fa: ${racketExample.blade}")
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Tenyeres: ${racketExample.forehandRubber}", modifier = Modifier.weight(1f)) // A szöveg kitölti a rendelkezésre álló helyet
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Text(text = "Tenyeres: ${racketExample.forehandRubber}", modifier = Modifier.weight(1f))
                             Spacer(modifier = Modifier.width(8.dp))
                             ColorCircle(color = stringToColor(forehandRubberExample.color))
                         }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Fonák: ${racketExample.backhandRubber}", modifier = Modifier.weight(1f)) // A szöveg kitölti a rendelkezésre álló helyet
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Text(text = "Fonák: ${racketExample.backhandRubber}", modifier = Modifier.weight(1f))
                             Spacer(modifier = Modifier.width(8.dp))
                             ColorCircle(color = stringToColor(backhandRubberExample.color))
                         }
@@ -271,11 +289,7 @@ fun ProfileScreen(
                 onClick = { /* TODO: Új ütő hozzáadása */ },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Új ütő hozzáadása",
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Új ütő hozzáadása")
             }
@@ -293,13 +307,16 @@ fun ProfileScreen(
                         value = editLastName,
                         onValueChange = { editLastName = it },
                         label = { Text("Vezetéknév") },
-                        singleLine = true
+                        singleLine = true,
+                        // UX: Ne engedjük írni, ha épp ment
+                        enabled = !profileState.isLoading
                     )
                     OutlinedTextField(
                         value = editFirstName,
                         onValueChange = { editFirstName = it },
                         label = { Text("Keresztnév") },
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !profileState.isLoading
                     )
                 }
             },
@@ -308,13 +325,15 @@ fun ProfileScreen(
                     onClick = {
                         profileViewModel.updateUser(editFirstName, editLastName)
                         showEditDialog = false
-                    }
+                    },
+                    // UX: Csak akkor aktív, ha nem üresek a mezők és nem tölt
+                    enabled = editFirstName.isNotBlank() && editLastName.isNotBlank() && !profileState.isLoading
                 ) {
                     Text("Mentés")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) {
+                TextButton(onClick = { showEditDialog = false }, enabled = !profileState.isLoading) {
                     Text("Mégse")
                 }
             }
