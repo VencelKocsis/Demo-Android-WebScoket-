@@ -31,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.domain.team.model.Team
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
 import kotlin.collections.isNotEmpty
@@ -78,11 +78,10 @@ fun TeamScreen(
     onNavigateToEditor: (Int) -> Unit = {}
 ) {
     // Állapot kinyerése a ViewModel-ből
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Ez a blokk figyeli, hogy mikor válik a képernyő aktívvá
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             // Ha a képernyő újra fókuszba kerül (ON_RESUME), frissítjük az adatokat!
