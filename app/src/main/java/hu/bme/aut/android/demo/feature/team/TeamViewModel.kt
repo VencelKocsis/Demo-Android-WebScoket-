@@ -3,7 +3,7 @@ package hu.bme.aut.android.demo.feature.team
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.model.toSimpleTeam
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +31,7 @@ class Resource<out T>(val isLoading: Boolean, private val data: T?, val error: T
 @HiltViewModel
 class TeamViewModel @Inject constructor(
     private val getTeamsUseCase: GetTeamsUseCase,
-    private val authRepository: AuthRepository // TODO change it to usecase
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
     // 1. Különálló, reaktív állapotok
@@ -56,7 +56,7 @@ class TeamViewModel @Inject constructor(
     ) { teamsResource, selectedId ->
 
         val teams = teamsResource.getOrNull() ?: emptyList()
-        val currentUserUid = authRepository.getCurrentUser()?.uid
+        val currentUserUid = getCurrentUserUseCase()?.uid
 
         // Meghatározzuk, melyik csapat legyen kiválasztva
         val currentTeam = teams.find {it.id == selectedId }

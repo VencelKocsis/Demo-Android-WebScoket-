@@ -3,7 +3,7 @@ package hu.bme.aut.android.demo.feature.tournament
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.ApplyForMatchUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
@@ -21,7 +21,7 @@ class TeamMatchViewModel @Inject constructor(
     private val getTeamsUseCase: GetTeamsUseCase,
     private val applyForMatchUseCase: ApplyForMatchUseCase,
     private val updateParticipantStatusUseCase: UpdateParticipantStatusUseCase,
-    private val authRepository: AuthRepository
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TeamMatchUiState(isLoading = true))
@@ -44,7 +44,7 @@ class TeamMatchViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
                 // 1. Felhasználói adatok és jogosultságok lekérése
-                val currentUserUid = authRepository.getCurrentUser()?.uid
+                val currentUserUid = getCurrentUserUseCase()?.uid
                 val allTeams = getTeamsUseCase()
 
                 var currentName = ""

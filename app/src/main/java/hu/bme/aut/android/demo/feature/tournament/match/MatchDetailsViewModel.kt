@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.ApplyForMatchUseCase
@@ -49,7 +50,7 @@ class MatchDetailsViewModel @Inject constructor(
     private val getTeamsUseCase: GetTeamsUseCase,
     private val applyForMatchUseCase: ApplyForMatchUseCase,
     private val updateParticipantStatusUseCase: UpdateParticipantStatusUseCase,
-    private val authRepository: AuthRepository,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val withdrawFromMatchUseCase: WithdrawFromMatchUseCase,
     private val finalizeMatchUseCase: FinalizeMatchUseCase
 ) : ViewModel() {
@@ -98,7 +99,7 @@ class MatchDetailsViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                val currentUserUid = authRepository.getCurrentUser()?.uid
+                val currentUserUid = getCurrentUserUseCase()?.uid
                 Log.d("MatchDetails", "=== MECCS BETÖLTÉSE INDUL ===")
                 Log.d("MatchDetails", "1. Jelenlegi Firebase UID: $currentUserUid")
 
