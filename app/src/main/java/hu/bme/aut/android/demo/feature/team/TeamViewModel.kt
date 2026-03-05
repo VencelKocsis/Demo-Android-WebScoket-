@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.model.toSimpleTeam
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
+import hu.bme.aut.android.demo.util.Resource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,17 +17,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import kotlin.collections.emptyList
-
-// Segédosztály a lekérdezés állapotának követésére (Loading, Success, Error)
-class Resource<out T>(val isLoading: Boolean, private val data: T?, val error: Throwable?) {
-    companion object {
-        fun <T> loading() = Resource<T>(true, null, null)
-        fun <T> success(data: T) = Resource<T>(false, data, null)
-        fun <T> error(e: Throwable) = Resource<T>(false, null, e)
-    }
-    fun getOrNull() = data
-    fun exceptionOrNull() = error
-}
 
 @HiltViewModel
 class TeamViewModel @Inject constructor(

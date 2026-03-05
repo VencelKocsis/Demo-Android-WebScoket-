@@ -4,17 +4,24 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import hu.bme.aut.android.demo.domain.team.model.TeamMember
 import hu.bme.aut.android.demo.domain.team.usecase.AddTeamMemberUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetAvailableUsersUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.RemoveTeamMemberUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.UpdateTeamNameUseCase
+import hu.bme.aut.android.demo.util.Resource
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.emptyList
 
 @HiltViewModel
 class TeamEditorViewModel @Inject constructor(
@@ -29,141 +36,122 @@ class TeamEditorViewModel @Inject constructor(
     // A Dagger Hilt automatikusan kiszedi nekünk a teamId-t a Navigációs argumentumokból!
     private val teamId: Int = checkNotNull(savedStateHandle["teamId"])
 
-    private val _uiState = MutableStateFlow(TeamEditorState(teamId = teamId))
-    val uiState: StateFlow<TeamEditorState> = _uiState.asStateFlow()
+    // 1. Triggerek a reaktív adatfolyamhoz
+    private val _refreshTrigger = MutableStateFlow(Unit)
 
-    init {
-        loadInitialData()
-    }
+    // 2. UI állapot változók (Dialógusok és Inputok)
+    private val _newNameInput = MutableStateFlow("")
+    private val _isEditNameDialogVisible = MutableStateFlow(false)
+    private val _memberToKick = MutableStateFlow<TeamMember?>(null)
+    private val _userToAdd = MutableStateFlow<TeamMember?>(null)
 
-    private fun loadInitialData() {
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true) }
+    // Explicit loading a mutációs (író) műveletek idejére
+    private val _isMutating = MutableStateFlow(false)
 
-                // 1. Csapat adatok lekérése a meglévő UseCase-el
-                val allTeams = getTeamsUseCase()
-                val currentTeam = allTeams.find { it.id == teamId }
-
-                // 2. Szabad játékosok lekérése az új UseCase-el
-                val availableDomainUsers = getAvailableUsersUseCase()
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        teamName = currentTeam?.name ?: "",
-                        newNameInput = currentTeam?.name ?: "",
-                        currentMembers = currentTeam?.members ?: emptyList(),
-                        availableUsers = availableDomainUsers
-                    )
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _uiState.update { it.copy(isLoading = false) }
-            }
+    // 3. A tiszta adat-Flow-k, amelyek a trigger hatására lefutnak
+    private val teamDataFlow = _refreshTrigger.flatMapLatest {
+        flow {
+            emit(Resource.loading())
+            val allTeams = getTeamsUseCase()
+            val team = allTeams.find { it.id == teamId }
+            val availableUsers = getAvailableUsersUseCase()
+            emit(Resource.success(Pair(team, availableUsers)))
+        }.catch { e ->
+            emit(Resource.error(e))
         }
     }
 
+    // 4. A UI Állapot összerakása (combine)
+    // 4. A UI Állapot összerakása (Mivel 5-nél több Flow-nk van, csoportosítjuk őket)
+    val uiState: StateFlow<TeamEditorState> = combine(
+        // Első hármas csoport
+        combine(teamDataFlow, _newNameInput, _isEditNameDialogVisible, ::Triple),
+        // Második hármas csoport
+        combine(_memberToKick, _userToAdd, _isMutating, ::Triple)
+    ) { (dataResource, newName, editDialog), (kickTarget, addTarget, isMutating) ->
+
+        val dataPair = dataResource.getOrNull()
+        val currentTeam = dataPair?.first
+        val availableUsers = dataPair?.second ?: emptyList()
+
+        // Ha a dialógus épp megnyílt, és a név még üres, beállítjuk a jelenlegire
+        val displayNewName = if (newName.isEmpty() && editDialog) currentTeam?.name ?: "" else newName
+
+        TeamEditorState(
+            teamId = teamId,
+            teamName = currentTeam?.name ?: "Ismeretlen csapat",
+            newNameInput = displayNewName,
+            isEditNameDialogVisible = editDialog,
+            currentMembers = currentTeam?.members ?: emptyList(),
+            availableUsers = availableUsers,
+            memberToKick = kickTarget,
+            userToAdd = addTarget,
+            // A képernyő akkor tölt, ha a Flow tölt, vagy ha épp írunk a szerverre
+            isLoading = dataResource.isLoading || isMutating
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = TeamEditorState(teamId = teamId, isLoading = true)
+    )
+
     fun onEvent(event: TeamEditorEvent) {
         when (event) {
-            //  Csapatnév szerkeztés logika
-            is TeamEditorEvent.OnEditNameClicked -> {
-                _uiState.update {
-                    it.copy(
-                        isEditNameDialogVisible = true,
-                        newNameInput = it.teamName
-                    )
-                }
-            }
-
+            is TeamEditorEvent.OnEditNameClicked -> _isEditNameDialogVisible.value = true
             is TeamEditorEvent.OnDismissEditName -> {
-                _uiState.update { it.copy(isEditNameDialogVisible = false) }
+                _isEditNameDialogVisible.value = false
+                _newNameInput.value = "" // Tiszta lappal indulunk legközelebb
             }
+            is TeamEditorEvent.OnNameInputChanged -> _newNameInput.value = event.newName
 
-            is TeamEditorEvent.OnNameInputChanged -> {
-                _uiState.update { it.copy(newNameInput = event.newName) }
-            }
             is TeamEditorEvent.OnSaveNameClicked -> {
                 viewModelScope.launch {
+                    _isMutating.value = true
                     try {
-                        val newName = _uiState.value.newNameInput
-                        _uiState.update { it.copy(isLoading = true) }
-
-                        updateTeamNameUseCase(teamId = teamId, newName = newName)
-                        _uiState.update {
-                            it.copy(
-                                teamName = newName,
-                                isLoading = false,
-                                isEditNameDialogVisible = false
-                            )
-                        }
+                        updateTeamNameUseCase(teamId = teamId, newName = _newNameInput.value)
+                        _isEditNameDialogVisible.value = false
+                        _refreshTrigger.value = Unit // Frissítés a szerverről
 
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        _uiState.update { it.copy(isLoading = false) }
+                    } finally {
+                        _isMutating.value = false
                     }
                 }
             }
 
-            // --- Kirúgás logika ---
-            is TeamEditorEvent.OnKickClicked -> {
-                _uiState.update { it.copy(memberToKick = event.member) }
-            }
-            is TeamEditorEvent.OnDismissKick -> {
-                _uiState.update { it.copy(memberToKick = null) }
-            }
+            is TeamEditorEvent.OnKickClicked -> _memberToKick.value = event.member
+            is TeamEditorEvent.OnDismissKick -> _memberToKick.value = null
             is TeamEditorEvent.OnConfirmKick -> {
-                val memberToKick = _uiState.value.memberToKick ?: return
-
+                val member = _memberToKick.value ?: return
                 viewModelScope.launch {
+                    _isMutating.value = true
                     try {
-                        _uiState.update { it.copy(isLoading = true) }
-
-                        removeTeamMemberUseCase(teamId = teamId, userId = memberToKick.id)
-
-                        _uiState.update { state ->
-                            state.copy(
-                                isLoading = false,
-                                currentMembers = state.currentMembers.filter { it.id != memberToKick.id },
-                                availableUsers = state.availableUsers + memberToKick.copy(isCaptain = false),
-                                memberToKick = null
-                            )
-                        }
+                        removeTeamMemberUseCase(teamId = teamId, userId = member.id)
+                        _memberToKick.value = null
+                        _refreshTrigger.value = Unit // Frissítés szerverről!
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        _uiState.update { it.copy(isLoading = false, memberToKick = null) }
+                    } finally {
+                        _isMutating.value = false
                     }
                 }
             }
 
-            // --- Hozzáadás logika ---
-            is TeamEditorEvent.OnAddClicked -> {
-                _uiState.update { it.copy(userToAdd = event.member) }
-            }
-            is TeamEditorEvent.OnDismissAdd -> {
-                _uiState.update { it.copy(userToAdd = null) }
-            }
+            is TeamEditorEvent.OnAddClicked -> _userToAdd.value = event.member
+            is TeamEditorEvent.OnDismissAdd -> _userToAdd.value = null
             is TeamEditorEvent.OnConfirmAdd -> {
-                val userToAdd = _uiState.value.userToAdd ?: return
-
+                val user = _userToAdd.value ?: return
                 viewModelScope.launch {
+                    _isMutating.value = true
                     try {
-                        _uiState.update { it.copy(isLoading = true) }
-
-                        addTeamMemberUseCase(teamId = teamId, userId = userToAdd.id)
-
-                        _uiState.update { state ->
-                            state.copy(
-                                isLoading = false,
-                                currentMembers = state.currentMembers + userToAdd.copy(isCaptain = false),
-                                availableUsers = state.availableUsers.filter { it.id != userToAdd.id },
-                                userToAdd = null
-                            )
-                        }
-
+                        addTeamMemberUseCase(teamId = teamId, userId = user.id)
+                        _userToAdd.value = null
+                        _refreshTrigger.value = Unit // Frissítés szerverről!
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        _uiState.update { it.copy(isLoading = false, userToAdd = null) }
+                    } finally {
+                        _isMutating.value = false
                     }
                 }
             }
