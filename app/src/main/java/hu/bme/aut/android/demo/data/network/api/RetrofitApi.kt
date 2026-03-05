@@ -48,6 +48,12 @@ interface RetrofitApi {
         @Body statusUpdate: ParticipantStatusUpdateDTO
     )
 
+    @DELETE("matches/{matchId}/apply")
+    suspend fun withdrawFromMatch(@Path("matchId") matchId: Int)
+
+    @POST("matches/{matchId}/finalize")
+    suspend fun finalizeMatch(@Path("matchId") matchId: Int)
+
     @GET("matches")
     suspend fun getTeamMatches(): List<TeamMatchDTO>
 

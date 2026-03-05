@@ -34,7 +34,7 @@ fun LoginScreen(
         if (state.isAuthenticated && state.currentUser != null) {
             onAuthSuccess(state.currentUser!!)
         }
-    }
+    } // TODO keyboard options for email and password
 
     Scaffold(
         topBar = {

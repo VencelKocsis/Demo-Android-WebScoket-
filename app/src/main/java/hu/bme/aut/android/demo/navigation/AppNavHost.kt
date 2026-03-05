@@ -17,6 +17,7 @@ import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
 import hu.bme.aut.android.demo.feature.team.editor.TeamEditorScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
+import hu.bme.aut.android.demo.feature.tournament.match.MatchDetailsScreen
 
 /**
  * Az alkalmazás fő navigációs konténere.
@@ -96,6 +97,9 @@ fun AppNavHost(
                     },
                     onNavigateToTeamEditor = { teamId ->
                         navController.navigate(Screen.TeamEditor.createRoute(teamId))
+                    },
+                    onNavigateToMatchDetails = { matchId ->
+                        navController.navigate(Screen.MatchDetails.createRoute(matchId))
                     }
                 )
             }
@@ -118,6 +122,23 @@ fun AppNavHost(
                 TeamEditorScreen(
                     onNavigateBack = {
                         navController.popBackStack() // Visszalépés az előző képernyőre
+                    }
+                )
+            }
+
+            // --- 4. ÚJ: Meccs Részletek Képernyő ---
+            composable(
+                route = "${Screen.MatchDetails.route}/{matchId}",
+                arguments = listOf(
+                    navArgument("matchId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val matchId = backStackEntry.arguments?.getInt("matchId") ?: return@composable
+
+                MatchDetailsScreen(
+                    matchId = matchId,
+                    onNavigateBack = {
+                        navController.popBackStack() // Visszalépés a listához
                     }
                 )
             }

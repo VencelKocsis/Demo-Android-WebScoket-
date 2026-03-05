@@ -1,5 +1,6 @@
 package hu.bme.aut.android.demo.feature.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
@@ -38,7 +39,8 @@ class AuthViewModel @Inject constructor(
     private val registerUserUseCase: RegisterUserUseCase,
     private val signInUserUseCase: SignInUserUseCase,
     private val signOutUserUseCase: SignOutUserUseCase,
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val registerFcmTokenUseCase: RegisterUserUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -74,6 +76,19 @@ class AuthViewModel @Inject constructor(
                 } catch (e: Exception) {
                     e.printStackTrace() // Kisebb hiba esetén nem léptetjük ki, de logolhatjuk
                 }
+            }
+        }
+    }
+
+    fun getCurrentUser() = authRepository.getCurrentUser()
+
+    fun registerFcmToken(email: String, token: String) {
+        viewModelScope.launch {
+            try {
+                registerFcmTokenUseCase(email, token)
+                Log.d("AuthViewModel", "✅ FCM Token sikeresen szinkronizálva a Ktor szerverrel!")
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "❌ FCM Token szinkronizálás SIKERTELEN: ${e.message}")
             }
         }
     }
