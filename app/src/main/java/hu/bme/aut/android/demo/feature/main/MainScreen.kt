@@ -25,6 +25,7 @@ import hu.bme.aut.android.demo.navigation.Screen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import android.Manifest
+import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen(
@@ -50,28 +51,28 @@ fun MainScreen(
     )
 
     // --- 2. FCM TOKEN LEKÉRÉSE ÉS SZINKRONIZÁLÁSA ---
-    // Ezt csak egyszer, a főképernyő betöltésekor futtatjuk le
     LaunchedEffect(Unit) {
-        // Engedélykérés Android 13 (TIRAMISU) és újabb rendszereken
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        var tokenRetrieved = false
+        var retryCount = 0
+        val maxRetries = 3
 
-        // Token lekérése a háttérszálon
-        scope.launch {
+        while (!tokenRetrieved && retryCount < maxRetries) {
             try {
-                // Megkérdezzük a telefont, mi a címe (Tokenje)
                 val token = FirebaseMessaging.getInstance().token.await()
-                // Lekérjük a bejelentkezett felhasználó email címét
                 val currentUserEmail = authViewModel.getCurrentUser()?.email
 
                 if (currentUserEmail != null) {
-                    Log.d("MainScreen", "FCM Token lekérve. Frissítés a backendnek: $token")
-                    // Felküldjük a Ktornak!
                     authViewModel.registerFcmToken(currentUserEmail, token)
+                    Log.d("MainScreen", "FCM Token sikeresen regisztrálva: $currentUserEmail")
+                    tokenRetrieved = true
+                } else {
+                    Log.w("MainScreen", "Még nincs bejelentkezett felhasználó, várjunk...")
+                    delay(2000) // Várjunk 2 másodpercet, hátha az Auth még frissül
                 }
             } catch (e: Exception) {
-                Log.e("MainScreen", "Hiba az FCM token lekérésekor: ${e.message}")
+                retryCount++
+                Log.e("MainScreen", "Hiba az FCM token lekérésekor ($retryCount. próbálkozás): ${e.message}")
+                delay(5000) // 5 másodperc múlva újrapróbáljuk
             }
         }
     }
