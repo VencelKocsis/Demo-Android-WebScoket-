@@ -57,7 +57,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 
-// --- 1. UI STATE (Állapot leíró) ---
+// --- 1. UI STATE (Állapot leíró) --- // TODO refactor to separate files data class, ui state, events
 data class TeamMatchUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
@@ -383,7 +383,7 @@ fun TeamMatchItemCard(
                         // Itt lehetne a "Jelentkezés" gomb, ha üres a lista
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(onClick = { /* TODO: Jelentkezés logika */ }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            Text("Jelentkezés")
+                            Text("Jelentkezés") // TODO UI redesign
                         }
                     }
                 }

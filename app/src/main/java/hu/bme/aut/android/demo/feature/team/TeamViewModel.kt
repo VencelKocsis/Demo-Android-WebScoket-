@@ -17,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TeamViewModel @Inject constructor(
     private val getTeamsUseCase: GetTeamsUseCase,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository // TODO change it to usecase
 ) : ViewModel() {
 
     // Fontos: Itt a TeamScreenState-et használjuk, amit a UI-ban is definiáltál
@@ -25,7 +25,7 @@ class TeamViewModel @Inject constructor(
     val uiState: StateFlow<TeamScreenState> = _uiState.asStateFlow()
 
     // Itt tároljuk el a nyers domain listát, hogy ne kelljen újra lekérdezni a hálózatról
-    private var allTeamsDomain: List<TeamDetails> = emptyList()
+    private var allTeamsDomain: List<TeamDetails> = emptyList() // TODO make it flow
 
     fun onEvent(event: TeamScreenEvent) {
         when (event) {
