@@ -72,7 +72,8 @@ class AddUserToTeamTest {
                 RegularTestUser("Tamás Zsolt"),
                 RegularTestUser("Kurucz Máté"),
                 RegularTestUser("Juhász Péter"),
-                RegularTestUser("Wiener Gábor")
+                RegularTestUser("Wiener Gábor"),
+                RegularTestUser("Kocsis Vencel")
             )
         ),
         // BEAC VI.
@@ -101,7 +102,7 @@ class AddUserToTeamTest {
             navigate(composeTestRule, "Csapat", Navigation.OnNodeWith.TEXT)
 
             // BELÉPÉS A CSAPATSZERKESZTŐBE
-            composeTestRule.onNodeWithContentDescription("Csapat szerkesztése").performClick()
+            navigate(composeTestRule, "Csapat szerkesztése", Navigation.OnNodeWith.DESCRIPTION)
 
             // 2. Csak a kapitányhoz tartozó játékosokon megyünk végig!
             team.members.forEach { user ->
@@ -109,9 +110,6 @@ class AddUserToTeamTest {
                 composeTestRule.onNodeWithText(user.name).performClick()
                 composeTestRule.onNodeWithText("Felvétel").performClick()
             }
-
-            //Espresso.pressBack()
-            //Thread.sleep(500)
 
             // NAVIGÁCIÓ VISSZA A CSAPATKÉPERNYŐRE
             navigate(composeTestRule, "Visszalépés", Navigation.OnNodeWith.DESCRIPTION)

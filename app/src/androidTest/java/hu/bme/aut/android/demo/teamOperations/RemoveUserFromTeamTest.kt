@@ -1,4 +1,124 @@
 package hu.bme.aut.android.demo.teamOperations
 
+import android.Manifest
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
+import hu.bme.aut.android.demo.MainActivity
+import hu.bme.aut.android.demo.functions.Authentication.login
+import hu.bme.aut.android.demo.functions.Authentication.logout
+import hu.bme.aut.android.demo.functions.Navigation
+import hu.bme.aut.android.demo.functions.Navigation.navigate
+import hu.bme.aut.android.demo.teamOperations.AddUserToTeamTest.CaptainTestUser
+import hu.bme.aut.android.demo.teamOperations.AddUserToTeamTest.RegularTestUser
+import hu.bme.aut.android.demo.teamOperations.AddUserToTeamTest.TeamData
+import okhttp3.internal.wait
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
 class RemoveUserFromTeamTest {
+
+    data class CaptainTestUser(
+        val email: String,
+        val password: String
+    )
+
+    data class RegularTestUser(
+        val name: String
+    )
+
+    data class TeamData(
+        val captain: CaptainTestUser,
+        val members: List<RegularTestUser>
+    )
+
+    @get:Rule
+    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        Manifest.permission.POST_NOTIFICATIONS
+    )
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    val teams = listOf(
+        // BEAC III.
+        TeamData(
+            captain = CaptainTestUser("tf@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Katus Ferenc"),
+                RegularTestUser("Szabó Miklós"),
+                RegularTestUser("Szekulesz Péter")
+            )
+        ),
+        // BEAC IV.
+        TeamData(
+            captain = CaptainTestUser("nzs@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Széles Gergő"),
+                RegularTestUser("Gulyás Áron"),
+                RegularTestUser("Gábor Norbert"),
+                RegularTestUser("Szabó Győző")
+            )
+        ),
+        // BEAC V.
+        TeamData(
+            captain = CaptainTestUser("id@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Molnár Dániel"),
+                RegularTestUser("Módos Vilmos"),
+                RegularTestUser("Tamás Zsolt"),
+                RegularTestUser("Kurucz Máté"),
+                RegularTestUser("Juhász Péter"),
+                RegularTestUser("Wiener Gábor"),
+                RegularTestUser("Kocsis Vencel")
+            )
+        ),
+        // BEAC VI.
+        TeamData(
+            captain = CaptainTestUser("kp@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Sipos Tamás"),
+                RegularTestUser("Tengerdi Tibor"),
+                RegularTestUser("Böröcz Botond"),
+                RegularTestUser("Reszler Balázs")
+            )
+        )
+    )
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun captainDestroyTeam() {
+
+        teams.forEach { team ->
+
+            login(composeTestRule, team.captain.email, team.captain.password)
+
+            navigate(composeTestRule, "Csapat", Navigation.OnNodeWith.TEXT)
+
+            navigate(composeTestRule, "Csapat szerkesztése", Navigation.OnNodeWith.DESCRIPTION)
+
+            team.members.forEach { user ->
+                composeTestRule.waitUntilAtLeastOneExists(hasTestTag("kick_${user.name}"), 5000)
+                composeTestRule.onNodeWithTag("kick_${user.name}").performClick()
+                composeTestRule.waitUntilAtLeastOneExists(hasText("Tag eltávolítása"), 5000)
+                composeTestRule.onNodeWithText("Eltávolítás").performClick()
+                composeTestRule.waitForIdle()
+            }
+
+            navigate(composeTestRule, "Visszalépés", Navigation.OnNodeWith.DESCRIPTION)
+
+            composeTestRule.waitForIdle()
+            Thread.sleep(1000)
+
+            logout(composeTestRule)
+        }
+    }
 }

@@ -37,6 +37,9 @@
       <SelectionState runConfigName="AddUserToTeamTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="RemoveUserFromTeamTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>
