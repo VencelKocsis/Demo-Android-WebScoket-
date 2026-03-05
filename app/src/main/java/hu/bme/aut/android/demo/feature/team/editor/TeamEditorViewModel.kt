@@ -37,7 +37,7 @@ class TeamEditorViewModel @Inject constructor(
     private val teamId: Int = checkNotNull(savedStateHandle["teamId"])
 
     // 1. Triggerek a reaktív adatfolyamhoz
-    private val _refreshTrigger = MutableStateFlow(Unit)
+    private val _refreshTrigger = MutableStateFlow(0)
 
     // 2. UI állapot változók (Dialógusok és Inputok)
     private val _newNameInput = MutableStateFlow("")
@@ -110,7 +110,7 @@ class TeamEditorViewModel @Inject constructor(
                     try {
                         updateTeamNameUseCase(teamId = teamId, newName = _newNameInput.value)
                         _isEditNameDialogVisible.value = false
-                        _refreshTrigger.value = Unit // Frissítés a szerverről
+                        _refreshTrigger.value += 1 // Frissítés a szerverről
 
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -129,7 +129,7 @@ class TeamEditorViewModel @Inject constructor(
                     try {
                         removeTeamMemberUseCase(teamId = teamId, userId = member.id)
                         _memberToKick.value = null
-                        _refreshTrigger.value = Unit // Frissítés szerverről!
+                        _refreshTrigger.value += 1 // Frissítés szerverről!
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {
@@ -147,7 +147,7 @@ class TeamEditorViewModel @Inject constructor(
                     try {
                         addTeamMemberUseCase(teamId = teamId, userId = user.id)
                         _userToAdd.value = null
-                        _refreshTrigger.value = Unit // Frissítés szerverről!
+                        _refreshTrigger.value += 1 // Frissítés szerverről!
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {
