@@ -1,6 +1,7 @@
 package hu.bme.aut.android.demo.feature.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -9,6 +10,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -28,13 +32,14 @@ fun LoginScreen(
 ) {
     // Figyeli a ViewModel állapotát
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
 
     // Ha a felhasználó hitelesítése sikeres, navigáljunk
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated && state.currentUser != null) {
             onAuthSuccess(state.currentUser!!)
         }
-    } // TODO keyboard options for email and password
+    }
 
     Scaffold(
         topBar = {
@@ -57,7 +62,13 @@ fun LoginScreen(
                     onValueChange = viewModel::updateEmail,
                     label = { Text("E-mail cím") },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = "E-mail") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -70,7 +81,14 @@ fun LoginScreen(
                     label = { Text("Jelszó") },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Jelszó") },
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                    }
+                        ),
                     modifier = Modifier.fillMaxWidth()
                 )
 

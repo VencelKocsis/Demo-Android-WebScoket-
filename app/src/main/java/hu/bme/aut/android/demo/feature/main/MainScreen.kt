@@ -1,6 +1,5 @@
 package hu.bme.aut.android.demo.feature.main
 
-import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,9 +21,7 @@ import hu.bme.aut.android.demo.feature.profile.ProfileScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
 import hu.bme.aut.android.demo.feature.tournament.TeamMatchScreen
 import hu.bme.aut.android.demo.navigation.Screen
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import android.Manifest
 import kotlinx.coroutines.delay
 
 @Composable
