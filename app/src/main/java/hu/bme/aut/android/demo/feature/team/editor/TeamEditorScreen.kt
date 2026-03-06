@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -185,7 +186,10 @@ fun TeamEditorContent(
                         leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
                         trailingContent = {
                             if (!member.isCaptain) {
-                                IconButton(onClick = { onEvent(TeamEditorEvent.OnKickClicked(member)) }) {
+                                IconButton(
+                                    onClick = { onEvent(TeamEditorEvent.OnKickClicked(member)) },
+                                    modifier = Modifier.testTag("kick_${member.name}")
+                                ) {
                                     Icon(Icons.Default.Dangerous, contentDescription = "Eltávolítás", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
