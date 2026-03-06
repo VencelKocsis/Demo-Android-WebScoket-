@@ -5,8 +5,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class IndividualMatchDTO(
     val id: Int,
-    val homePlayerName: String, // TODO make userId
-    val guestPlayerName: String, // TODO make userId
+    val homePlayerId: Int,
+    val homePlayerName: String,
+    val guestPlayerId: Int,
+    val guestPlayerName: String,
     val homeScore: Int,
     val guestScore: Int
 )

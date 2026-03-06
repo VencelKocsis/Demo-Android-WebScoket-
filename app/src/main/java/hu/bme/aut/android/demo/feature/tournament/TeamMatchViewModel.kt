@@ -3,121 +3,155 @@ package hu.bme.aut.android.demo.feature.tournament
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
+import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.ApplyForMatchUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.UpdateParticipantStatusUseCase
+import hu.bme.aut.android.demo.util.Resource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// --- STATE & EVENTS (Ideálisan egy TeamMatchContract.kt fájlban) ---
+data class TeamMatchUiState(
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val teamMatchesByRound: Map<Int, List<TeamMatch>> = emptyMap(),
+    val currentUserName: String = "",
+    val userTeamIds: List<Int> = emptyList(),
+    val userCaptainTeamIds: List<Int> = emptyList()
+)
+
+sealed class TeamMatchScreenEvent {
+    object LoadTeamMatches : TeamMatchScreenEvent()
+    data class OnApplyForMatch(val matchId: Int) : TeamMatchScreenEvent()
+    data class OnToggleParticipantStatus(val participantId: Int, val currentStatus: String) : TeamMatchScreenEvent()
+}
+
+// --- VIEWMODEL ---
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TeamMatchViewModel @Inject constructor(
     private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
     private val getTeamsUseCase: GetTeamsUseCase,
     private val applyForMatchUseCase: ApplyForMatchUseCase,
     private val updateParticipantStatusUseCase: UpdateParticipantStatusUseCase,
-    private val authRepository: AuthRepository
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TeamMatchUiState(isLoading = true))
-    val uiState: StateFlow<TeamMatchUiState> = _uiState.asStateFlow()
+    // 1. Triggerek a reaktív adatfolyamhoz (Unit helyett 0-s számláló!)
+    private val _refreshTrigger = MutableStateFlow(0)
+    private val _isMutating = MutableStateFlow(false) // Írási műveletek töltésjelzője
+    private val _actionError = MutableStateFlow<String?>(null) // Hibák a gombnyomásoknál
+
+    // 2. Tiszta adat-Flow, ami betölti a csapatokat és a meccseket (mapLatest + onStart)
+    private val matchDataFlow = _refreshTrigger.mapLatest {
+        val allTeams = getTeamsUseCase()
+        val teamMatches = getTeamMatchesUseCase()
+        Resource.success(Pair(allTeams, teamMatches))
+    }.onStart {
+        emit(Resource.loading())
+    }.catch { e ->
+        emit(Resource.error(e))
+    } // <-- Itt volt a felesleges zárójel a korábbi kódban!
+
+    // 3. A Végső UI Állapot összerakása (combine)
+    val uiState: StateFlow<TeamMatchUiState> = combine(
+        matchDataFlow,
+        _isMutating,
+        _actionError
+    ) { dataResource, isMutating, actionError ->
+
+        val dataPair = dataResource.getOrNull()
+        val allTeams = dataPair?.first ?: emptyList()
+        val teamMatches = dataPair?.second ?: emptyList()
+
+        // Adatfeldolgozás
+        val currentUserUid = getCurrentUserUseCase()?.uid
+        var currentName = ""
+        val memberOf = mutableListOf<Int>()
+        val captainOf = mutableListOf<Int>()
+
+        if (currentUserUid != null) {
+            allTeams.forEach { team ->
+                val userInTeam = team.members.find { it.uid == currentUserUid }
+                if (userInTeam != null) {
+                    currentName = userInTeam.name
+                    memberOf.add(team.id)
+                    if (userInTeam.isCaptain) {
+                        captainOf.add(team.id)
+                    }
+                }
+            }
+        }
+
+        val groupedTeamMatches = teamMatches.groupBy { it.roundNumber }.toSortedMap()
+
+        // Hibaüzenet priorizálása: Előbb a gombnyomás hibája, utána a hálózati betöltés hibája
+        val displayError = actionError ?: dataResource.exceptionOrNull()?.message
+
+        TeamMatchUiState(
+            isLoading = dataResource.isLoading || isMutating,
+            errorMessage = displayError,
+            teamMatchesByRound = groupedTeamMatches,
+            currentUserName = currentName,
+            userTeamIds = memberOf,
+            userCaptainTeamIds = captainOf
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = TeamMatchUiState(isLoading = true)
+    )
 
     fun onEvent(event: TeamMatchScreenEvent) {
         when (event) {
-            is TeamMatchScreenEvent.LoadTeamMatches -> loadTeamMatches()
-            is TeamMatchScreenEvent.OnApplyForMatch -> applyForMatch(event.matchId)
-            is TeamMatchScreenEvent.OnToggleParticipantStatus -> updateParticipantStatus(
-                event.participantId,
-                event.currentStatus
-            )
-        }
-    }
+            is TeamMatchScreenEvent.LoadTeamMatches -> {
+                _actionError.value = null
+                _refreshTrigger.value += 1 // Növeljük a számlálót
+            }
 
-    private fun loadTeamMatches() {
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-
-                // 1. Felhasználói adatok és jogosultságok lekérése
-                val currentUserUid = authRepository.getCurrentUser()?.uid
-                val allTeams = getTeamsUseCase()
-
-                var currentName = ""
-                val memberOf = mutableListOf<Int>()
-                val captainOf = mutableListOf<Int>()
-
-                allTeams.forEach { team ->
-                    val userInTeam = team.members.find { it.uid == currentUserUid }
-                    if (userInTeam != null) {
-                        currentName = userInTeam.name
-                        memberOf.add(team.id)
-                        if (userInTeam.isCaptain) {
-                            captainOf.add(team.id)
-                        }
+            is TeamMatchScreenEvent.OnApplyForMatch -> {
+                viewModelScope.launch {
+                    _isMutating.value = true
+                    _actionError.value = null
+                    try {
+                        applyForMatchUseCase(event.matchId)
+                        _refreshTrigger.value += 1 // Siker -> Újratöltjük az adatokat!
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        _actionError.value = "Sikertelen jelentkezés: ${e.message}"
+                    } finally {
+                        _isMutating.value = false
                     }
                 }
-
-                // 2. Meccsek lekérése és csoportosítása
-                val teamMatches = getTeamMatchesUseCase()
-                val groupedTeamMatches = teamMatches
-                    .groupBy { it.roundNumber }
-                    .toSortedMap()
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        teamMatchesByRound = groupedTeamMatches,
-                        currentUserName = currentName,
-                        userTeamIds = memberOf,
-                        userCaptainTeamIds = captainOf
-                    )
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Ismeretlen hiba történt"
-                    )
-                }
             }
-        }
-    }
 
-    private fun applyForMatch(matchId: Int) {
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true) }
-                applyForMatchUseCase(matchId)
-                loadTeamMatches() // Újratöltjük az adatokat, hogy látszódjon a jelentkezés
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Sikertelen jelentkezés: ${e.message}"
-                    )
+            is TeamMatchScreenEvent.OnToggleParticipantStatus -> {
+                viewModelScope.launch {
+                    _isMutating.value = true
+                    _actionError.value = null
+                    try {
+                        val newStatus = if (event.currentStatus == "SELECTED") "APPLIED" else "SELECTED"
+                        updateParticipantStatusUseCase(event.participantId, newStatus)
+                        _refreshTrigger.value += 1 // Siker -> Újratöltjük az adatokat!
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        _actionError.value = "Sikertelen státusz frissítés: ${e.message}"
+                    } finally {
+                        _isMutating.value = false
+                    }
                 }
-            }
-        }
-    }
-
-    private fun updateParticipantStatus(participantId: Int, currentStatus: String) {
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true) }
-                val newStatus = if (currentStatus == "SELECTED") "APPLIED" else "SELECTED"
-                updateParticipantStatusUseCase(participantId, newStatus)
-                loadTeamMatches() // Újratöltjük az adatokat, hogy látszódjon a státusz frissítés
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _uiState.update { it.copy(isLoading = false, errorMessage = "Sikertelen státusz frissítés: ${e.message}") }
             }
         }
     }

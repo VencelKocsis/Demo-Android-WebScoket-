@@ -11,8 +11,20 @@ object DataStructure {
         val name: String
     )
 
-    data class TeamData(
+    data class FullTestUser(
+        val name: String,
+        val email: String,
+        val password: String
+    )
+
+    data class TeamData<T>(
+        val teamName: String,
         val captain: CaptainTestUser,
-        val members: List<RegularTestUser>
+        val members: List<T>
+    )
+
+    data class TeamMatchData<T>(
+        val homeTeam: TeamData<T>,
+        val guestTeam: TeamData<T>
     )
 }

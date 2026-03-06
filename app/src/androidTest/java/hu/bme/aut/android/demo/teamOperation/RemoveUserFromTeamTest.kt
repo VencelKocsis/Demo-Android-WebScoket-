@@ -42,7 +42,8 @@ class RemoveUserFromTeamTest {
                 RegularTestUser("Szabó Miklós"),
                 RegularTestUser("Szekulesz Péter"),
                 RegularTestUser("Bakos Bertalan")
-            )
+            ),
+            teamName = "BEAC III."
         ),
         // BEAC IV.
         TeamData(
@@ -52,7 +53,8 @@ class RemoveUserFromTeamTest {
                 RegularTestUser("Gulyás Áron"),
                 RegularTestUser("Gábor Norbert"),
                 RegularTestUser("Szabó Győző")
-            )
+            ),
+            teamName = "BEAC IV."
         ),
         // BEAC V.
         TeamData(
@@ -65,7 +67,8 @@ class RemoveUserFromTeamTest {
                 RegularTestUser("Juhász Péter"),
                 RegularTestUser("Wiener Gábor"),
                 RegularTestUser("Kocsis Vencel")
-            )
+            ),
+            teamName = "BEAC V."
         ),
         // BEAC VI.
         TeamData(
@@ -75,7 +78,8 @@ class RemoveUserFromTeamTest {
                 RegularTestUser("Tengerdi Tibor"),
                 RegularTestUser("Böröcz Botond"),
                 RegularTestUser("Reszler Balázs")
-            )
+            ),
+            teamName = "BEAC VI."
         )
     )
 

@@ -1,6 +1,7 @@
 package hu.bme.aut.android.demo.feature.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -9,6 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -28,6 +33,7 @@ fun LoginScreen(
 ) {
     // Figyeli a ViewModel állapotát
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
 
     // Ha a felhasználó hitelesítése sikeres, navigáljunk
     LaunchedEffect(state.isAuthenticated) {
@@ -57,7 +63,13 @@ fun LoginScreen(
                     onValueChange = viewModel::updateEmail,
                     label = { Text("E-mail cím") },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = "E-mail") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -70,7 +82,14 @@ fun LoginScreen(
                     label = { Text("Jelszó") },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Jelszó") },
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                    }
+                        ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -83,6 +102,32 @@ fun LoginScreen(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+
+                // Sikerüzenet (pl. elküldött e-mail után)
+                state.successMessage?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = it,
+                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50), // Zöld szín
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Elfelejtett jelszó gomb
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = viewModel::forgotPassword,
+                        enabled = !state.isLoading && state.emailInput.isNotBlank()
+                        // Csak akkor kattintható, ha beírt egy e-mail címet!
+                    ) {
+                        Text("Elfelejtetted a jelszavad?")
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -114,11 +159,6 @@ fun LoginScreen(
                 ) {
                     Text("Regisztráció")
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Kijelentkezés gomb
-
             }
         }
     )

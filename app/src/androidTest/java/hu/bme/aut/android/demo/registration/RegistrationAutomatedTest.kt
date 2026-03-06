@@ -43,7 +43,7 @@ class RegistrationAutomatedTest {
 
             // BEAC II.
 
-            /*
+
             // BEAC III. in DB
             TestUser("Ferenc", "Katus", "KF@test.com", "bestpassword"),
             TestUser("Fanni", "Takáts", "TF@test.com", "bestpassword"),
@@ -74,9 +74,9 @@ class RegistrationAutomatedTest {
             TestUser("Tibor", "Tengerdi", "TT@test.com", "bestpassword"),
             TestUser("Botond", "Böröcz", "BB@test.com", "bestpassword"),
             TestUser("Balázs", "Reszler", "RB@test.com", "bestpassword")
-             */
 
-            TestUser("firstName", "lastName", "email@test.com", "bestpassword")
+
+            //TestUser("firstName", "lastName", "email@test.com", "bestpassword")
         )
 
         testUsers.forEach { user ->

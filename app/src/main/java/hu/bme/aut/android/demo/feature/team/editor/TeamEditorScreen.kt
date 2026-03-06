@@ -1,5 +1,6 @@
 package hu.bme.aut.android.demo.feature.team.editor
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,8 +31,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.domain.team.model.TeamMember
 
 data class TeamEditorState(
@@ -57,6 +59,8 @@ data class TeamEditorState(
 )
 
 sealed class TeamEditorEvent {
+    object LoadTeamData : TeamEditorEvent() // <--- ÚJ
+
     data class OnKickClicked(val member: TeamMember) : TeamEditorEvent()
     object OnConfirmKick : TeamEditorEvent()
     object OnDismissKick : TeamEditorEvent()
@@ -76,11 +80,11 @@ fun TeamEditorScreen(
     onNavigateBack: () -> Unit,
     viewModel: TeamEditorViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     TeamEditorContent(
         state = state,
-        onEvent = { viewModel.onEvent(it) },
+        onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack
     )
 }
@@ -106,101 +110,116 @@ fun TeamEditorContent(
             )
         }
     ) { paddingValues ->
-        Column(
+
+        // --- ÚJ: PULL TO REFRESH DOBOZ A TELJES TARTALOM KÖRÉ ---
+        PullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { onEvent(TeamEditorEvent.LoadTeamData) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
         ) {
 
-            // --- 0. CSAPAT NEVÉNEK MÓDOSÍTÁSA ---
-            Text("Csapat neve", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
+            // Ha épp nincs senki a csapatban és üres az egész, akkor is lehessen görgetni/húzni lefelé
+            Box(modifier = Modifier.fillMaxSize()) {
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = state.teamName,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = { onEvent(TeamEditorEvent.OnEditNameClicked) }) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Név szerkesztése",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    // --- 0. CSAPAT NEVÉNEK MÓDOSÍTÁSA ---
+                    Text("Csapat neve", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- 1. ÚJ TAG FELVÉTELE ---
-            Text("Új tag felvétele", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                OutlinedTextField(
-                    value = "Válassz szabad játékost...",
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
-                )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    if (state.availableUsers.isEmpty()) {
-                        DropdownMenuItem(text = { Text("Nincs szabad játékos") }, onClick = { expanded = false })
-                    } else {
-                        state.availableUsers.forEach { user ->
-                            DropdownMenuItem(
-                                text = { Text(user.name) },
-                                onClick = {
-                                    onEvent(TeamEditorEvent.OnAddClicked(user))
-                                    expanded = false
-                                },
-                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = state.teamName,
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { onEvent(TeamEditorEvent.OnEditNameClicked) }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Név szerkesztése",
+                                tint = MaterialTheme.colorScheme.primary
                             )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- 1. ÚJ TAG FELVÉTELE ---
+                    Text("Új tag felvétele", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = "Válassz szabad játékost...",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            if (state.availableUsers.isEmpty()) {
+                                DropdownMenuItem(text = { Text("Nincs szabad játékos") }, onClick = { expanded = false })
+                            } else {
+                                state.availableUsers.forEach { user ->
+                                    DropdownMenuItem(
+                                        text = { Text(user.name) },
+                                        onClick = {
+                                            onEvent(TeamEditorEvent.OnAddClicked(user))
+                                            expanded = false
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- 2. JELENLEGI TAGOK LISTÁJA ---
+                    Text("Jelenlegi csapattagok", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // A csapattagok listája görgethető lesz ezen a kereten belül,
+                    // de ha a tetején vagyunk és lefelé húzzuk, frissíti az oldalt.
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(state.currentMembers) { member ->
+                            ListItem(
+                                headlineContent = { Text(member.name) },
+                                supportingContent = { Text(if (member.isCaptain) "Kapitány" else "Játékos") },
+                                leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
+                                trailingContent = {
+                                    if (!member.isCaptain) {
+                                        IconButton(
+                                            onClick = { onEvent(TeamEditorEvent.OnKickClicked(member)) },
+                                            modifier = Modifier.testTag("kick_${member.name}")
+                                        ) {
+                                            Icon(Icons.Default.Dangerous, contentDescription = "Eltávolítás", tint = MaterialTheme.colorScheme.error)
+                                        }
+                                    }
+                                }
+                            )
+                            HorizontalDivider()
                         }
                     }
                 }
             }
+        } // --- PullToRefreshBox VÉGE ---
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- 2. JELENLEGI TAGOK LISTÁJA ---
-            Text("Jelenlegi csapattagok", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn {
-                items(state.currentMembers) { member ->
-                    ListItem(
-                        headlineContent = { Text(member.name) },
-                        supportingContent = { Text(if (member.isCaptain) "Kapitány" else "Játékos") },
-                        leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
-                        trailingContent = {
-                            if (!member.isCaptain) {
-                                IconButton(
-                                    onClick = { onEvent(TeamEditorEvent.OnKickClicked(member)) },
-                                    modifier = Modifier.testTag("kick_${member.name}")
-                                ) {
-                                    Icon(Icons.Default.Dangerous, contentDescription = "Eltávolítás", tint = MaterialTheme.colorScheme.error)
-                                }
-                            }
-                        }
-                    )
-                    HorizontalDivider()
-                }
-            }
-        }
-
-        // --- DIALÓGUSOK ---
+        // --- DIALÓGUSOK (Ezek továbbra is a képernyőn kívül "lebegnek", ezért itt vannak a végén) ---
         if (state.isEditNameDialogVisible) {
             AlertDialog(
                 onDismissRequest = { onEvent(TeamEditorEvent.OnDismissEditName) },
@@ -217,7 +236,6 @@ fun TeamEditorContent(
                 confirmButton = {
                     TextButton(
                         onClick = { onEvent(TeamEditorEvent.OnSaveNameClicked) },
-                        // Csak akkor aktív a Mentés, ha nem üres, és meg is változott a név
                         enabled = state.newNameInput.isNotBlank() && state.newNameInput != state.teamName
                     ) {
                         Text("Mentés")

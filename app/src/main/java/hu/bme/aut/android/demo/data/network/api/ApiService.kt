@@ -32,6 +32,8 @@ interface ApiService {
     suspend fun getTeamMatches(): List<TeamMatchDTO>
     suspend fun applyForMatch(matchId: Int)
     suspend fun updateParticipantStatus(participantId: Int, status: String)
+    suspend fun withdrawFromMatch(matchId: Int)
+    suspend fun finalizeMatch(matchId: Int)
 
     //SingleMatch
 

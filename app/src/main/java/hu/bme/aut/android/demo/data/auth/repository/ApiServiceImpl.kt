@@ -89,4 +89,12 @@ class ApiServiceImpl @Inject constructor(
     override suspend fun updateUser(user: UserDTO): UserDTO {
         return retrofitApi.updateUser(user)
     }
+
+    override suspend fun withdrawFromMatch(matchId: Int) {
+        return retrofitApi.withdrawFromMatch(matchId)
+    }
+
+    override suspend fun finalizeMatch(matchId: Int) {
+        return retrofitApi.finalizeMatch(matchId)
+    }
 }
