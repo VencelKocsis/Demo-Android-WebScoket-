@@ -36,4 +36,14 @@ class AuthRepositoryImpl @Inject constructor(
     override fun getCurrentUser(): FirebaseUser? {
         return auth.currentUser
     }
+
+    override suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
+        return try {
+            // A Firebase beépített jelszó-visszaállító e-mail küldője
+            auth.sendPasswordResetEmail(email).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

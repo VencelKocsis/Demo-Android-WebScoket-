@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -103,6 +104,32 @@ fun LoginScreen(
                     )
                 }
 
+                // Sikerüzenet (pl. elküldött e-mail után)
+                state.successMessage?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = it,
+                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50), // Zöld szín
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Elfelejtett jelszó gomb
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = viewModel::forgotPassword,
+                        enabled = !state.isLoading && state.emailInput.isNotBlank()
+                        // Csak akkor kattintható, ha beírt egy e-mail címet!
+                    ) {
+                        Text("Elfelejtetted a jelszavad?")
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Bejelentkezés gomb
@@ -132,11 +159,6 @@ fun LoginScreen(
                 ) {
                     Text("Regisztráció")
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Kijelentkezés gomb
-
             }
         }
     )

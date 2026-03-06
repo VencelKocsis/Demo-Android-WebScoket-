@@ -11,4 +11,6 @@ interface AuthRepository {
     fun signOutUser()
 
     fun getCurrentUser(): FirebaseUser?
+
+    suspend fun sendPasswordResetEmail(email: String): Result<Unit>
 }

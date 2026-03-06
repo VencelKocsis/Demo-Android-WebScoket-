@@ -10,6 +10,7 @@ import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
 import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.domain.auth.usecase.SignInUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecase.SignOutUserUseCase
+import hu.bme.aut.android.demo.domain.auth.usecases.ForgotPasswordUseCase
 import hu.bme.aut.android.demo.domain.auth.usecases.RegisterUserUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +27,7 @@ data class AuthUiState(
     val passwordInput: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
+    val successMessage: String? = null,
     val isAuthenticated: Boolean = false,
     val currentUser: FirebaseUser? = null,
     val backendUser: UserDTO? = null
@@ -40,7 +42,8 @@ class AuthViewModel @Inject constructor(
     private val signInUserUseCase: SignInUserUseCase,
     private val signOutUserUseCase: SignOutUserUseCase,
     private val apiService: ApiService,
-    private val registerFcmTokenUseCase: RegisterUserUseCase
+    private val registerFcmTokenUseCase: RegisterUserUseCase,
+    private val forgotPasswordUseCase: ForgotPasswordUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -95,12 +98,12 @@ class AuthViewModel @Inject constructor(
 
     // Frissíti az e-mail beviteli mezőt
     fun updateEmail(email: String) {
-        _uiState.update { it.copy(emailInput = email, error = null) }
+        _uiState.update { it.copy(emailInput = email, error = null, successMessage = null) }
     }
 
     // Frissíti a jelszó beviteli mezőt
     fun updatePassword(password: String) {
-        _uiState.update { it.copy(passwordInput = password, error = null) }
+        _uiState.update { it.copy(passwordInput = password, error = null, successMessage = null) }
     }
 
     /**
@@ -108,7 +111,34 @@ class AuthViewModel @Inject constructor(
      * Hasznos módváltáskor.
      */
     fun clearError() {
-        _uiState.update { it.copy(error = null) }
+        _uiState.update { it.copy(error = null, successMessage = null) }
+    }
+
+    /**
+     * ÚJ: Jelszó visszaállító e-mail küldése.
+     */
+    fun forgotPassword() {
+        _uiState.update { it.copy(isLoading = true, error = null, successMessage = null) }
+
+        viewModelScope.launch {
+            val result = forgotPasswordUseCase(uiState.value.emailInput)
+
+            result.onSuccess {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Jelszó-visszaállító e-mail elküldve! Kérjük, ellenőrizd a fiókodat."
+                    )
+                }
+            }.onFailure { exception ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = exception.message ?: "Ismeretlen hiba történt a küldéskor."
+                    )
+                }
+            }
+        }
     }
 
     /**
