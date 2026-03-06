@@ -1,12 +1,10 @@
-package hu.bme.aut.android.demo.teamOperations
+package hu.bme.aut.android.demo.teamOperation
 
 import android.Manifest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.runner.AndroidJUnit4
 import hu.bme.aut.android.demo.MainActivity
@@ -101,8 +99,20 @@ class AddUserToTeamTest {
             // NAVIGÁCIÓ CSAPAT KÉPERNYŐRE
             navigate(composeTestRule, "Csapat", Navigation.OnNodeWith.TEXT)
 
+            // --- ÚJ BIZTONSÁGI VÁRAKOZÁS ---
+            // Várunk 2 másodpercet, hogy a hálózati/adatbázis lekérdezés biztosan befejeződjön,
+            // és a Csapat képernyő adatai feltöltődjenek.
+            composeTestRule.waitForIdle()
+            Thread.sleep(2000)
+
             // BELÉPÉS A CSAPATSZERKESZTŐBE
             navigate(composeTestRule, "Csapat szerkesztése", Navigation.OnNodeWith.DESCRIPTION)
+
+            // --- ÚJ BIZTONSÁGI VÁRAKOZÁS 2 ---
+            // Itt is adunk 1 másodpercet, hogy a lenyíló lista (Dropdown) adatai biztosan betöltsenek,
+            // mielőtt elkezdenénk a játékosokon iterálni.
+            composeTestRule.waitForIdle()
+            Thread.sleep(1000)
 
             // 2. Csak a kapitányhoz tartozó játékosokon megyünk végig!
             team.members.forEach { user ->

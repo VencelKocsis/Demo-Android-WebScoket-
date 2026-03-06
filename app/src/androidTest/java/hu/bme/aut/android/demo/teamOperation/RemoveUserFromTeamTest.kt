@@ -15,10 +15,6 @@ import hu.bme.aut.android.demo.functions.Authentication.login
 import hu.bme.aut.android.demo.functions.Authentication.logout
 import hu.bme.aut.android.demo.functions.Navigation
 import hu.bme.aut.android.demo.functions.Navigation.navigate
-import hu.bme.aut.android.demo.teamOperations.AddUserToTeamTest.CaptainTestUser
-import hu.bme.aut.android.demo.teamOperations.AddUserToTeamTest.RegularTestUser
-import hu.bme.aut.android.demo.teamOperations.AddUserToTeamTest.TeamData
-import okhttp3.internal.wait
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -103,14 +99,29 @@ class RemoveUserFromTeamTest {
 
             navigate(composeTestRule, "Csapat", Navigation.OnNodeWith.TEXT)
 
+            // --- VÁRAKOZÁS AZ ADATOK BETÖLTÉSÉRE ---
+            composeTestRule.waitForIdle()
+            Thread.sleep(2000)
+
             navigate(composeTestRule, "Csapat szerkesztése", Navigation.OnNodeWith.DESCRIPTION)
 
+            // --- VÁRAKOZÁS A LISTA FELÉPÜLÉSÉRE ---
+            composeTestRule.waitForIdle()
+            Thread.sleep(1000)
+
             team.members.forEach { user ->
+                // 1. Megvárjuk az egyedi tag-gel ellátott törlés ikont
                 composeTestRule.waitUntilAtLeastOneExists(hasTestTag("kick_${user.name}"), 5000)
                 composeTestRule.onNodeWithTag("kick_${user.name}").performClick()
+
+                // 2. Megvárjuk a megerősítő dialógust
                 composeTestRule.waitUntilAtLeastOneExists(hasText("Tag eltávolítása"), 5000)
                 composeTestRule.onNodeWithText("Eltávolítás").performClick()
+
+                // --- VÁRAKOZÁS A TÖRLÉS SIKERESSÉGÉRE ---
+                // Adunk egy pici időt a Compose-nak, hogy frissítse a listát a törölt elem nélkül
                 composeTestRule.waitForIdle()
+                Thread.sleep(500)
             }
 
             navigate(composeTestRule, "Visszalépés", Navigation.OnNodeWith.DESCRIPTION)
