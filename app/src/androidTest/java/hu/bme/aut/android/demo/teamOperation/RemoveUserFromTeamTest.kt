@@ -11,6 +11,9 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import hu.bme.aut.android.demo.MainActivity
+import hu.bme.aut.android.demo.data.DataStructure.CaptainTestUser
+import hu.bme.aut.android.demo.data.DataStructure.RegularTestUser
+import hu.bme.aut.android.demo.data.DataStructure.TeamData
 import hu.bme.aut.android.demo.functions.Authentication.login
 import hu.bme.aut.android.demo.functions.Authentication.logout
 import hu.bme.aut.android.demo.functions.Navigation
@@ -21,20 +24,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class RemoveUserFromTeamTest {
-
-    data class CaptainTestUser(
-        val email: String,
-        val password: String
-    )
-
-    data class RegularTestUser(
-        val name: String
-    )
-
-    data class TeamData(
-        val captain: CaptainTestUser,
-        val members: List<RegularTestUser>
-    )
 
     @get:Rule
     val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
@@ -51,7 +40,8 @@ class RemoveUserFromTeamTest {
             members = listOf(
                 RegularTestUser("Katus Ferenc"),
                 RegularTestUser("Szabó Miklós"),
-                RegularTestUser("Szekulesz Péter")
+                RegularTestUser("Szekulesz Péter"),
+                RegularTestUser("Bakos Bertalan")
             )
         ),
         // BEAC IV.
