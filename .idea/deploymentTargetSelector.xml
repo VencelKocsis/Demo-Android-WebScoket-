@@ -40,6 +40,9 @@
       <SelectionState runConfigName="RemoveUserFromTeamTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="createMultipleTestUsers()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>

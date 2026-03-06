@@ -48,7 +48,8 @@ class AddUserToTeamTest {
             members = listOf(
                 RegularTestUser("Katus Ferenc"),
                 RegularTestUser("Szabó Miklós"),
-                RegularTestUser("Szekulesz Péter")
+                RegularTestUser("Szekulesz Péter"),
+                RegularTestUser("Bakos Bertalan")
             )
         ),
         // BEAC IV.

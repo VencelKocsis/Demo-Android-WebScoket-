@@ -49,7 +49,7 @@ class RegistrationAutomatedTest {
             TestUser("Fanni", "Takáts", "TF@test.com", "bestpassword"),
             TestUser("Miklós", "Szabó", "SZM@test.com", "bestpassword"),
             TestUser("Péter", "Szekulesz", "SZP@test.com", "bestpassword"),
-
+            TestUser("Bertalan", "Bakos", "BaBe@test.com", "bestpassword"),
 
             // BEAC IV. in DB
             TestUser("Zsombor", "Nagy", "NZS@test.com", "bestpassword"),
