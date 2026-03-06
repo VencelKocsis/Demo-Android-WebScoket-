@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -84,64 +85,74 @@ fun TeamMatchScreenContent(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Bajnokság Mérkőzések") }) }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
 
-            if (state.isLoading && state.teamMatchesByRound.isEmpty()) {
-                // Csak akkor mutatunk teljes képernyős töltést, ha még nincs egy adatunk sem
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    state.teamMatchesByRound.forEach { (roundNumber, teamMatches) ->
-                        stickyHeader { RoundHeader(roundNumber) }
+        // --- ÚJ: PULL TO REFRESH DOBOZ A TELJES KÉPERNYŐRE ---
+        PullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { onEvent(TeamMatchScreenEvent.LoadTeamMatches) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
 
-                        items(teamMatches) { teamMatch ->
-                            TeamMatchSimpleCard(
-                                teamMatch = teamMatch,
-                                onClick = { onMatchClick(teamMatch.id) }
-                            )
-                        }
-                    }
-                }
+            Box(modifier = Modifier.fillMaxSize()) {
 
-                // Halvány töltésjelző a tetején, ha adat már van, de épp frissítünk (pl. gombnyomás után)
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 16.dp)
+                if (state.isLoading && state.teamMatchesByRound.isEmpty()) {
+                    // Csak akkor mutatunk teljes képernyős töltést, ha még nincs egy adatunk sem
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else if (state.teamMatchesByRound.isEmpty() && state.errorMessage == null) {
+                    // Ha nincs meccs
+                    Text(
+                        text = "Nincsenek elérhető mérkőzések a bajnokságban.",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.Gray
                     )
-                }
-            }
-
-            // Hibaüzenet megjelenítése
-            if (state.errorMessage != null && !state.isLoading) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                } else {
+                    // A meccsek listája
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = state.errorMessage,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { onEvent(TeamMatchScreenEvent.LoadTeamMatches) }) {
-                            Text("Újrapóbálkozás")
+                        state.teamMatchesByRound.forEach { (roundNumber, teamMatches) ->
+                            stickyHeader { RoundHeader(roundNumber) }
+
+                            items(teamMatches) { teamMatch ->
+                                TeamMatchSimpleCard(
+                                    teamMatch = teamMatch,
+                                    onClick = { onMatchClick(teamMatch.id) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Hibaüzenet megjelenítése lebegve az alján
+                if (state.errorMessage != null && !state.isLoading) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = state.errorMessage,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { onEvent(TeamMatchScreenEvent.LoadTeamMatches) }) {
+                                Text("Újrapóbálkozás")
+                            }
                         }
                     }
                 }
             }
-        }
+        } // --- PullToRefreshBox vége ---
     }
 }
 

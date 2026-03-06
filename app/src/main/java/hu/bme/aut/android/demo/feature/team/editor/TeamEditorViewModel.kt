@@ -98,6 +98,8 @@ class TeamEditorViewModel @Inject constructor(
 
     fun onEvent(event: TeamEditorEvent) {
         when (event) {
+            is TeamEditorEvent.LoadTeamData -> _refreshTrigger.value += 1
+
             is TeamEditorEvent.OnEditNameClicked -> _isEditNameDialogVisible.value = true
             is TeamEditorEvent.OnDismissEditName -> {
                 _isEditNameDialogVisible.value = false

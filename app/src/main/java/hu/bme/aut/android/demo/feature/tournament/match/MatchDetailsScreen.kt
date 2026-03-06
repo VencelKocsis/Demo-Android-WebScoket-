@@ -34,6 +34,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -63,7 +64,7 @@ fun MatchDetailsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Frissítés Lifecycle alapon
+    // Frissítés Lifecycle alapon (Pl. ha visszajövünk a térképről)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -101,212 +102,241 @@ fun MatchDetailsScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+
+        // --- ÚJ: PULL TO REFRESH DOBOZ A TELJES KÉPERNYŐRE ---
+        PullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { viewModel.onEvent(MatchDetailsEvent.LoadMatch) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Finom töltésjelző a képernyő tetején, ha épp adatot küldünk fel (mutating)
-            if (state.isMutating) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
 
-            if (state.isLoading && state.match == null) {
-                // Csak akkor takarjuk el a képernyőt, ha a legelső letöltés zajlik
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (state.errorMessage != null && state.match == null) {
-                Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Hiba: ${state.errorMessage}", color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { viewModel.onEvent(MatchDetailsEvent.LoadMatch) }) { Text("Újratöltés") }
+            Box(modifier = Modifier.fillMaxSize()) {
+
+                // Finom töltésjelző a képernyő tetején, ha épp adatot küldünk fel (mutating)
+                if (state.isMutating) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
-            } else {
-                // A let blokk garantálja, hogy ha van match, akkor ezen belül
-                // a 'match' változó 100%-ig nem null.
-                state.match?.let { match ->
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        // --- 1. FEJLÉC (Csapatok és Eredmény) ---
-                        item {
-                            Text(
-                                text = "${match.homeTeamName} vs ${match.guestTeamName}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
 
-                            if (match.status == "finished") {
+                if (state.errorMessage != null && state.match == null) {
+                    // Hiba képernyő, ha semmi sem töltött be
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "Hiba: ${state.errorMessage}", color = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { viewModel.onEvent(MatchDetailsEvent.LoadMatch) }) {
+                            Text("Újratöltés")
+                        }
+                    }
+                } else {
+                    // A let blokk garantálja, hogy ha van match, akkor ezen belül 100%-ig nem null.
+                    state.match?.let { match ->
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp)
+                        ) {
+                            // --- 1. FEJLÉC (Csapatok és Eredmény) ---
+                            item {
                                 Text(
-                                    text = "Végeredmény: ${match.homeTeamScore} - ${match.guestTeamScore}",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    text = "${match.homeTeamName} vs ${match.guestTeamName}",
+                                    style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Bold
                                 )
-                            } else {
-                                Text(
-                                    text = "Státusz: ${if (match.status == "scheduled") "Tervezve" else "Folyamatban"}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color.Gray
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider()
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-
-                        // --- 2. IDŐPONT ÉS HELYSZÍN ---
-                        item {
-                            Text("Időpont és Helyszín", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            match.matchDate?.let { date ->
-                                Text(text = "📅 $date", style = MaterialTheme.typography.bodyLarge)
                                 Spacer(modifier = Modifier.height(8.dp))
-                            }
 
-                            if (!match.location.isNullOrEmpty()) {
-                                OutlinedButton(onClick = { openMap(match.location) }) {
-                                    Icon(Icons.Default.LocationOn, contentDescription = null)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Térkép: ${match.location}")
+                                if (match.status == "finished") {
+                                    Text(
+                                        text = "Végeredmény: ${match.homeTeamScore} - ${match.guestTeamScore}",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Státusz: ${if (match.status == "scheduled") "Tervezve" else if (match.status == "in_progress") "Folyamatban" else match.status}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Color.Gray
+                                    )
                                 }
-                            }
 
-                            Spacer(modifier = Modifier.height(24.dp))
-                            HorizontalDivider()
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-
-                        // --- 3. EREDMÉNYEK VAGY KERETEK ---
-                        if (match.status == "finished") {
-                            item {
-                                Text("Részletes eredmények", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                HorizontalDivider()
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
 
-                            if (match.individualMatches.isEmpty()) {
+                            // --- 2. IDŐPONT ÉS HELYSZÍN ---
+                            item {
+                                Text("Időpont és Helyszín", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                match.matchDate?.let { date ->
+                                    Text(text = "📅 $date", style = MaterialTheme.typography.bodyLarge)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+
+                                if (!match.location.isNullOrEmpty()) {
+                                    OutlinedButton(onClick = { openMap(match.location) }) {
+                                        Icon(Icons.Default.LocationOn, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Térkép: ${match.location}")
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+                                HorizontalDivider()
+                                Spacer(modifier = Modifier.height(24.dp))
+                            }
+
+                            // --- 3. EREDMÉNYEK VAGY KERETEK ---
+                            if (match.status == "finished") {
                                 item {
-                                    Text("Nincsenek feltöltve részletes eredmények.", fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                                    Text("Részletes eredmények", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+
+                                if (match.individualMatches.isEmpty()) {
+                                    item {
+                                        Text("Nincsenek feltöltve részletes eredmények.", fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                                    }
+                                } else {
+                                    items(match.individualMatches.size) { index ->
+                                        val game = match.individualMatches[index]
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text("${game.homePlayerName} vs ${game.guestPlayerName}", style = MaterialTheme.typography.bodyLarge)
+                                            Text("${game.homeScore} - ${game.guestScore}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                                        }
+                                        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
+                                    }
                                 }
                             } else {
-                                items(match.individualMatches.size) { index ->
-                                    val game = match.individualMatches[index]
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text("${game.homePlayerName} vs ${game.guestPlayerName}", style = MaterialTheme.typography.bodyLarge)
-                                        Text("${game.homeScore} - ${game.guestScore}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                                    }
-                                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
-                                }
-                            }
-                        } else {
-                            item {
-                                Text("Csapatkeretek", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    // Hazai Oszlop
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("Hazai", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        match.participants.filter { it.teamSide == "HOME" }.forEach { p ->
-                                            ParticipantRow(
-                                                name = p.playerName,
-                                                status = p.status,
-                                                showAction = state.isHomeCaptain,
-                                                isLoading = state.isMutating, // UX: Gomb letiltása hálózat közben
-                                                onToggle = { viewModel.onEvent(MatchDetailsEvent.OnToggleParticipantStatus(p.id, p.status)) }
-                                            )
-                                        }
-                                    }
-                                    Box(modifier = Modifier.width(1.dp).height(100.dp).background(Color.LightGray))
-                                    // Vendég Oszlop
-                                    Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
-                                        Text("Vendég", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        match.participants.filter { it.teamSide == "GUEST" }.forEach { p ->
-                                            ParticipantRow(
-                                                name = p.playerName,
-                                                status = p.status,
-                                                showAction = state.isGuestCaptain,
-                                                isLoading = state.isMutating, // UX
-                                                onToggle = { viewModel.onEvent(MatchDetailsEvent.OnToggleParticipantStatus(p.id, p.status)) }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            // --- 4. JELENTKEZÉS ÉS KAPITÁNYI GOMBOK ---
-                            if (state.isUserInvolved) {
                                 item {
-                                    Spacer(modifier = Modifier.height(32.dp))
-
-                                    // A) JÁTÉKOS NÉZET: Jelentkezés és Visszavonás
-                                    if (!state.hasApplied) {
-                                        Button(
-                                            onClick = { viewModel.onEvent(MatchDetailsEvent.OnApply) },
-                                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                                            enabled = !state.isMutating
-                                        ) {
-                                            Text("Jelentkezem a meccsre")
-                                        }
-                                    } else {
-                                        val statusMsg = if (state.myStatus == "SELECTED") "Be vagy válogatva a meccskeretbe!" else "Jelentkezésed rögzítve, várj a kapitány döntésére."
-                                        val statusColor = if (state.myStatus == "SELECTED") Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
-
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Box(
-                                                modifier = Modifier.fillMaxWidth().background(statusColor.copy(alpha = 0.1f), MaterialTheme.shapes.medium).padding(16.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(text = statusMsg, color = statusColor, fontWeight = FontWeight.Bold)
-                                            }
-
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            TextButton(
-                                                onClick = { viewModel.onEvent(MatchDetailsEvent.OnWithdrawApplication) },
-                                                enabled = !state.isMutating
-                                            ) {
-                                                Text("Jelentkezés visszavonása", color = MaterialTheme.colorScheme.error)
-                                            }
-                                        }
-                                    }
-
+                                    Text("Csapatkeretek", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(16.dp))
 
-                                    // B) KAPITÁNYI NÉZET: Véglegesítés
-                                    val isCaptainOfCurrentMatch = state.isHomeCaptain || state.isGuestCaptain
-                                    val selectedCount = if (state.isHomeCaptain) state.homeSelectedCount else state.guestSelectedCount
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        // Hazai Oszlop
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Hazai", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            match.participants.filter { it.teamSide == "HOME" }.forEach { p ->
+                                                ParticipantRow(
+                                                    name = p.playerName,
+                                                    status = p.status,
+                                                    showAction = state.isHomeCaptain,
+                                                    isLoading = state.isMutating, // UX: Gomb letiltása hálózat közben
+                                                    onToggle = { viewModel.onEvent(MatchDetailsEvent.OnToggleParticipantStatus(p.id, p.status)) }
+                                                )
+                                            }
+                                        }
 
-                                    if (isCaptainOfCurrentMatch) {
-                                        HorizontalDivider()
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .width(1.dp)
+                                                .height(100.dp)
+                                                .background(Color.LightGray)
+                                        )
 
-                                        if (selectedCount >= 4) {
+                                        // Vendég Oszlop
+                                        Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+                                            Text("Vendég", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            match.participants.filter { it.teamSide == "GUEST" }.forEach { p ->
+                                                ParticipantRow(
+                                                    name = p.playerName,
+                                                    status = p.status,
+                                                    showAction = state.isGuestCaptain,
+                                                    isLoading = state.isMutating, // UX
+                                                    onToggle = { viewModel.onEvent(MatchDetailsEvent.OnToggleParticipantStatus(p.id, p.status)) }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // --- 4. JELENTKEZÉS ÉS KAPITÁNYI GOMBOK ---
+                                if (state.isUserInvolved) {
+                                    item {
+                                        Spacer(modifier = Modifier.height(32.dp))
+
+                                        // A) JÁTÉKOS NÉZET: Jelentkezés és Visszavonás
+                                        if (!state.hasApplied) {
                                             Button(
-                                                onClick = { viewModel.onEvent(MatchDetailsEvent.OnFinalizeRoster) },
-                                                modifier = Modifier.fillMaxWidth().height(50.dp),
-                                                enabled = !state.isMutating,
-                                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
+                                                onClick = { viewModel.onEvent(MatchDetailsEvent.OnApply) },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(50.dp),
+                                                enabled = !state.isMutating
                                             ) {
-                                                Text("Keret véglegesítése és Indítás ($selectedCount fő)")
+                                                Text("Jelentkezem a meccsre")
                                             }
                                         } else {
-                                            Text(
-                                                text = "A meccs elindításához legalább 4 játékost be kell tenned a keretbe! (Jelenleg: $selectedCount/4)",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = Color.Gray,
-                                                modifier = Modifier.padding(top = 8.dp)
-                                            )
+                                            val statusMsg = if (state.myStatus == "SELECTED") "Be vagy válogatva a meccskeretbe!" else "Jelentkezésed rögzítve, várj a kapitány döntésére."
+                                            val statusColor = if (state.myStatus == "SELECTED") Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
+
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .background(statusColor.copy(alpha = 0.1f), MaterialTheme.shapes.medium)
+                                                        .padding(16.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(text = statusMsg, color = statusColor, fontWeight = FontWeight.Bold)
+                                                }
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                TextButton(
+                                                    onClick = { viewModel.onEvent(MatchDetailsEvent.OnWithdrawApplication) },
+                                                    enabled = !state.isMutating
+                                                ) {
+                                                    Text("Jelentkezés visszavonása", color = MaterialTheme.colorScheme.error)
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        // B) KAPITÁNYI NÉZET: Véglegesítés
+                                        val isCaptainOfCurrentMatch = state.isHomeCaptain || state.isGuestCaptain
+                                        val selectedCount = if (state.isHomeCaptain) state.homeSelectedCount else state.guestSelectedCount
+
+                                        if (isCaptainOfCurrentMatch) {
+                                            HorizontalDivider()
+                                            Spacer(modifier = Modifier.height(16.dp))
+
+                                            if (selectedCount >= 4) {
+                                                Button(
+                                                    onClick = { viewModel.onEvent(MatchDetailsEvent.OnFinalizeRoster) },
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(50.dp),
+                                                    enabled = !state.isMutating,
+                                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
+                                                ) {
+                                                    Text("Keret véglegesítése és Indítás ($selectedCount fő)")
+                                                }
+                                            } else {
+                                                Text(
+                                                    text = "A meccs elindításához legalább 4 játékost be kell tenned a keretbe! (Jelenleg: $selectedCount/4)",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color.Gray,
+                                                    modifier = Modifier.padding(top = 8.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -315,7 +345,7 @@ fun MatchDetailsScreen(
                     }
                 }
             }
-        }
+        } // --- PullToRefreshBox vége ---
     }
 }
 
@@ -324,14 +354,16 @@ fun ParticipantRow(
     name: String,
     status: String,
     showAction: Boolean,
-    isLoading: Boolean, // ÚJ: a gomb tiltásához
+    isLoading: Boolean,
     onToggle: () -> Unit
 ) {
     val isSelected = status == "SELECTED"
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 6.dp).fillMaxWidth(),
+        modifier = Modifier
+            .padding(vertical = 6.dp)
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
@@ -351,7 +383,7 @@ fun ParticipantRow(
             TextButton(
                 onClick = onToggle,
                 contentPadding = PaddingValues(0.dp),
-                enabled = !isLoading // Gomb inaktiválása betöltés közben
+                enabled = !isLoading
             ) {
                 Text(
                     text = if (isSelected) "Kivesz" else "Betesz",
