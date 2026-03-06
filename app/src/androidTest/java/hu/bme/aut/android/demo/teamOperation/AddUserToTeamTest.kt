@@ -101,8 +101,20 @@ class AddUserToTeamTest {
             // NAVIGÁCIÓ CSAPAT KÉPERNYŐRE
             navigate(composeTestRule, "Csapat", Navigation.OnNodeWith.TEXT)
 
+            // --- ÚJ BIZTONSÁGI VÁRAKOZÁS ---
+            // Várunk 2 másodpercet, hogy a hálózati/adatbázis lekérdezés biztosan befejeződjön,
+            // és a Csapat képernyő adatai feltöltődjenek.
+            composeTestRule.waitForIdle()
+            Thread.sleep(2000)
+
             // BELÉPÉS A CSAPATSZERKESZTŐBE
             navigate(composeTestRule, "Csapat szerkesztése", Navigation.OnNodeWith.DESCRIPTION)
+
+            // --- ÚJ BIZTONSÁGI VÁRAKOZÁS 2 ---
+            // Itt is adunk 1 másodpercet, hogy a lenyíló lista (Dropdown) adatai biztosan betöltsenek,
+            // mielőtt elkezdenénk a játékosokon iterálni.
+            composeTestRule.waitForIdle()
+            Thread.sleep(1000)
 
             // 2. Csak a kapitányhoz tartozó játékosokon megyünk végig!
             team.members.forEach { user ->
