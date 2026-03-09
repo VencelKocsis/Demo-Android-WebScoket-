@@ -9,7 +9,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.rule.GrantPermissionRule
@@ -25,7 +24,8 @@ import hu.bme.aut.android.demo.functions.Navigation.navigate
 import org.junit.Rule
 import org.junit.Test
 
-class ApplyForMatchTest {
+class CancelApplyForMatchTest {
+
     @get:Rule
     val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.POST_NOTIFICATIONS
@@ -105,7 +105,7 @@ class ApplyForMatchTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun applyAndFinalizeMatch() {
+    fun cancelMatchApplication() {
         teams.forEach { team ->
             team.members.forEach { user ->
 
@@ -134,28 +134,25 @@ class ApplyForMatchTest {
                     Thread.sleep(1500)
 
                     // --- JAVÍTOTT, OKOS VÁRAKOZÁS ---
-                    // Megvárjuk, amíg VAGY a jelentkezés, VAGY a visszavonás gomb megjelenik.
-                    // Az 'or' kulcsszóval összekapcsolhatunk két keresési feltételt!
+                    // Megvárjuk, amíg VAGY a visszavonás, VAGY a jelentkezés gomb megjelenik.
                     composeTestRule.waitUntilAtLeastOneExists(
-                        hasText("Jelentkezem a meccsre") or hasText("Jelentkezés visszavonása"),
+                        hasText("Jelentkezés visszavonása") or hasText("Jelentkezem a meccsre"),
                         timeoutMillis = 5000
                     )
 
-                    // Ellenőrizzük, hogy melyik gomb van a képernyőn
-                    val isApplyButtonVisible = composeTestRule
-                        .onAllNodesWithText("Jelentkezem a meccsre")
+                    // Ellenőrizzük, hogy a visszavonás gomb látszik-e
+                    val isCancelButtonVisible = composeTestRule
+                        .onAllNodesWithText("Jelentkezés visszavonása")
                         .fetchSemanticsNodes()
                         .isNotEmpty()
 
-                    if (isApplyButtonVisible) {
-                        // Ha még nem jelentkezett, akkor rákattintunk
-                        composeTestRule.onNodeWithText("Jelentkezem a meccsre")
-                            .performScrollTo()
+                    if (isCancelButtonVisible) {
+                        // Ha már jelentkezett, akkor rákattintunk a visszavonásra
+                        composeTestRule.onNodeWithText("Jelentkezés visszavonása")
                             .performClick()
                     } else {
-                        // Ha már jelentkezett (mert pl. tegnap is lefuttattad a tesztet),
-                        // csak kiírjuk a logba, és a kód megy tovább a visszalépéshez.
-                        println("Már jelentkezett erre a meccsre: $matchTitle")
+                        // Ha még nem jelentkezett, akkor nincs mit visszavonni, megyünk tovább.
+                        println("Nem volt aktív jelentkezés a meccsre: $matchTitle")
                     }
 
                     navigate(composeTestRule, "Vissza", Navigation.OnNodeWith.DESCRIPTION)
