@@ -71,6 +71,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.animation)
 
+    implementation(libs.compose.reorderable)
+
     // Retrofit, OkHttp, Coroutines, Serialization
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)

@@ -30,4 +30,16 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
             return "$route/$matchId"
         }
     }
+
+    data object LiveMatch : Screen("live_match") {
+        fun createRoute(matchId: Int): String {
+            return "$route/$matchId"
+        }
+    }
+
+    data object MatchScorer : Screen("match_scorer") {
+        fun createRoute(matchId: Int, individualMatchId: Int): String {
+            return "$route/$matchId/$individualMatchId"
+        }
+    }
 }

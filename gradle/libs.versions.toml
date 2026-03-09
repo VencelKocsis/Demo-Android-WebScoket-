@@ -12,6 +12,9 @@ lifecycleRuntimeKtx = "2.8.0"
 lifecycleViewmodel = "2.8.0"
 navigationCompose = "2.7.7"
 
+# REORDERABLE (Drag and Drop)
+reorderable = "0.9.6"
+
 # HILT ÉS EGYÉB
 hilt = "2.51.1"
 hilt-compose = "1.2.0"
@@ -45,6 +48,9 @@ lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-view
 # COMPOSE BOM
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+
+# Drag and Drop listákhoz
+compose-reorderable = { group = "org.burnoutcrew.composereorderable", name = "reorderable", version.ref = "reorderable" }
 
 # Explicit Compose Core Modulok (BOM-mal kezelve a verziót)
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }

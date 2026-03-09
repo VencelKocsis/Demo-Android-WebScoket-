@@ -19,21 +19,29 @@ fun TeamMatchDTO.toDomain(): TeamMatch {
         seasonId = this.seasonId,
         homeTeamId = this.homeTeamId,
         guestTeamId = this.guestTeamId,
+
         individualMatches = this.individualMatches?.map { dto ->
             IndividualMatch(
+                id = dto.id,
                 homePlayerName = dto.homePlayerName,
                 guestPlayerName = dto.guestPlayerName,
                 homeScore = dto.homeScore,
-                guestScore = dto.guestScore
+                guestScore = dto.guestScore,
+                setScores = dto.setScores,
+                status = dto.status ?: "pending",
+                orderNumber = dto.orderNumber
             )
         } ?: emptyList(),
 
         participants = this.participants?.map { dto ->
             MatchParticipant(
                 id = dto.id,
+                userId = dto.userId,
+                firebaseUid = dto.firebaseUid,
                 playerName = dto.playerName,
                 teamSide = dto.teamSide,
-                status = dto.status
+                status = dto.status,
+                position = dto.position
             )
         } ?: emptyList()
     )

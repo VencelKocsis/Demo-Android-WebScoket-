@@ -5,7 +5,6 @@ import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
 import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
 import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
@@ -18,26 +17,14 @@ interface ApiService {
     suspend fun registerFcmToken(registration: FcmToken)
     suspend fun sendPushNotification(payload: Map<String, String>)
 
-    //Team
+    // Team
     suspend fun getTeams(): List<TeamWithMembersDTO>
-
-    // --- Csapat szerkesztése ---
     suspend fun updateTeamName(teamId: Int, request: TeamUpdateDTO)
     suspend fun getAvailableUsers(): List<MemberDTO>
     suspend fun addTeamMember(teamId: Int, request: TeamMemberOperationDTO)
     suspend fun removeTeamMember(teamId: Int, userId: Int)
 
-
-    //TeamMatch
-    suspend fun getTeamMatches(): List<TeamMatchDTO>
-    suspend fun applyForMatch(matchId: Int)
-    suspend fun updateParticipantStatus(participantId: Int, status: String)
-    suspend fun withdrawFromMatch(matchId: Int)
-    suspend fun finalizeMatch(matchId: Int)
-
-    //SingleMatch
-
-
+    // Auth
     suspend fun syncUser(user: UserDTO): UserDTO
     suspend fun updateUser(user: UserDTO): UserDTO
 }

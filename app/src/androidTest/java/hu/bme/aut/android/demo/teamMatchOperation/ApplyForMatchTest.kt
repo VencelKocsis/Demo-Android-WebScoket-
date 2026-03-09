@@ -158,7 +158,7 @@ class ApplyForMatchTest {
                         println("Már jelentkezett erre a meccsre: $matchTitle")
                     }
 
-                    navigate(composeTestRule, "Vissza", Navigation.OnNodeWith.DESCRIPTION)
+                    navigate(composeTestRule, "Visszalépés", Navigation.OnNodeWith.DESCRIPTION)
 
                     composeTestRule.waitForIdle()
                     Thread.sleep(1000)

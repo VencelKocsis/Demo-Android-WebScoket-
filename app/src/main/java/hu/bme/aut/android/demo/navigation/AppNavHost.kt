@@ -18,6 +18,9 @@ import hu.bme.aut.android.demo.feature.main.MainScreen
 import hu.bme.aut.android.demo.feature.team.editor.TeamEditorScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
 import hu.bme.aut.android.demo.feature.tournament.match.MatchDetailsScreen
+// JAVÍTVA: Importáljuk be az új képernyőt!
+import hu.bme.aut.android.demo.feature.tournament.liveMatch.LiveMatchScreen
+import hu.bme.aut.android.demo.feature.tournament.scorer.MatchScorerScreen
 
 /**
  * Az alkalmazás fő navigációs konténere.
@@ -81,7 +84,7 @@ fun AppNavHost(
                         }
                     }
                 )
-            } // TODO new navigation implementation, on navigation3 branch (build failed because of gradle versions)
+            }
 
             // --- 2. FőKépernyő (MainScreen) ---
             composable(Screen.Main.route) {
@@ -126,7 +129,7 @@ fun AppNavHost(
                 )
             }
 
-            // --- 4. ÚJ: Meccs Részletek Képernyő ---
+            // --- 4. Meccs Részletek Képernyő ---
             composable(
                 route = "${Screen.MatchDetails.route}/{matchId}",
                 arguments = listOf(
@@ -139,6 +142,49 @@ fun AppNavHost(
                     matchId = matchId,
                     onNavigateBack = {
                         navController.popBackStack() // Visszalépés a listához
+                    },
+                    onNavigateToLiveMatch = {
+                        navController.navigate(Screen.LiveMatch.createRoute(matchId))
+                    }
+                )
+            }
+
+            // --- 5. Élő Mérkőzés (Sorrend leadás és Grid) ---
+            composable(
+                route = "${Screen.LiveMatch.route}/{matchId}",
+                arguments = listOf(
+                    navArgument("matchId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val matchId = backStackEntry.arguments?.getInt("matchId") ?: return@composable
+
+                LiveMatchScreen(
+                    matchId = matchId,
+                    onNavigateBack = {
+                        navController.popBackStack() // Visszalép a MatchDetails-re
+                    },
+                    onNavigateToScorer = { individualMatchId ->
+                        navController.navigate(Screen.MatchScorer.createRoute(matchId, individualMatchId))
+                    }
+                )
+            }
+
+            // --- 6. Egyéni Meccs Pontozó (Scorer) ---
+            composable(
+                route = "${Screen.MatchScorer.route}/{matchId}/{individualMatchId}",
+                arguments = listOf(
+                    navArgument("matchId") { type = NavType.IntType },
+                    navArgument("individualMatchId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val matchId = backStackEntry.arguments?.getInt("matchId") ?: return@composable
+                val individualMatchId = backStackEntry.arguments?.getInt("individualMatchId") ?: return@composable
+
+                MatchScorerScreen(
+                    matchId = matchId,
+                    individualMatchId = individualMatchId,
+                    onNavigateBack = {
+                        navController.popBackStack() // Visszalép az Élő Mérkőzés hálózatára (LiveMatch)
                     }
                 )
             }

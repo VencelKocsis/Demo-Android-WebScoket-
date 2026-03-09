@@ -20,8 +20,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -30,9 +28,9 @@ import javax.inject.Inject
 
 data class MatchDetailsUiState(
     val isLoading: Boolean = true,
-    val isMutating: Boolean = false, // ÚJ: Külön állapot a gombnyomások töltéséhez
+    val isMutating: Boolean = false,
     val errorMessage: String? = null,
-    val actionError: String? = null, // ÚJ: Külön hiba a Snackbarhoz (pl. "Sikertelen jelentkezés")
+    val actionError: String? = null,
     val match: TeamMatch? = null,
     val currentUserName: String = "",
     val isUserInvolved: Boolean = false,

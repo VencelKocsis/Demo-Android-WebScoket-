@@ -1,6 +1,6 @@
 package hu.bme.aut.android.demo.domain.fcm.usecases
 
-import hu.bme.aut.android.demo.data.fcm.repository.FcmRepository
+import hu.bme.aut.android.demo.data.fcm.repository.FcmRepositoryImpl
 import hu.bme.aut.android.demo.data.websocket.repository.PlayerRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -28,15 +28,15 @@ class FcmUseCasesTest {
     @Test
     fun `SendPushNotificationUseCase calls FcmRepository`() = runTest {
         // GIVEN
-        val fcmRepository = mockk<FcmRepository>()
-        coEvery { fcmRepository.sendPushNotification(any(), any(), any()) } returns Unit
+        val fcmRepositoryImpl = mockk<FcmRepositoryImpl>()
+        coEvery { fcmRepositoryImpl.sendPushNotification(any(), any(), any()) } returns Unit
 
-        val useCase = SendPushNotificationUseCase(fcmRepository)
+        val useCase = SendPushNotificationUseCase(fcmRepositoryImpl)
 
         // WHEN
         useCase("target@mail.com", "Title", "Body")
 
         // THEN
-        coVerify { fcmRepository.sendPushNotification("target@mail.com", "Title", "Body") }
+        coVerify { fcmRepositoryImpl.sendPushNotification("target@mail.com", "Title", "Body") }
     }
 }

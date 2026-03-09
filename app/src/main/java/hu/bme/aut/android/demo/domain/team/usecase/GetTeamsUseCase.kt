@@ -1,6 +1,6 @@
 package hu.bme.aut.android.demo.domain.team.usecase
 
-import hu.bme.aut.android.demo.data.team.repository.TeamRepository
+import hu.bme.aut.android.demo.domain.team.repository.TeamRepository
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
 import javax.inject.Inject
 

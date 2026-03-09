@@ -19,7 +19,7 @@ import hu.bme.aut.android.demo.feature.history.HistoryScreen
 import hu.bme.aut.android.demo.feature.history.demoData
 import hu.bme.aut.android.demo.feature.profile.ProfileScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
-import hu.bme.aut.android.demo.feature.tournament.TeamMatchScreen
+import hu.bme.aut.android.demo.feature.tournament.teamMatch.TeamMatchScreen
 import hu.bme.aut.android.demo.navigation.Screen
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.delay

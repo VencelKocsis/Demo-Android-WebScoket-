@@ -6,7 +6,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import hu.bme.aut.android.demo.data.auth.repository.ApiServiceImpl
+import hu.bme.aut.android.demo.data.network.api.ApiServiceImpl
 import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import hu.bme.aut.android.demo.data.network.interceptor.AuthInterceptor

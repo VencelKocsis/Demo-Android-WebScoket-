@@ -9,10 +9,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class FcmRepositoryTest {
+class FcmRepositoryImplTest {
 
     private val retrofitApi = mockk<RetrofitApi>()
-    private val repository = FcmRepository(retrofitApi)
+    private val repository = FcmRepositoryImpl(retrofitApi)
 
     @Test
     fun `sendPushNotification constructs correct payload`() = runTest {

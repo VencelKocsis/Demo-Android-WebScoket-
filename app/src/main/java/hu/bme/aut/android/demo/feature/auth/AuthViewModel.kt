@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.data.auth.model.UserDTO
-import hu.bme.aut.android.demo.data.auth.repository.AuthRepository
+import hu.bme.aut.android.demo.domain.auth.repository.AuthRepository
 import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.domain.auth.usecase.SignInUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecase.SignOutUserUseCase

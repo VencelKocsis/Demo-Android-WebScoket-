@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.feature.tournament
+package hu.bme.aut.android.demo.feature.tournament.teamMatch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -65,7 +65,7 @@ class TeamMatchViewModel @Inject constructor(
         emit(Resource.error(e))
     } // <-- Itt volt a felesleges zárójel a korábbi kódban!
 
-    // 3. A Végső UI Állapot összerakása (combine)
+    // 3. UI Állapot összerakása (combine)
     val uiState: StateFlow<TeamMatchUiState> = combine(
         matchDataFlow,
         _isMutating,

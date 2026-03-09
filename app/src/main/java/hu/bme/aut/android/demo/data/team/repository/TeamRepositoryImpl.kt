@@ -3,6 +3,7 @@ package hu.bme.aut.android.demo.data.team.repository
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import hu.bme.aut.android.demo.data.network.model.team.mapper.toDomainDetails
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
+import hu.bme.aut.android.demo.domain.team.repository.TeamRepository
 import javax.inject.Inject
 
 class TeamRepositoryImpl @Inject constructor(
