@@ -2,6 +2,8 @@ package hu.bme.aut.android.demo.ui.common
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -51,6 +53,7 @@ fun MatchLocationButton(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MatchDateRow(
     date: String?,
@@ -64,7 +67,7 @@ fun MatchDateRow(
         modifier = modifier
     ) {
         Text(
-            text = "📅 $formattedDate",
+            text = formattedDate,
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )
