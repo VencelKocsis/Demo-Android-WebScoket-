@@ -54,7 +54,7 @@ class LiveMatchViewModel @Inject constructor(
     private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val submitLineupUseCase: SubmitLineupUseCase,
-    private val observeMatchEventsUseCase: ObserveMatchEventUseCase,
+    private val observeMatchEventUseCase: ObserveMatchEventUseCase,
     private val signMatchUseCase: SignMatchUseCase,
     private val retrofitApi: RetrofitApi
 ) : ViewModel() {
@@ -73,10 +73,9 @@ class LiveMatchViewModel @Inject constructor(
 
     private fun observeWs() {
         viewModelScope.launch {
-            observeMatchEventsUseCase().collect { event ->
+            observeMatchEventUseCase().collect { event ->
                 when (event) {
                     is MatchWsEvent.IndividualScoreUpdated -> {
-                        // Kikeressük azt a meccset a listából, aminek frissült az eredménye
                         val updatedMatches = _uiState.value.individualMatches.map { match ->
                             if (match.id == event.individualMatchId) {
                                 match.copy(
@@ -89,8 +88,23 @@ class LiveMatchViewModel @Inject constructor(
                                 match
                             }
                         }
-
                         _uiState.update { it.copy(individualMatches = updatedMatches) }
+                    }
+
+                    // --- ALÁÍRÁS ESEMÉNY KEZELÉSE ---
+                    is MatchWsEvent.MatchSignatureUpdated -> {
+                        // Csak akkor frissítjük, ha az épp nyitott meccsről van szó
+                        if (event.matchId == matchId) {
+                            _uiState.update { state ->
+                                // Frissítjük a fő meccs adatait (Aláírások és Státusz)
+                                val updatedMatch = state.match?.copy(
+                                    homeTeamSigned = event.homeSigned,
+                                    guestTeamSigned = event.guestSigned,
+                                    status = event.status
+                                )
+                                state.copy(match = updatedMatch)
+                            }
+                        }
                     }
                 }
             }

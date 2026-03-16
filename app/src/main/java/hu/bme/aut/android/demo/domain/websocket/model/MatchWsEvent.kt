@@ -15,4 +15,13 @@ sealed class MatchWsEvent {
         val status: String
     ) : MatchWsEvent()
 
+    @Serializable
+    @SerialName("MatchSignatureUpdated")
+    data class MatchSignatureUpdated(
+        val matchId: Int,
+        val homeSigned: Boolean,
+        val guestSigned: Boolean,
+        val status: String
+    ) : MatchWsEvent()
+
 }

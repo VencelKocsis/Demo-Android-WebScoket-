@@ -15,17 +15,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Egy szett állapota (String, mert TextBox-ba gépeljük)
 data class SetScoreInput(val home: String = "", val guest: String = "")
 
 data class MatchScorerUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val match: IndividualMatch? = null,
-    val sets: List<SetScoreInput> = listOf(SetScoreInput()), // Kezdésnek 1 szett van
+    val sets: List<SetScoreInput> = listOf(SetScoreInput()),
     val homeSetsWon: Int = 0,
     val guestSetsWon: Int = 0,
-    val isFinished: Boolean = false
+    val isFinished: Boolean = false,
+    val isTeamMatchFinished: Boolean = false // <--- ÚJ: Tudjuk-e, hogy az egész meccs lezárult?
 )
 
 @HiltViewModel
@@ -53,8 +53,6 @@ class MatchScorerViewModel @Inject constructor(
                 when (event) {
                     is MatchWsEvent.IndividualScoreUpdated -> {
                         if (event.individualMatchId == individualMatchId) {
-
-                            // JAVÍTVA: Bolondbiztos szövegfeldolgozás
                             val loadedSets = if (event.setScores.isBlank()) {
                                 mutableListOf(SetScoreInput())
                             } else {
@@ -84,6 +82,13 @@ class MatchScorerViewModel @Inject constructor(
                             }
                         }
                     }
+
+                    is MatchWsEvent.MatchSignatureUpdated -> {
+                        // <--- ÚJ: Ha a Live képernyőn aláírják, itt is azonnal letiltjuk a szerkesztést!
+                        if (event.matchId == teamMatchId) {
+                            _uiState.update { it.copy(isTeamMatchFinished = event.status == "finished") }
+                        }
+                    }
                 }
             }
         }
@@ -96,18 +101,13 @@ class MatchScorerViewModel @Inject constructor(
                 val parentMatch = matches.find { it.id == teamMatchId }
                 val indMatch = parentMatch?.individualMatches?.find { it.id == individualMatchId }
 
-                // Szétszedjük a szerverről kapott szetteket
                 var loadedSets = indMatch?.setScores?.split(", ")?.mapNotNull {
                     val parts = it.split("-")
                     if (parts.size == 2) SetScoreInput(parts[0], parts[1]) else null
                 }?.toMutableList() ?: mutableListOf(SetScoreInput())
 
-                // Biztosítjuk, hogy legalább 1 sor legyen
-                if (loadedSets.isEmpty()) {
-                    loadedSets.add(SetScoreInput())
-                }
+                if (loadedSets.isEmpty()) loadedSets.add(SetScoreInput())
 
-                // Kiszámoljuk az állást a betöltött adatok alapján
                 var hWins = 0
                 var gWins = 0
                 loadedSets.forEach { set ->
@@ -117,8 +117,6 @@ class MatchScorerViewModel @Inject constructor(
                     else if (g > h && g >= 11) gWins++
                 }
 
-                // JAVÍTÁS: Ha a meccs még nem dőlt el (nincs 3 nyert szett) ÉS az utolsó sor ki van töltve,
-                // ÉS még nem értük el az 5 szettes határt, akkor adunk egy üres sort
                 val lastSet = loadedSets.last()
                 val isLastSetFilled = lastSet.home.isNotEmpty() && lastSet.guest.isNotEmpty()
                 if (hWins < 3 && gWins < 3 && isLastSetFilled && loadedSets.size < 5) {
@@ -132,7 +130,8 @@ class MatchScorerViewModel @Inject constructor(
                         sets = loadedSets,
                         homeSetsWon = hWins,
                         guestSetsWon = gWins,
-                        isFinished = indMatch?.status == "finished"
+                        isFinished = indMatch?.status == "finished",
+                        isTeamMatchFinished = parentMatch?.status == "finished" // <--- ÚJ: Szülő meccs státusza
                     )
                 }
             } catch (e: Exception) {
@@ -146,43 +145,25 @@ class MatchScorerViewModel @Inject constructor(
             val mutableSets = state.sets.toMutableList()
             mutableSets[index] = SetScoreInput(home, guest)
 
-            // Számoljuk újra a nyert szetteket!
             var hWins = 0
             var gWins = 0
             mutableSets.forEach { set ->
                 val h = set.home.toIntOrNull() ?: 0
                 val g = set.guest.toIntOrNull() ?: 0
-
-                // Egyszerűsített asztalitenisz szabály: 11 pont kell, de legalább 2 pont különbség (pl. 12-10).
-                // Itt most az alap 11-es határt nézzük.
                 if (h > g && h >= 11 && (h - g) >= 2) hWins++
                 else if (g > h && g >= 11 && (g - h) >= 2) gWins++
             }
 
-            // JAVÍTÁS: Szigorú logikát vezetünk be az üres sorokra
-
-            // 1. Ha már valakinek megvan a 3 nyert szettje, akkor levágjuk a listát az aktuális sornál!
-            // Így nem marad bent felesleges üres 6. (vagy 4., 5.) szett.
             if (hWins >= 3 || gWins >= 3) {
-                // Csak az eddig kitöltött sorokat tartjuk meg (indexig bezárólag)
                 val trimmedList = mutableSets.take(index + 1)
-                return@update state.copy(
-                    sets = trimmedList,
-                    homeSetsWon = hWins,
-                    guestSetsWon = gWins
-                )
+                return@update state.copy(sets = trimmedList, homeSetsWon = hWins, guestSetsWon = gWins)
             }
 
-            // 2. Ha az utolsó szett is ki lett töltve, nincs még győztes, és nem értük el az 5. szettet, új sort nyitunk.
             if (index == mutableSets.lastIndex && home.isNotEmpty() && guest.isNotEmpty() && mutableSets.size < 5) {
                 mutableSets.add(SetScoreInput())
             }
 
-            state.copy(
-                sets = mutableSets,
-                homeSetsWon = hWins,
-                guestSetsWon = gWins
-            )
+            state.copy(sets = mutableSets, homeSetsWon = hWins, guestSetsWon = gWins)
         }
     }
 
@@ -191,7 +172,6 @@ class MatchScorerViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true) }
             val state = _uiState.value
 
-            // "11-8, 9-11" formátum előállítása, az üres sorokat kihagyjuk
             val scoreString = state.sets
                 .filter { it.home.isNotEmpty() && it.guest.isNotEmpty() }
                 .joinToString(", ") { "${it.home}-${it.guest}" }

@@ -37,12 +37,11 @@ fun MatchScorerScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // --- Automatikus újratöltés, ha a telefon felébred (ON_RESUME) ---
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.loadMatch() // HTTP-s frissítés, ha a WS esetleg megszakadt
+                viewModel.loadMatch()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -60,7 +59,6 @@ fun MatchScorerScreen(
         }
     ) { paddingValues ->
 
-        // --- Húzással frissíthető doboz ---
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { viewModel.loadMatch() },
@@ -71,9 +69,12 @@ fun MatchScorerScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 } else {
                     state.match?.let { match ->
+
+                        // <--- ÚJ: Eldöntjük, hogy szerkeszthető-e még a felület --->
+                        val isReadOnly = state.isFinished || state.isTeamMatchFinished
+
                         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-                            // --- FEJLÉC ÉS ÖSSZESÍTŐ ---
                             Text("Állás (Szettek)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.CenterHorizontally))
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -93,7 +94,6 @@ fun MatchScorerScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // --- SZETTEK PONTJAINAK BEVITELE ---
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -115,22 +115,20 @@ fun MatchScorerScreen(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.Center
                                         ) {
-                                            // Hazai Input
                                             ScoreInputBox(
                                                 value = setScore.home,
                                                 onValueChange = { viewModel.updateSetScore(index, it, setScore.guest) },
                                                 isWinner = isHomeWinner,
-                                                enabled = !state.isFinished
+                                                enabled = !isReadOnly // <--- JAVÍTVA
                                             )
 
                                             Text(" : ", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-                                            // Vendég Input
                                             ScoreInputBox(
                                                 value = setScore.guest,
                                                 onValueChange = { viewModel.updateSetScore(index, setScore.home, it) },
                                                 isWinner = isGuestWinner,
-                                                enabled = !state.isFinished
+                                                enabled = !isReadOnly // <--- JAVÍTVA
                                             )
                                         }
                                     }
@@ -139,14 +137,14 @@ fun MatchScorerScreen(
 
                             Spacer(modifier = Modifier.weight(1f))
 
-                            // --- MENTÉS GOMBOK ---
                             val isMatchOver = state.homeSetsWon == 3 || state.guestSetsWon == 3
                             val areSetsValid = state.sets.all { set ->
                                 (set.home.isEmpty() && set.guest.isEmpty()) || (set.home.isNotEmpty() && set.guest.isNotEmpty())
                             }
                             val canSave = areSetsValid && !state.isSaving
 
-                            if (!state.isFinished) {
+                            // <--- JAVÍTVA: Ha olvasható mód, akkor eltüntetjük a mentés gombokat --->
+                            if (!isReadOnly) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -179,12 +177,13 @@ fun MatchScorerScreen(
                                     )
                                 }
                             } else {
+                                // Olvasható mód esetén a tájékoztató szöveg:
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
                                 ) {
                                     Text(
-                                        "A mérkőzés lezárult.",
+                                        text = if (state.isTeamMatchFinished) "A csapatmérkőzés hitelesítve lett, az eredmények véglegesek." else "A mérkőzés lezárult.",
                                         color = Color(0xFF4CAF50),
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -200,7 +199,6 @@ fun MatchScorerScreen(
     }
 }
 
-// KOMPONENS A PONTOK BEÍRÁSÁHOZ
 @Composable
 fun ScoreInputBox(
     value: String,
@@ -208,8 +206,6 @@ fun ScoreInputBox(
     isWinner: Boolean,
     enabled: Boolean = true
 ) {
-    // Ha nyertes, a doboz kitöltött (primary) lesz.
-    // Ha tiltva van és nem nyertes, halvány szürke hátteret kap.
     val containerColor = if (isWinner) MaterialTheme.colorScheme.primaryContainer
     else if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     else MaterialTheme.colorScheme.surface

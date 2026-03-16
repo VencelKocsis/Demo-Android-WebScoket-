@@ -1,10 +1,12 @@
 package hu.bme.aut.android.demo.feature.tournament.liveMatch
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -15,9 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -315,7 +319,11 @@ fun MatchGridContent(
             items(matches, key = { it.id }) { game ->
 
                 val isClickable = game.status != "pending"
-                val cardAlpha = if (game.status == "pending") 0.5f else 1f
+                val cardAlpha = if (game.status == "pending") 0.6f else 1f
+
+                // Kiszámoljuk, ki nyert (ha már vége a meccsnek), a vizuális kiemeléshez
+                val isHomeWinner = game.status == "finished" && game.homeScore > game.guestScore
+                val isGuestWinner = game.status == "finished" && game.guestScore > game.homeScore
 
                 Card(
                     modifier = Modifier
@@ -325,77 +333,99 @@ fun MatchGridContent(
                         .clickable(enabled = isClickable) {
                             onEvent(LiveMatchEvent.OpenIndividualMatchScoring(game.id))
                         },
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
+                    // ÚJ DESIGN: Tiszta háttér, finom körvonal
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = CardDefaults.outlinedCardBorder(),
                     elevation = CardDefaults.cardElevation(defaultElevation = if (isClickable) 2.dp else 0.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(0.7f)) {
-                            Text(
-                                text = game.homePlayerName,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Text(
-                                text = "vs",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            )
-                            Text(
-                                text = game.guestPlayerName,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-
-                            if (game.status == "finished" && !game.setScores.isNullOrEmpty()) {
-                                Spacer(modifier = Modifier.height(4.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // --- BAL OLDAL: Játékosok Nevei ---
+                            Column(modifier = Modifier.weight(0.7f)) {
                                 Text(
-                                    text = game.setScores,
+                                    text = game.homePlayerName,
+                                    // Ha vége a meccsnek és NEM ő nyert, elhalványítjuk!
+                                    fontWeight = if (isHomeWinner) FontWeight.Black else FontWeight.Bold,
+                                    color = if (game.status == "finished" && !isHomeWinner) Color.Gray else MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "vs",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Text(
+                                    text = game.guestPlayerName,
+                                    fontWeight = if (isGuestWinner) FontWeight.Black else FontWeight.Bold,
+                                    color = if (game.status == "finished" && !isGuestWinner) Color.Gray else MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodyLarge
                                 )
                             }
-                        }
 
-                        Column(
-                            modifier = Modifier.weight(0.3f),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            Text(
-                                text = "${game.homeScore} - ${game.guestScore}",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (game.status == "finished") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
+                            // --- JOBB OLDAL: Szettarány és Státusz ---
+                            Column(
+                                modifier = Modifier.weight(0.3f),
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    text = "${game.homeScore} - ${game.guestScore}",
+                                    style = MaterialTheme.typography.headlineMedium, // Kicsit nagyobbra vettük
+                                    fontWeight = FontWeight.Black,
+                                    color = if (game.status == "finished") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
 
-                            Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
 
-                            when (game.status) {
-                                "in_progress" -> {
-                                    LiveIndicator(color = Color(0xFFFF4081))
-                                }
-                                "finished" -> {
-                                    Text(
-                                        text = "Befejezve",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF4CAF50)
-                                    )
-                                }
-                                else -> {
-                                    Text(
-                                        text = "Várakozik",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.Gray
-                                    )
+                                // ÚJ DESIGN: Státusz "Jelvények" (Badges)
+                                when (game.status) {
+                                    "in_progress" -> {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            LiveIndicator(color = Color(0xFFFF4081))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "ÉLŐ",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFFF4081)
+                                            )
+                                        }
+                                    }
+                                    "finished" -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color(0xFF4CAF50).copy(alpha = 0.1f))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "Befejezve",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF388E3C)
+                                            )
+                                        }
+                                    }
+                                    else -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "Várakozik",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -431,7 +461,7 @@ fun MatchGridContent(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Minden mérkőzés véget ért. Kérjük a csapatok képviselőit, hogy hagyják jóvá az eredményt!",
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
