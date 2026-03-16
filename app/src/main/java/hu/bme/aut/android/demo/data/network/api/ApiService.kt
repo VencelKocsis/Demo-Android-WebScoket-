@@ -8,10 +8,6 @@ import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
 
 interface ApiService {
-    suspend fun getPlayers(): List<PlayerDTO>
-    suspend fun addPlayer(player: NewPlayerDTO): PlayerDTO
-    suspend fun deletePlayer(id: Int)
-    suspend fun updatePlayer(id: Int, player: NewPlayerDTO)
     suspend fun registerFcmToken(registration: FcmToken)
     suspend fun sendPushNotification(payload: Map<String, String>)
 

@@ -18,18 +18,6 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface RetrofitApi {
-    @GET("players")
-    suspend fun getPlayers(): List<PlayerDTO>
-
-    @POST("players")
-    suspend fun addPlayer(@Body player: NewPlayerDTO): PlayerDTO
-
-    @DELETE("players/{id}")
-    suspend fun deletePlayer(@Path("id") id: Int)
-
-    @PUT("players/{id}")
-    suspend fun updatePlayer(@Path("id") id: Int, @Body player: NewPlayerDTO)
-
     @POST("register_fcm_token")
     suspend fun registerFcmToken(@Body registration: FcmToken)
 

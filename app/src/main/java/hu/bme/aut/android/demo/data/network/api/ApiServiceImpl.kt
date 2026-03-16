@@ -11,11 +11,6 @@ import javax.inject.Inject
 class ApiServiceImpl @Inject constructor(
     private val retrofitApi: RetrofitApi // A Retrofit által generált klienst kérjük el
 ) : ApiService {
-    override suspend fun getPlayers(): List<PlayerDTO> = retrofitApi.getPlayers()
-    override suspend fun addPlayer(player: NewPlayerDTO): PlayerDTO = retrofitApi.addPlayer(player)
-    override suspend fun deletePlayer(id: Int) = retrofitApi.deletePlayer(id)
-    override suspend fun updatePlayer(id: Int, player: NewPlayerDTO) = retrofitApi.updatePlayer(id, player)
-
     override suspend fun registerFcmToken(registration: FcmToken) = retrofitApi.registerFcmToken(registration)
     override suspend fun sendPushNotification(payload: Map<String, String>) = retrofitApi.sendPushNotification(payload)
 

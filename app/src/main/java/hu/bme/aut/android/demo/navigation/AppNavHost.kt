@@ -1,5 +1,7 @@
 package hu.bme.aut.android.demo.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -10,8 +12,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import hu.bme.aut.android.demo.feature.auth.AuthState
-import hu.bme.aut.android.demo.feature.list_players.DemoScreen
-import hu.bme.aut.android.demo.feature.list_players.PlayersViewModel
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
@@ -29,6 +29,7 @@ import hu.bme.aut.android.demo.feature.tournament.scorer.MatchScorerScreen
  *
  * @param navController A NavHostController, ami az aktuális képernyő állapotát kezeli.
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(
     navController: NavHostController
@@ -67,20 +68,6 @@ fun AppNavHost(
                             popUpTo(Screen.Login.route) {
                                 inclusive = true // Az LoginScreen-t is eltávolítja
                             }
-                        }
-                    }
-                )
-            }
-
-            composable(Screen.Players.route) {
-                // Itt kérjük le a ViewModelt, aminek hatására lefut az init blokk!
-                val playersViewModel: PlayersViewModel = hiltViewModel()
-                DemoScreen(
-                    viewModel = playersViewModel,
-                    onLogout = {
-                        authViewModel.signOut()
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Players.route) { inclusive = true }
                         }
                     }
                 )

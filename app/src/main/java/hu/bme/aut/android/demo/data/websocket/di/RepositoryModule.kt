@@ -4,7 +4,9 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import hu.bme.aut.android.demo.data.fcm.repository.FcmRepositoryImpl
 import hu.bme.aut.android.demo.data.websocket.repository.MatchWsRepository
+import hu.bme.aut.android.demo.domain.fcm.repository.FcmRepository
 import hu.bme.aut.android.demo.domain.websocket.repository.MatchWsRepositoryImpl
 import javax.inject.Singleton
 
@@ -17,4 +19,10 @@ abstract class RepositoryModule {
     abstract fun bindMatchRepository(
         matchRepositoryImpl: MatchWsRepositoryImpl
     ): MatchWsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFcmRepository(
+        fcmRepositoryImpl: FcmRepositoryImpl
+    ): FcmRepository
 }
