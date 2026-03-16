@@ -13,4 +13,8 @@ class MatchWsRepositoryImpl @Inject constructor(
         matchWsClient.connect()
         return matchWsClient.events
     }
+
+    override fun signMatch(matchId: Int, teamSide: String) {
+        matchWsClient.signMatch(matchId, teamSide)
+    }
 }

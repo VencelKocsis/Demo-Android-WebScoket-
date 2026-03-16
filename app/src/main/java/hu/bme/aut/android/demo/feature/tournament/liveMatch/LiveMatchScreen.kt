@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -400,6 +401,104 @@ fun MatchGridContent(
                         }
                     }
                 }
+            }
+        }
+
+        // --- ALÁÍRÁS / LEZÁRÁS KÁRTYA ---
+        val allFinished = state.individualMatches.size == 16 && state.individualMatches.all { it.status == "finished" }
+
+        if (allFinished && state.match != null) {
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Jegyzőkönyv Hitelesítése",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Minden mérkőzés véget ért. Kérjük a csapatok képviselőit, hogy hagyják jóvá az eredményt!",
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            // HAZAI CSAPAT ÁLLAPOTA
+                            SignatureStatusColumn(
+                                teamName = "Hazai",
+                                isSigned = state.match.homeTeamSigned,
+                                isMyTeam = state.myTeamSide == "HOME" && !state.isSpectator,
+                                onSignClick = { onEvent(LiveMatchEvent.SignMatch) }
+                            )
+
+                            // VENDÉG CSAPAT ÁLLAPOTA
+                            SignatureStatusColumn(
+                                teamName = "Vendég",
+                                isSigned = state.match.guestTeamSigned,
+                                isMyTeam = state.myTeamSide == "GUEST" && !state.isSpectator,
+                                onSignClick = { onEvent(LiveMatchEvent.SignMatch) }
+                            )
+                        }
+
+                        if (state.match.homeTeamSigned && state.match.guestTeamSigned) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50))) {
+                                Text(
+                                    text = "A MÉRKŐZÉS HIVATALOSAN LEZÁRULT!",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SignatureStatusColumn(
+    teamName: String,
+    isSigned: Boolean,
+    isMyTeam: Boolean,
+    onSignClick: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = teamName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (isSigned) {
+            Icon(Icons.Default.CheckCircle, contentDescription = "Aláírva", tint = Color(0xFF4CAF50), modifier = Modifier.size(32.dp))
+            Text("Jóváhagyva", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+        } else {
+            if (isMyTeam) {
+                Button(onClick = onSignClick, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+                    Text("Aláírom")
+                }
+            } else {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Várakozás...", style = MaterialTheme.typography.labelSmall)
             }
         }
     }

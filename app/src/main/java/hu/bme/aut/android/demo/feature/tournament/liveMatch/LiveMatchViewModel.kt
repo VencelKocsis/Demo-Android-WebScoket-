@@ -13,6 +13,7 @@ import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.SubmitLineupUseCase
 import hu.bme.aut.android.demo.domain.websocket.model.MatchWsEvent
+import hu.bme.aut.android.demo.domain.teammatch.usecase.SignMatchUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -44,6 +45,7 @@ sealed class LiveMatchEvent {
     data class MovePlayer(val fromIndex: Int, val toIndex: Int) : LiveMatchEvent()
     object SubmitLineup : LiveMatchEvent()
     data class OpenIndividualMatchScoring(val individualMatchId: Int) : LiveMatchEvent()
+    object SignMatch : LiveMatchEvent()
 }
 
 @HiltViewModel
@@ -53,6 +55,7 @@ class LiveMatchViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val submitLineupUseCase: SubmitLineupUseCase,
     private val observeMatchEventsUseCase: ObserveMatchEventUseCase,
+    private val signMatchUseCase: SignMatchUseCase,
     private val retrofitApi: RetrofitApi
 ) : ViewModel() {
 
@@ -201,6 +204,20 @@ class LiveMatchViewModel @Inject constructor(
             }
 
             is LiveMatchEvent.OpenIndividualMatchScoring -> {}
+
+            is LiveMatchEvent.SignMatch -> {
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isMutating = true, errorMessage = null) }
+                    try {
+                        signMatchUseCase(matchId)
+                        // Nem kell manuálisan újratölteni semmit, mert ha sikeres,
+                        // a Ktor WebSocket úgyis ránk szól, hogy "MatchSignatureUpdated"!
+                        _uiState.update { it.copy(isMutating = false) }
+                    } catch (e: Exception) {
+                        _uiState.update { it.copy(isMutating = false, errorMessage = "Hiba az aláírásnál: ${e.message}") }
+                    }
+                }
+            }
         }
     }
 }

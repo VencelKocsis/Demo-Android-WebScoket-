@@ -17,6 +17,7 @@ interface ApiService {
     suspend fun getAvailableUsers(): List<MemberDTO>
     suspend fun addTeamMember(teamId: Int, request: TeamMemberOperationDTO)
     suspend fun removeTeamMember(teamId: Int, userId: Int)
+    suspend fun signMatch(matchId: Int)
 
     // Auth
     suspend fun syncUser(user: UserDTO): UserDTO

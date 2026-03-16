@@ -48,6 +48,11 @@ interface RetrofitApi {
         @Body request: ScoreSubmitDTO
     )
 
+    @POST("/matches/{matchId}/sign")
+    suspend fun signMatch(
+        @Path("matchId") matchId: Int
+    )
+
     @DELETE("matches/{matchId}/apply")
     suspend fun withdrawFromMatch(@Path("matchId") matchId: Int)
 

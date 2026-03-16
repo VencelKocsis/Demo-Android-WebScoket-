@@ -14,5 +14,7 @@ data class TeamMatch(
     val matchDate: String?,
     val status: String,
     val participants: List<MatchParticipant>,
-    val individualMatches: List<IndividualMatch>
+    val individualMatches: List<IndividualMatch>,
+    val homeTeamSigned: Boolean,
+    val guestTeamSigned: Boolean
 )

@@ -54,4 +54,8 @@ class MatchWebSocketClient(
         ws?.close(1000, "Normal closing")
         ws = null
     }
+
+    fun signMatch(matchId: Int, teamSide: String) {
+
+    }
 }

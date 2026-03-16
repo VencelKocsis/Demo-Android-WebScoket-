@@ -19,6 +19,7 @@ class ApiServiceImpl @Inject constructor(
     override suspend fun getAvailableUsers(): List<MemberDTO> = retrofitApi.getAvailableUsers()
     override suspend fun addTeamMember(teamId: Int, request: TeamMemberOperationDTO) = retrofitApi.addTeamMember(teamId, request)
     override suspend fun removeTeamMember(teamId: Int, userId: Int) = retrofitApi.removeTeamMember(teamId, userId)
+    override suspend fun signMatch(matchId: Int) = retrofitApi.signMatch(matchId)
 
     override suspend fun syncUser(user: UserDTO): UserDTO = retrofitApi.syncUser(user)
     override suspend fun updateUser(user: UserDTO): UserDTO = retrofitApi.updateUser(user)

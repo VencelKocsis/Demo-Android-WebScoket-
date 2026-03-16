@@ -62,4 +62,8 @@ class TeamMatchRepositoryImpl @Inject constructor(
         // 2. Elküldjük a Retrofittel
         retrofitApi.updateIndividualScore(individualMatchId, request)
     }
+
+    override suspend fun signMatch(matchId: Int) {
+        retrofitApi.signMatch(matchId)
+    }
 }
