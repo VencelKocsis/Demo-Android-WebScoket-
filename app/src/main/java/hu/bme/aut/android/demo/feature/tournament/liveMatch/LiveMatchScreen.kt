@@ -23,7 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import hu.bme.aut.android.demo.ui.common.LiveIndicator // <--- ÚJ IMPORT: Animált pont
+import hu.bme.aut.android.demo.ui.common.LiveIndicator
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
@@ -43,8 +43,7 @@ fun LiveMatchScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // Amikor visszatérünk a Scorer-ből, vagy bejövünk, kérünk egy full HTTP frissítést,
-                // hátha lemaradtunk valami offline eseményről a WebSocket mellett.
+                // Biztonsági HTTP frissítés, ha esetleg a WS kapcsolat megszakadt volna a háttérben
                 viewModel.onEvent(LiveMatchEvent.LoadMatchData)
             }
         }
@@ -65,76 +64,96 @@ fun LiveMatchScreen(
         }
     ) { paddingValues ->
 
-        PullToRefreshBox(
-            isRefreshing = state.isLoading && !state.isMutating,
-            onRefresh = { viewModel.onEvent(LiveMatchEvent.LoadMatchData) },
+        // Csak akkor engedjük a kézi "lehúzós" frissítést, ha Még NEM vagyunk a Match Grid fázisban!
+        val isPullToRefreshEnabled = state.phase != LiveMatchPhase.MATCH_GRID
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            // Ha épp a szerverre küldünk adatot, egy finom csíkot mutatunk felül
+            if (state.isMutating) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+            }
 
-                if (state.isMutating) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+            // Ha engedélyezett a frissítés, beletesszük a dobozba
+            if (isPullToRefreshEnabled) {
+                PullToRefreshBox(
+                    isRefreshing = state.isLoading && !state.isMutating,
+                    onRefresh = { viewModel.onEvent(LiveMatchEvent.LoadMatchData) },
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    ScreenContent(state, viewModel, onNavigateToScorer)
                 }
+            } else {
+                // Ha a Grid-en vagyunk (ahol a WebSocket amúgy is tolja az adatokat), nincs Pull-to-refresh
+                ScreenContent(state, viewModel, onNavigateToScorer)
+            }
 
-                if (state.isLoading && state.phase == LiveMatchPhase.LOADING) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                } else {
-                    when (state.phase) {
-                        LiveMatchPhase.LOADING -> { }
-                        LiveMatchPhase.LINEUP_SETUP -> {
-                            LineupSetupContent(state = state, onEvent = viewModel::onEvent)
-                        }
-                        LiveMatchPhase.WAITING_FOR_OPPONENT -> {
-                            WaitingForOpponentContent(
-                                state = state,
-                                onRefresh = { viewModel.onEvent(LiveMatchEvent.LoadMatchData) }
-                            )
-                        }
-                        LiveMatchPhase.MATCH_GRID -> {
-                            MatchGridContent(
-                                state = state,
-                                onEvent = { event ->
-                                    if (event is LiveMatchEvent.OpenIndividualMatchScoring) {
-                                        onNavigateToScorer(event.individualMatchId)
-                                    } else {
-                                        viewModel.onEvent(event)
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
-
-                state.errorMessage?.let { error ->
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+            // Hibaüzenet kezelése
+            state.errorMessage?.let { error ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
         }
     }
 }
 
-// ... (LineupSetupContent és WaitingForOpponentContent marad pontosan ugyanaz, VÁLTOZATLAN) ...
+// A belső tartalom kiszervezése, hogy ne duplikáljuk a kódot az if-else ágban
+@Composable
+private fun BoxScope.ScreenContent(
+    state: LiveMatchUiState,
+    viewModel: LiveMatchViewModel,
+    onNavigateToScorer: (Int) -> Unit
+) {
+    if (state.isLoading && state.phase == LiveMatchPhase.LOADING) {
+        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+    } else {
+        when (state.phase) {
+            LiveMatchPhase.LOADING -> { }
+            LiveMatchPhase.LINEUP_SETUP -> {
+                LineupSetupContent(state = state, onEvent = viewModel::onEvent)
+            }
+            LiveMatchPhase.WAITING_FOR_OPPONENT -> {
+                WaitingForOpponentContent(
+                    state = state,
+                    onRefresh = { viewModel.onEvent(LiveMatchEvent.LoadMatchData) }
+                )
+            }
+            LiveMatchPhase.MATCH_GRID -> {
+                MatchGridContent(
+                    state = state,
+                    onEvent = { event ->
+                        if (event is LiveMatchEvent.OpenIndividualMatchScoring) {
+                            onNavigateToScorer(event.individualMatchId)
+                        } else {
+                            viewModel.onEvent(event)
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun LineupSetupContent(
     state: LiveMatchUiState,
     onEvent: (LiveMatchEvent) -> Unit
 ) {
-    // Reorderable Állapot Inicializálása
     val reorderState = rememberReorderableLazyListState(onMove = { from, to ->
         onEvent(LiveMatchEvent.MovePlayer(from.index, to.index))
     })
@@ -151,7 +170,7 @@ fun LineupSetupContent(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = if (state.isSpectator) {
-                "Nézőként csak megtekintheted az eddigi felállást."
+                "Nézőként csak megtekintheted az eddigi felállást.\nHúzd le a frissítéshez!"
             } else {
                 "Húzd a játékosokat a megfelelő helyre! Az első 4 pozíció lép pályára, a többiek a kispadon maradnak."
             },
@@ -160,7 +179,6 @@ fun LineupSetupContent(
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        // A Drag & Drop Lista
         LazyColumn(
             state = reorderState.listState,
             modifier = Modifier
@@ -172,7 +190,7 @@ fun LineupSetupContent(
                 ReorderableItem(reorderState, key = player.id) { isDragging ->
                     val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
                     val index = state.lineupList.indexOf(player)
-                    val isStarter = index < 4 // Az első 4 ember a kezdő
+                    val isStarter = index < 4
 
                     var cardModifier = Modifier
                         .fillMaxWidth()
@@ -254,7 +272,6 @@ fun WaitingForOpponentContent(
     }
 }
 
-// --- ÚJ DESIGN A MATCH GRIDHEZ ---
 @Composable
 fun MatchGridContent(
     state: LiveMatchUiState,
@@ -271,7 +288,6 @@ fun MatchGridContent(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            // Mivel WebSocket van, átírjuk a tájékoztató szöveget!
             Text(
                 text = "Válaszd ki a meccset a pontozáshoz! Az eredmények automatikusan (élőben) frissülnek.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -320,7 +336,6 @@ fun MatchGridContent(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Játékosok Nevei
                         Column(modifier = Modifier.weight(0.7f)) {
                             Text(
                                 text = game.homePlayerName,
@@ -339,7 +354,6 @@ fun MatchGridContent(
                                 style = MaterialTheme.typography.bodyLarge
                             )
 
-                            // Ha a meccs véget ért és vannak mentett szett-pontok ("11-8, 9-11"), azt is mutathatjuk apróval!
                             if (game.status == "finished" && !game.setScores.isNullOrEmpty()) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
@@ -350,7 +364,6 @@ fun MatchGridContent(
                             }
                         }
 
-                        // Szettarány és Státusz
                         Column(
                             modifier = Modifier.weight(0.3f),
                             horizontalAlignment = Alignment.End
@@ -364,10 +377,8 @@ fun MatchGridContent(
 
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            // JAVÍTÁS: Animált LiveIndicator használata!
                             when (game.status) {
                                 "in_progress" -> {
-                                    // A LiveIndicator-nak átadjuk a feltűnő magenta színt, és az elvégzi az animációt
                                     LiveIndicator(color = Color(0xFFFF4081))
                                 }
                                 "finished" -> {
@@ -375,7 +386,7 @@ fun MatchGridContent(
                                         text = "Befejezve",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF4CAF50) // Zöld
+                                        color = Color(0xFF4CAF50)
                                     )
                                 }
                                 else -> {
