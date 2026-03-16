@@ -4,13 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.network.api.ApiService // <-- ÚJ IMPORT
+import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
+import hu.bme.aut.android.demo.domain.websocket.usecases.ObserveMatchEventUseCase
 import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
 import hu.bme.aut.android.demo.domain.teammatch.model.MatchParticipant
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.SubmitLineupUseCase
+import hu.bme.aut.android.demo.domain.websocket.model.MatchWsEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -30,7 +32,7 @@ data class LiveMatchUiState(
     val phase: LiveMatchPhase = LiveMatchPhase.LOADING,
     val match: TeamMatch? = null,
     val myTeamSide: String = "HOME",
-    val isSpectator: Boolean = false, // <-- ÚJ: Néző vagy csapattag?
+    val isSpectator: Boolean = false,
     val lineupList: List<MatchParticipant> = emptyList(),
     val availablePlayers: List<MatchParticipant> = emptyList(),
     val individualMatches: List<IndividualMatch> = emptyList(),
@@ -50,7 +52,8 @@ class LiveMatchViewModel @Inject constructor(
     private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val submitLineupUseCase: SubmitLineupUseCase,
-    private val apiService: ApiService // <-- ÚJ: Behozzuk, hogy lássuk a csapatnévsorokat!
+    private val observeMatchEventsUseCase: ObserveMatchEventUseCase,
+    private val retrofitApi: RetrofitApi
 ) : ViewModel() {
 
     private val matchId: Int = checkNotNull(savedStateHandle["matchId"])
@@ -59,7 +62,36 @@ class LiveMatchViewModel @Inject constructor(
     val uiState: StateFlow<LiveMatchUiState> = _uiState
 
     init {
+        // 1. HTTP kérés elindítása
         onEvent(LiveMatchEvent.LoadMatchData)
+        // 2. JAVÍTÁS: Valós idejű WebSocket figyelés elindítása!
+        observeWs()
+    }
+
+    private fun observeWs() {
+        viewModelScope.launch {
+            observeMatchEventsUseCase().collect { event ->
+                when (event) {
+                    is MatchWsEvent.IndividualScoreUpdated -> {
+                        // Kikeressük azt a meccset a listából, aminek frissült az eredménye
+                        val updatedMatches = _uiState.value.individualMatches.map { match ->
+                            if (match.id == event.individualMatchId) {
+                                match.copy(
+                                    homeScore = event.homeScore,
+                                    guestScore = event.guestScore,
+                                    setScores = event.setScores,
+                                    status = event.status
+                                )
+                            } else {
+                                match
+                            }
+                        }
+
+                        _uiState.update { it.copy(individualMatches = updatedMatches) }
+                    }
+                }
+            }
+        }
     }
 
     fun onEvent(event: LiveMatchEvent) {
@@ -76,15 +108,13 @@ class LiveMatchViewModel @Inject constructor(
                         var teamSide = "HOME"
                         var spectatorFlag = false
 
-                        // 1. Próba: Benne van-e a JELENTKEZŐK között?
                         val myParticipant = match.participants.find { it.firebaseUid == currentUserUid }
 
                         if (myParticipant != null) {
                             teamSide = myParticipant.teamSide
                         } else {
-                            // 2. Próba: Nem jelentkezett. Lekérjük a CSAPATOKAT, hogy kiderítsük, hova tartozik!
                             try {
-                                val allTeams = apiService.getTeams()
+                                val allTeams = retrofitApi.getTeams() // JAVÍTVA: retrofitApi használata
                                 val homeTeam = allTeams.find { it.teamId == match.homeTeamId }
                                 val guestTeam = allTeams.find { it.teamId == match.guestTeamId }
 
@@ -93,14 +123,13 @@ class LiveMatchViewModel @Inject constructor(
                                 } else if (homeTeam?.members?.any { it.firebaseUid == currentUserUid } == true) {
                                     teamSide = "HOME"
                                 } else {
-                                    spectatorFlag = true // Tényleg csak egy külsős szurkoló
+                                    spectatorFlag = true
                                 }
                             } catch (e: Exception) {
-                                spectatorFlag = true // Hiba esetén biztonsági okból nézőként kezeljük
+                                spectatorFlag = true
                             }
                         }
 
-                        // Kigyűjtjük az ADOTT csapat beválogatott játékosait
                         val myTeamPlayers = match.participants.filter {
                             it.teamSide == teamSide && (it.status == "SELECTED" || it.status == "LOCKED")
                         }
@@ -122,7 +151,7 @@ class LiveMatchViewModel @Inject constructor(
                                 phase = currentPhase,
                                 match = match,
                                 myTeamSide = teamSide,
-                                isSpectator = spectatorFlag, // Mentsük el a flag-et!
+                                isSpectator = spectatorFlag,
                                 availablePlayers = myTeamPlayers,
                                 lineupList = if (state.lineupList.isEmpty()) initialLineupList else state.lineupList,
                                 individualMatches = match.individualMatches

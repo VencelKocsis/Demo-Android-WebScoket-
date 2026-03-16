@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.ui.common.LiveIndicator // <--- ÚJ IMPORT: Animált pont
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
@@ -38,12 +39,12 @@ fun LiveMatchScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // --- ÚJ: Lifecycle Figyelő a Visszanavigáláshoz ---
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // Amikor visszatérünk a Scorer-ből, újratöltjük az eredményeket!
+                // Amikor visszatérünk a Scorer-ből, vagy bejövünk, kérünk egy full HTTP frissítést,
+                // hátha lemaradtunk valami offline eseményről a WebSocket mellett.
                 viewModel.onEvent(LiveMatchEvent.LoadMatchData)
             }
         }
@@ -64,9 +65,8 @@ fun LiveMatchScreen(
         }
     ) { paddingValues ->
 
-        // --- ÚJ: Pull to Refresh Doboz ---
         PullToRefreshBox(
-            isRefreshing = state.isLoading && !state.isMutating, // Ne pörögjön duplán
+            isRefreshing = state.isLoading && !state.isMutating,
             onRefresh = { viewModel.onEvent(LiveMatchEvent.LoadMatchData) },
             modifier = Modifier
                 .fillMaxSize()
@@ -74,18 +74,15 @@ fun LiveMatchScreen(
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
 
-                // Finom vonal, ha épp adatot küldünk fel a szervernek (Sorrend beküldése)
                 if (state.isMutating) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
                 }
 
-                // Csak akkor mutatunk középső, nagy töltőt, ha teljesen üres a képernyő és épp töltünk
                 if (state.isLoading && state.phase == LiveMatchPhase.LOADING) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 } else {
-                    // A fázisok megjelenítése
                     when (state.phase) {
-                        LiveMatchPhase.LOADING -> { /* Már lekezeltük fent */ }
+                        LiveMatchPhase.LOADING -> { }
                         LiveMatchPhase.LINEUP_SETUP -> {
                             LineupSetupContent(state = state, onEvent = viewModel::onEvent)
                         }
@@ -110,7 +107,6 @@ fun LiveMatchScreen(
                     }
                 }
 
-                // Hibaüzenet kezelése
                 state.errorMessage?.let { error ->
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -130,6 +126,8 @@ fun LiveMatchScreen(
         }
     }
 }
+
+// ... (LineupSetupContent és WaitingForOpponentContent marad pontosan ugyanaz, VÁLTOZATLAN) ...
 
 @Composable
 fun LineupSetupContent(
@@ -244,7 +242,6 @@ fun WaitingForOpponentContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // A PullToRefresh miatt már nem kell feltétlenül ez a töltő is, de vizuálisan maradhat.
         CircularProgressIndicator()
         Spacer(modifier = Modifier.height(24.dp))
         Text("Sorrend leadva! ✅", style = MaterialTheme.typography.titleLarge)
@@ -257,6 +254,7 @@ fun WaitingForOpponentContent(
     }
 }
 
+// --- ÚJ DESIGN A MATCH GRIDHEZ ---
 @Composable
 fun MatchGridContent(
     state: LiveMatchUiState,
@@ -273,8 +271,9 @@ fun MatchGridContent(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+            // Mivel WebSocket van, átírjuk a tájékoztató szöveget!
             Text(
-                text = "Válaszd ki a meccset a pontozáshoz! Húzd le a képernyőt a legfrissebb eredményekért.",
+                text = "Válaszd ki a meccset a pontozáshoz! Az eredmények automatikusan (élőben) frissülnek.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -299,7 +298,6 @@ fun MatchGridContent(
             items(matches, key = { it.id }) { game ->
 
                 val isClickable = game.status != "pending"
-                // Ha várakozik, halványabb a kártya
                 val cardAlpha = if (game.status == "pending") 0.5f else 1f
 
                 Card(
@@ -340,6 +338,16 @@ fun MatchGridContent(
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyLarge
                             )
+
+                            // Ha a meccs véget ért és vannak mentett szett-pontok ("11-8, 9-11"), azt is mutathatjuk apróval!
+                            if (game.status == "finished" && !game.setScores.isNullOrEmpty()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = game.setScores,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
 
                         // Szettarány és Státusz
@@ -354,24 +362,30 @@ fun MatchGridContent(
                                 color = if (game.status == "finished") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
 
-                            // A státusz szövegének meghatározása
-                            val statusText = when (game.status) {
-                                "pending" -> "Várakozik"
-                                "in_progress" -> "JÁTÉKBAN" // Ezt nagybetűsítjük, hogy feltűnőbb legyen
-                                "finished" -> "Befejezve"
-                                else -> game.status
-                            }
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                            Text(
-                                text = statusText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (game.status == "in_progress") FontWeight.Bold else FontWeight.Normal,
-                                color = when (game.status) {
-                                    "in_progress" -> Color(0xFFE91E63) // Rózsaszín/Piros
-                                    "finished" -> Color(0xFF4CAF50) // Zöld
-                                    else -> Color.Gray
+                            // JAVÍTÁS: Animált LiveIndicator használata!
+                            when (game.status) {
+                                "in_progress" -> {
+                                    // A LiveIndicator-nak átadjuk a feltűnő magenta színt, és az elvégzi az animációt
+                                    LiveIndicator(color = Color(0xFFFF4081))
                                 }
-                            )
+                                "finished" -> {
+                                    Text(
+                                        text = "Befejezve",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF4CAF50) // Zöld
+                                    )
+                                }
+                                else -> {
+                                    Text(
+                                        text = "Várakozik",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
                         }
                     }
                 }
