@@ -4,8 +4,8 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import hu.bme.aut.android.demo.data.websocket.repository.PlayerRepositoryImpl
-import hu.bme.aut.android.demo.data.websocket.repository.PlayerRepository
+import hu.bme.aut.android.demo.data.websocket.repository.MatchWsRepository
+import hu.bme.aut.android.demo.domain.websocket.repository.MatchWsRepositoryImpl
 import javax.inject.Singleton
 
 @Module
@@ -14,7 +14,7 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindPlayerRepository(
-        playerRepositoryImpl: PlayerRepositoryImpl
-    ): PlayerRepository
+    abstract fun bindMatchRepository(
+        matchRepositoryImpl: MatchWsRepositoryImpl
+    ): MatchWsRepository
 }

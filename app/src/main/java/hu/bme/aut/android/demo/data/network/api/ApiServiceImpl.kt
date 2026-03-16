@@ -6,8 +6,6 @@ import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
-import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import javax.inject.Inject
 
 class ApiServiceImpl @Inject constructor(

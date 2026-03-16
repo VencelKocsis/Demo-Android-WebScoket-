@@ -2,10 +2,6 @@ package hu.bme.aut.android.demo.data.websocket.repository
 
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
-import hu.bme.aut.android.demo.data.websocket.PlayersWebSocketClient
-import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
-import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

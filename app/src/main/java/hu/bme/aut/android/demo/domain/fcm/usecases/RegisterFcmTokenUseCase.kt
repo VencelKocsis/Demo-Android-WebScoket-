@@ -1,6 +1,5 @@
 package hu.bme.aut.android.demo.domain.fcm.usecases
 
-import hu.bme.aut.android.demo.data.websocket.repository.PlayerRepository
 import javax.inject.Inject
 
 class RegisterFcmTokenUseCase @Inject constructor(

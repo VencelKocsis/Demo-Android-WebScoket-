@@ -10,8 +10,6 @@ import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.LineupSubmitDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ScoreSubmitDTO
-import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET

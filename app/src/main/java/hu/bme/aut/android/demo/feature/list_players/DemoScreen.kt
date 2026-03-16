@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
 import kotlinx.coroutines.delay
 
 /**

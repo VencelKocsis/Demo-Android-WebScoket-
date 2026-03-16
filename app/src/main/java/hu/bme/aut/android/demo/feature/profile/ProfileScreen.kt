@@ -1,6 +1,8 @@
 package hu.bme.aut.android.demo.feature.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -21,13 +26,14 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +52,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,18 +67,18 @@ import hu.bme.aut.android.demo.feature.racketEditor.Rubber
 fun ColorCircle(color: Color, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .size(10.dp)
+            .size(16.dp) // Kicsit megnöveltem, hogy jobban látszódjon
             .background(color, CircleShape)
     )
 }
 
 fun stringToColor(colorName: String): Color {
     return when (colorName.lowercase()) {
-        "red" -> Color.Red
-        "black" -> Color.Black
-        "blue" -> Color.Blue
-        "green" -> Color.Green
-        "yellow" -> Color.Yellow
+        "red" -> Color(0xFFD32F2F) // Szebb, Material piros
+        "black" -> Color(0xFF212121) // Szebb, Material fekete
+        "blue" -> Color(0xFF1976D2)
+        "green" -> Color(0xFF388E3C)
+        "yellow" -> Color(0xFFFBC02D)
         else -> Color.Gray
     }
 }
@@ -82,63 +90,49 @@ fun ProfileScreen(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     onLogoutClick: () -> Unit
 ) {
-    // 1. Lifecycle-aware state gyűjtés
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
     val backendUser = authState.backendUser
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val isDark = isSystemInDarkTheme()
 
-    // 2. Inicializálás, ha megvan a User a hálózatról/AuthViewModel-ből
     LaunchedEffect(backendUser) {
         profileViewModel.initUser(backendUser)
     }
 
-    // 3. Hibakezelés megjelenítése a Snackbar-on
     LaunchedEffect(profileState.error) {
         profileState.error?.let {
             snackbarHostState.showSnackbar(it)
-            profileViewModel.clearError() // Ne mutassa újra forgatáskor
+            profileViewModel.clearError()
         }
     }
 
     var showMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-
-    // Dialog változók
     var editFirstName by remember { mutableStateOf("") }
     var editLastName by remember { mutableStateOf("") }
 
     val user = profileState.user
-
-    // --- CSAPATOK MEGJELENÍTÉSE ---
     val teamNames = profileState.userTeamNames
-    val teamText = if (teamNames.isEmpty()) {
-        "Nincs csapatban"
-    } else {
-        teamNames.joinToString(", ") // Pl. "BEAC V., BEAC VI."
-    }
 
-    // Dummy adatok a statisztikához (később API-ból jön)
+    // Dummy adatok a statisztikához
     val seasonName = "2026 Tavasz"
-    val matchesPlayed = 0
-    val matchesWon = 0
+    val matchesPlayed = 12
+    val matchesWon = 9
     val winRate = if (matchesPlayed > 0) (matchesWon * 100) / matchesPlayed else 0
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Profil") },
+                title = { Text("Játékos Profil") },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Menü")
                     }
 
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
                             text = { Text("Profil szerkesztése") },
                             onClick = {
@@ -149,9 +143,9 @@ fun ProfileScreen(
                             },
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                         )
-                        Divider()
+                        HorizontalDivider()
                         DropdownMenuItem(
-                            text = { Text("Kijelentkezés") },
+                            text = { Text("Kijelentkezés", color = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 showMenu = false
                                 onLogoutClick()
@@ -166,72 +160,110 @@ fun ProfileScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState()) // GÖRGETHETŐSÉG!
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp), // Kicsit szellősebb térköz
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- FELHASZNÁLÓI ALAPADATOK ---
+            // --- 1. FELHASZNÁLÓI ALAPADATOK (AVATAR ÉS NÉV) ---
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profil ikon",
-                        modifier = Modifier.size(120.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    // Kis töltésjelző az ikon felett, ha épp adatot módosítunk
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                ) {
                     if (profileState.isLoading) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(40.dp)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profil ikon",
+                            modifier = Modifier.size(60.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
 
-                Text(
-                    text = if (user != null) "${user.lastName} ${user.firstName}" else "Töltés...",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = user?.email ?: "Nincs email",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = if (user != null) "${user.lastName} ${user.firstName}" else "Töltés...",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Black
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = user?.email ?: "Nincs email",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                // Csapat "Pilula"
+                val (teamBg, teamTextCol) = if (teamNames.isEmpty()) {
+                    if (isDark) Color(0xFFD32F2F).copy(alpha = 0.2f) to Color(0xFFFF8A80) else Color(0xFFFFEBEE) to Color(0xFFD32F2F)
+                } else {
+                    if (isDark) MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                    else MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                }
 
-                // Dinamikus csapatnév megjelenítés
-                Text(
-                    text = "Csapat: $teamText",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (teamNames.isEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                )
-
-                // --- STATISZTIKA (Dummy) ---
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(2.dp)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(teamBg)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Text(
+                        text = if (teamNames.isEmpty()) "Nincs csapatban" else "Csapat: ${teamNames.joinToString(", ")}",
+                        color = teamTextCol,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // --- 2. STATISZTIKA ---
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Saját statisztika", style = MaterialTheme.typography.titleMedium)
-                        Text("Érvényes: $seasonName", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                        Divider()
-                        Text("Lejátszott meccsek: $matchesPlayed")
-                        Text("Megnyert meccsek: $matchesWon")
-                        Text("Győzelmi arány: $winRate%")
+                        Text("Saját Statisztika", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(seasonName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        ProfileStatItem(label = "Meccs", value = matchesPlayed.toString(), type = "neutral")
+                        ProfileStatItem(label = "Győzelem", value = matchesWon.toString(), type = "success")
+                        ProfileStatItem(label = "Arány", value = "$winRate%", type = "primary")
                     }
                 }
             }
 
-            // --- ÜTŐK (Dummy maradt egyelőre) ---
+            // --- 3. ÜTŐK (FELSZERELÉS) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(2.dp)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 val forehandRubberExample = Rubber("DHS", "Hurricane 3 NEO", "Inverted", 40, 2.1f, "Black")
                 val backhandRubberExample = Rubber("Yasaka", "Rakza 7 Soft", "Inverted", 35, 2.0f, "Red")
@@ -242,56 +274,70 @@ fun ProfileScreen(
                     backhandRubber = "${backhandRubberExample.manufacturer} ${backhandRubberExample.model}"
                 )
 
-                Column (
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Ütők",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.weight(1f)
+                            text = "Felszerelés",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
                         )
                         Icon(
                             imageVector = Icons.Default.SportsTennis,
-                            contentDescription = "Ütő ikon",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(30.dp)
+                            contentDescription = "Ütő",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
 
-                    Divider()
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    Column(
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
-                        Text(text = "Fa: ${racketExample.blade}")
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Text(text = "Tenyeres: ${racketExample.forehandRubber}", modifier = Modifier.weight(1f))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            ColorCircle(color = stringToColor(forehandRubberExample.color))
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Text(text = "Fonák: ${racketExample.backhandRubber}", modifier = Modifier.weight(1f))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            ColorCircle(color = stringToColor(backhandRubberExample.color))
+                        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                            Text(text = "Ütőfa", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(text = racketExample.blade, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        ColorCircle(color = stringToColor(forehandRubberExample.color))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(text = "Tenyeres", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                    }
+                                    Text(text = racketExample.forehandRubber, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        ColorCircle(color = stringToColor(backhandRubberExample.color))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(text = "Fonák", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                    }
+                                    Text(text = racketExample.backhandRubber, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                }
+                            }
                         }
                     }
-                }
-            }
 
-            Button(
-                onClick = { /* TODO: Új ütő hozzáadása */ },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Új ütő hozzáadása")
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { /* TODO: Új ütő hozzáadása */ },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("ÚJ ÜTŐ HOZZÁADÁSA", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
@@ -300,15 +346,14 @@ fun ProfileScreen(
     if (showEditDialog) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
-            title = { Text("Profil szerkesztése") },
+            title = { Text("Profil szerkesztése", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     OutlinedTextField(
                         value = editLastName,
                         onValueChange = { editLastName = it },
                         label = { Text("Vezetéknév") },
                         singleLine = true,
-                        // UX: Ne engedjük írni, ha épp ment
                         enabled = !profileState.isLoading
                     )
                     OutlinedTextField(
@@ -326,7 +371,6 @@ fun ProfileScreen(
                         profileViewModel.updateUser(editFirstName, editLastName)
                         showEditDialog = false
                     },
-                    // UX: Csak akkor aktív, ha nem üresek a mezők és nem tölt
                     enabled = editFirstName.isNotBlank() && editLastName.isNotBlank() && !profileState.isLoading
                 ) {
                     Text("Mentés")
@@ -334,9 +378,45 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }, enabled = !profileState.isLoading) {
-                    Text("Mégse")
+                    Text("Mégse", color = Color.Gray)
                 }
             }
+        )
+    }
+}
+
+// ÚJ KÖZÖS KOMPONENS A PROFIL STATISZTIKÁHOZ
+@Composable
+fun ProfileStatItem(label: String, value: String, type: String) {
+    val isDark = isSystemInDarkTheme()
+
+    val (bgColor, textColor) = when (type) {
+        "success" -> if(isDark) Color(0xFF2E7D32).copy(0.25f) to Color(0xFF81C784) else Color(0xFF388E3C) to Color.White
+        "primary" -> if(isDark) MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        else -> if(isDark) Color.Gray.copy(0.2f) to Color.LightGray else Color(0xFF757575) to Color.White
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(56.dp) // Kicsit nagyobb buborékok a profilon
+                .clip(CircleShape)
+                .background(bgColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black,
+                color = textColor
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

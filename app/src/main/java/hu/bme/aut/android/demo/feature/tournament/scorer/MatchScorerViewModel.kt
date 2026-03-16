@@ -7,6 +7,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.SubmitIndividualScoreUseCase
+import hu.bme.aut.android.demo.domain.websocket.model.MatchWsEvent
+import hu.bme.aut.android.demo.domain.websocket.usecases.ObserveMatchEventUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -30,7 +32,8 @@ data class MatchScorerUiState(
 class MatchScorerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
-    private val submitScoreUseCase: SubmitIndividualScoreUseCase
+    private val submitScoreUseCase: SubmitIndividualScoreUseCase,
+    private val observeMatchEventsUseCase: ObserveMatchEventUseCase
 ) : ViewModel() {
 
     private val individualMatchId: Int = checkNotNull(savedStateHandle["individualMatchId"])
@@ -41,6 +44,47 @@ class MatchScorerViewModel @Inject constructor(
 
     init {
         loadMatch()
+        observeWs()
+    }
+
+    private fun observeWs() {
+        viewModelScope.launch {
+            observeMatchEventsUseCase().collect { event ->
+                when (event) {
+                    is MatchWsEvent.IndividualScoreUpdated -> {
+                        // Csak akkor frissítjük a UI-t, ha ez a MI meccsünk eseménye!
+                        if (event.individualMatchId == individualMatchId) {
+
+                            // A szerverről kapott "11-8, 9-11" szöveg visszaalakítása dobozokká
+                            val loadedSets = event.setScores.split(", ").mapNotNull {
+                                val parts = it.split("-")
+                                if (parts.size == 2) SetScoreInput(parts[0], parts[1]) else null
+                            }.toMutableList()
+
+                            if (loadedSets.isEmpty()) loadedSets.add(SetScoreInput())
+
+                            // Ha még nincs vége, nyitunk egy üres sort a folytatásnak
+                            val isFinished = event.status == "finished"
+                            if (!isFinished && loadedSets.size < 5) {
+                                val lastSet = loadedSets.last()
+                                if (lastSet.home.isNotEmpty() && lastSet.guest.isNotEmpty()) {
+                                    loadedSets.add(SetScoreInput())
+                                }
+                            }
+
+                            _uiState.update {
+                                it.copy(
+                                    sets = loadedSets,
+                                    homeSetsWon = event.homeScore,
+                                    guestSetsWon = event.guestScore,
+                                    isFinished = isFinished
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun loadMatch() {

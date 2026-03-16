@@ -6,16 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.domain.websocket.model.NewPlayerDTO
-import hu.bme.aut.android.demo.domain.websocket.model.PlayerDTO
-import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
-import hu.bme.aut.android.demo.domain.websocket.usecases.AddPlayerUseCase
-import hu.bme.aut.android.demo.domain.websocket.usecases.DeletePlayerUseCase
-import hu.bme.aut.android.demo.domain.websocket.usecases.GetInitialPlayersUseCase
-import hu.bme.aut.android.demo.domain.websocket.usecases.ObservePlayersEventsUseCase
 import hu.bme.aut.android.demo.domain.fcm.usecases.RegisterFcmTokenUseCase
 import hu.bme.aut.android.demo.domain.fcm.usecases.SendPushNotificationUseCase
-import hu.bme.aut.android.demo.domain.websocket.usecases.UpdatePlayerUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

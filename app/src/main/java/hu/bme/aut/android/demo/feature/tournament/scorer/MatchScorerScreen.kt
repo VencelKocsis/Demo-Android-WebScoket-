@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -98,7 +97,8 @@ fun MatchScorerScreen(
                                         ScoreInputBox(
                                             value = setScore.home,
                                             onValueChange = { viewModel.updateSetScore(index, it, setScore.guest) },
-                                            isWinner = isHomeWinner
+                                            isWinner = isHomeWinner,
+                                            enabled = !state.isFinished
                                         )
 
                                         Text(" : ", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -107,7 +107,8 @@ fun MatchScorerScreen(
                                         ScoreInputBox(
                                             value = setScore.guest,
                                             onValueChange = { viewModel.updateSetScore(index, setScore.home, it) },
-                                            isWinner = isGuestWinner
+                                            isWinner = isGuestWinner,
+                                            enabled = !state.isFinished
                                         )
                                     }
                                 }
@@ -119,12 +120,25 @@ fun MatchScorerScreen(
                         // --- MENTÉS GOMBOK ---
                         val isMatchOver = state.homeSetsWon == 3 || state.guestSetsWon == 3
 
+                        // Ellenőrizzük, hogy minden szett helyes-e
+                        // 1. Az üres sorokat ignoráljuk
+                        // 2. Vagy mindkét mező ki van töltve, vagy mindkettő üres
+                        val areSetsValid = state.sets.all { set ->
+                            (set.home.isEmpty() && set.guest.isEmpty()) || (set.home.isNotEmpty() && set.guest.isNotEmpty())
+                        }
+
+                        // A mentés feltétele: Érvényes szettek ÉS épp nem tölt be/ment
+                        val canSave = areSetsValid && !state.isSaving
+
                         if (!state.isFinished) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 OutlinedButton(
                                     onClick = { viewModel.submitScore(isFinal = false) },
                                     modifier = Modifier.weight(1f).height(50.dp),
-                                    enabled = !state.isSaving
+                                    enabled = canSave
                                 ) {
                                     Text("Mentés (Még tart)")
                                 }
@@ -132,22 +146,24 @@ fun MatchScorerScreen(
                                 Button(
                                     onClick = { viewModel.submitScore(isFinal = true) },
                                     modifier = Modifier.weight(1f).height(50.dp),
-                                    enabled = !state.isSaving && isMatchOver,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                    enabled = canSave && isMatchOver, // A véglegesítéshez még a 3 nyert szett is kell
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(
+                                            0xFF4CAF50
+                                        )
+                                    )
                                 ) {
                                     Text("VÉGLEGESÍTÉS")
                                 }
                             }
-                        } else {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
-                            ) {
+
+                            // Ha a gombok tiltva vannak egy "félig" beírt szett miatt, jelezzük a felhasználónak!
+                            if (!areSetsValid) {
                                 Text(
-                                    "A mérkőzés lezárult.",
-                                    color = Color(0xFF4CAF50),
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    text = "Kérlek, töltsd ki mindkét pontszámot a megkezdett szettekben!",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -164,25 +180,33 @@ fun MatchScorerScreen(
 fun ScoreInputBox(
     value: String,
     onValueChange: (String) -> Unit,
-    isWinner: Boolean
+    isWinner: Boolean,
+    enabled: Boolean = true
 ) {
-    // Ha nyertes, a doboz kitöltött (primary) lesz, különben szürke körvonalas
-    val containerColor = if (isWinner) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-    val textColor = if (isWinner) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-    val borderColor = if (isWinner) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+    // Ha nyertes, a doboz kitöltött (primary) lesz.
+    // Ha tiltva van és nem nyertes, halvány szürke hátteret kap.
+    val containerColor = if (isWinner) MaterialTheme.colorScheme.primaryContainer
+    else if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    else MaterialTheme.colorScheme.surface
+
+    val textColor = if (isWinner) MaterialTheme.colorScheme.onPrimaryContainer
+    else if (!enabled) Color.Gray
+    else MaterialTheme.colorScheme.onSurface
+
+    val borderColor = if (isWinner || !enabled) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
 
     BasicTextField(
         value = value,
         onValueChange = { newValue ->
-            // Csak számokat engedünk, és maximum 2 karaktert (pl. 99)
             if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
                 onValueChange(newValue)
             }
         },
+        enabled = enabled,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Next
-            ),
+        ),
         textStyle = MaterialTheme.typography.headlineMedium.copy(
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold,
@@ -192,7 +216,7 @@ fun ScoreInputBox(
         decorationBox = { innerTextField ->
             Box(
                 modifier = Modifier
-                    .size(64.dp) // Szép, nagy, ujjbarát négyzet
+                    .size(64.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(containerColor)
                     .border(2.dp, borderColor, RoundedCornerShape(12.dp)),

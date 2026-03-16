@@ -3,14 +3,11 @@ package hu.bme.aut.android.demo.feature.tournament.teamMatch
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,11 +18,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,18 +27,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,7 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.ui.common.MatchDateRow
 import hu.bme.aut.android.demo.ui.common.MatchLocationButton
-import hu.bme.aut.android.demo.util.toDisplayDate
+import hu.bme.aut.android.demo.ui.common.MatchStatusChip
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -63,7 +54,6 @@ fun TeamMatchScreen(
     viewModel: TeamMatchViewModel = hiltViewModel(),
     onNavigateToMatchDetails: (Int) -> Unit
 ) {
-    // REFAKTOR: Lifecycle-aware állapofigyelés
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -185,17 +175,6 @@ fun RoundHeader(roundNumber: Int) {
     }
 }
 
-@Composable
-fun getStatusTheme(status: String?): Pair<Color, Color> {
-    return when (status) {
-        "scheduled" -> Color(0xFF2E7D32).copy(alpha = 0.15f) to Color(0xFF81C784)
-        "in_progress" -> Color(0xFFE91E63).copy(alpha = 0.15f) to Color(0xFFFF4081)
-        "finished" -> Color(0xFF455A64).copy(alpha = 0.15f) to Color(0xFFCFD8DC)
-        "cancelled" -> Color(0xFFD32F2F).copy(alpha = 0.15f) to Color(0xFFFF8A80)
-        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-    }
-}
-
 @SuppressLint("RememberReturnType")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -203,45 +182,54 @@ fun TeamMatchSimpleCard(
     teamMatch: TeamMatch,
     onClick: () -> Unit
 ) {
-    val (bgColor, contentColor) = getStatusTheme(teamMatch.status)
+    val isDark = isSystemInDarkTheme()
+
+    val statusColor = when (teamMatch.status) {
+        "scheduled" -> if (isDark) Color(0xFF2E7D32).copy(alpha = 0.15f) else Color(0xFFE8F5E9)
+        "in_progress" -> if (isDark) Color(0xFFE91E63).copy(alpha = 0.15f) else Color(0xFFFCE4EC)
+        "finished" -> if (isDark) Color(0xFF455A64).copy(alpha = 0.15f) else Color(0xFFECEFF1)
+        "cancelled" -> if (isDark) Color(0xFFD32F2F).copy(alpha = 0.15f) else Color(0xFFFFEBEE)
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val borderColor = when (teamMatch.status) {
+        "scheduled" -> if (isDark) Color(0xFF81C784).copy(alpha = 0.5f) else Color(0xFFA5D6A7)
+        "in_progress" -> if (isDark) Color(0xFFFF4081).copy(alpha = 0.5f) else Color(0xFFF48FB1)
+        "finished" -> if (isDark) Color(0xFFCFD8DC).copy(alpha = 0.5f) else Color(0xFFCFD8DC)
+        "cancelled" -> if (isDark) Color(0xFFFF8A80).copy(alpha = 0.5f) else Color(0xFFEF9A9A)
+        else -> MaterialTheme.colorScheme.outlineVariant
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = bgColor),
-        border = CardDefaults.outlinedCardBorder(enabled = teamMatch.status == "in_progress")
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = statusColor),
+        border = BorderStroke(1.dp, borderColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "${teamMatch.homeTeamName} vs ${teamMatch.guestTeamName}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White // A nevek maradjanak fehérek/világosak
-                )
-
-                if (teamMatch.status == "in_progress") {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Egy kis "LIVE" jelzés
-                    LiveIndicator()
-                }
-            }
-
-            // A státusz szöveg színe már az új, kontrasztos szín lesz
             Text(
-                text = when(teamMatch.status) {
-                    "scheduled" -> "Tervezve"
-                    "in_progress" -> "FOLYAMATBAN"
-                    "finished" -> "Befejezve"
-                    else -> "Törölve"
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = contentColor,
-                fontWeight = FontWeight.ExtraBold
+                text = "${teamMatch.homeTeamName} vs ${teamMatch.guestTeamName}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            MatchStatusChip(status = teamMatch.status)
+
+            if (teamMatch.status == "finished") {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Végeredmény: ${teamMatch.homeTeamScore} - ${teamMatch.guestTeamScore}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             MatchLocationButton(
                 location = teamMatch.location,
@@ -250,34 +238,5 @@ fun TeamMatchSimpleCard(
 
             MatchDateRow(date = teamMatch.matchDate)
         }
-    }
-}
-
-@Composable
-fun LiveIndicator() {
-    val infiniteTransition = rememberInfiniteTransition(label = "live")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "alpha"
-    )
-
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Surface(
-            shape = CircleShape,
-            color = Color(0xFFFF4081).copy(alpha = alpha),
-            modifier = Modifier.size(8.dp)
-        ) {}
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            "LIVE",
-            color = Color(0xFFFF4081),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Black
-        )
     }
 }

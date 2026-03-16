@@ -4,7 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import hu.bme.aut.android.demo.data.websocket.PlayersWebSocketClient
+import hu.bme.aut.android.demo.data.websocket.MatchWebSocketClient
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import javax.inject.Singleton
@@ -18,8 +18,7 @@ object WebSocketModule {
     // ----------------------------------------------------
     @Provides
     @Singleton
-    fun providePlayersWebSocketClient(okHttpClient: OkHttpClient, json: Json): PlayersWebSocketClient {
-        // A Hilt injektálja a NetworkModule-ban definiált OkHttpClient-et és Json-t.
-        return PlayersWebSocketClient(okHttpClient, json)
+    fun provideMatchWebSocketClient(okHttpClient: OkHttpClient, json: Json): MatchWebSocketClient {
+        return MatchWebSocketClient(okHttpClient, json)
     }
 }

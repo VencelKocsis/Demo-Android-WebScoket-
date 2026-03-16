@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.ui.common.MatchDateRow
 import hu.bme.aut.android.demo.ui.common.MatchLocationButton
+import hu.bme.aut.android.demo.ui.common.MatchStatusChip
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -158,6 +159,7 @@ fun MatchDetailsScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
 
+                                // Ha vége van, kiírjuk nagyban az eredményt
                                 if (match.status == "finished") {
                                     Text(
                                         text = "Végeredmény: ${match.homeTeamScore} - ${match.guestTeamScore}",
@@ -165,13 +167,10 @@ fun MatchDetailsScreen(
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold
                                     )
-                                } else {
-                                    Text(
-                                        text = "Státusz: ${if (match.status == "scheduled") "Tervezve" else if (match.status == "in_progress") "Folyamatban" else match.status}",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = Color.Gray
-                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
+
+                                MatchStatusChip(status = match.status)
 
                                 Spacer(modifier = Modifier.height(16.dp))
                                 HorizontalDivider()

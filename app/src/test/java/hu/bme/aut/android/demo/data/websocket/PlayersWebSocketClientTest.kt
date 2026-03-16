@@ -1,7 +1,6 @@
 package hu.bme.aut.android.demo.data.websocket
 
 import app.cash.turbine.test
-import hu.bme.aut.android.demo.domain.websocket.model.WsEvent
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot

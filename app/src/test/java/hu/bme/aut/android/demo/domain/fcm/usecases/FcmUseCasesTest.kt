@@ -1,7 +1,6 @@
 package hu.bme.aut.android.demo.domain.fcm.usecases
 
 import hu.bme.aut.android.demo.data.fcm.repository.FcmRepositoryImpl
-import hu.bme.aut.android.demo.data.websocket.repository.PlayerRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
