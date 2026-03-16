@@ -17,5 +17,7 @@ data class TeamMatchDTO(
     val homeTeamId: Int = 0,
     val guestTeamId: Int = 0,
     val individualMatches: List<IndividualMatchDTO>? = emptyList(),
-    val participants: List<MatchParticipantDTO>? = emptyList()
+    val participants: List<MatchParticipantDTO>? = emptyList(),
+    val homeTeamSigned: Boolean = false,
+    val guestTeamSigned: Boolean = false
 )

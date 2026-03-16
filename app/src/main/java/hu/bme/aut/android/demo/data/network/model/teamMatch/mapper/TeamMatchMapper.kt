@@ -19,6 +19,8 @@ fun TeamMatchDTO.toDomain(): TeamMatch {
         seasonId = this.seasonId,
         homeTeamId = this.homeTeamId,
         guestTeamId = this.guestTeamId,
+        homeTeamSigned = this.homeTeamSigned,
+        guestTeamSigned = this.guestTeamSigned,
 
         individualMatches = this.individualMatches?.map { dto ->
             IndividualMatch(
