@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +22,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +37,18 @@ fun MatchScorerScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // --- Automatikus újratöltés, ha a telefon felébred (ON_RESUME) ---
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadMatch() // HTTP-s frissítés, ha a WS esetleg megszakadt
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -43,129 +59,138 @@ fun MatchScorerScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            if (state.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                state.match?.let { match ->
-                    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-                        // --- FEJLÉC ÉS ÖSSZESÍTŐ ---
-                        Text("Állás (Szettek)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.CenterHorizontally))
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                Text(match.homePlayerName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                                Text("${state.homeSetsWon}", style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+        // --- Húzással frissíthető doboz ---
+        PullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { viewModel.loadMatch() },
+            modifier = Modifier.fillMaxSize().padding(paddingValues)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (state.isLoading && state.match == null) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else {
+                    state.match?.let { match ->
+                        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+
+                            // --- FEJLÉC ÉS ÖSSZESÍTŐ ---
+                            Text("Állás (Szettek)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.CenterHorizontally))
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                                    Text(match.homePlayerName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                                    Text("${state.homeSetsWon}", style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+                                }
+                                Text(":", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                                    Text(match.guestPlayerName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                                    Text("${state.guestSetsWon}", style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+                                }
                             }
-                            Text(":", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                Text(match.guestPlayerName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                                Text("${state.guestSetsWon}", style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
-                            }
-                        }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        // --- SZETTEK PONTJAINAK BEVITELE ---
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Szettek részletei", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(16.dp))
+                            // --- SZETTEK PONTJAINAK BEVITELE ---
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text("Szettek részletei", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(16.dp))
 
-                                state.sets.forEachIndexed { index, setScore ->
+                                    state.sets.forEachIndexed { index, setScore ->
 
-                                    // Kiszámoljuk, hogy kiemeljük-e valamelyik dobozt (ha megnyerte a szettet)
-                                    val hScore = setScore.home.toIntOrNull() ?: 0
-                                    val gScore = setScore.guest.toIntOrNull() ?: 0
-                                    val isHomeWinner = hScore >= 11 && (hScore - gScore) >= 2
-                                    val isGuestWinner = gScore >= 11 && (gScore - hScore) >= 2
+                                        val hScore = setScore.home.toIntOrNull() ?: 0
+                                        val gScore = setScore.guest.toIntOrNull() ?: 0
+                                        val isHomeWinner = hScore >= 11 && (hScore - gScore) >= 2
+                                        val isGuestWinner = gScore >= 11 && (gScore - hScore) >= 2
 
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        // Hazai Input
-                                        ScoreInputBox(
-                                            value = setScore.home,
-                                            onValueChange = { viewModel.updateSetScore(index, it, setScore.guest) },
-                                            isWinner = isHomeWinner,
-                                            enabled = !state.isFinished
-                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            // Hazai Input
+                                            ScoreInputBox(
+                                                value = setScore.home,
+                                                onValueChange = { viewModel.updateSetScore(index, it, setScore.guest) },
+                                                isWinner = isHomeWinner,
+                                                enabled = !state.isFinished
+                                            )
 
-                                        Text(" : ", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(" : ", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-                                        // Vendég Input
-                                        ScoreInputBox(
-                                            value = setScore.guest,
-                                            onValueChange = { viewModel.updateSetScore(index, setScore.home, it) },
-                                            isWinner = isGuestWinner,
-                                            enabled = !state.isFinished
-                                        )
+                                            // Vendég Input
+                                            ScoreInputBox(
+                                                value = setScore.guest,
+                                                onValueChange = { viewModel.updateSetScore(index, setScore.home, it) },
+                                                isWinner = isGuestWinner,
+                                                enabled = !state.isFinished
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        Spacer(modifier = Modifier.weight(1f))
+                            Spacer(modifier = Modifier.weight(1f))
 
-                        // --- MENTÉS GOMBOK ---
-                        val isMatchOver = state.homeSetsWon == 3 || state.guestSetsWon == 3
-
-                        // Ellenőrizzük, hogy minden szett helyes-e
-                        // 1. Az üres sorokat ignoráljuk
-                        // 2. Vagy mindkét mező ki van töltve, vagy mindkettő üres
-                        val areSetsValid = state.sets.all { set ->
-                            (set.home.isEmpty() && set.guest.isEmpty()) || (set.home.isNotEmpty() && set.guest.isNotEmpty())
-                        }
-
-                        // A mentés feltétele: Érvényes szettek ÉS épp nem tölt be/ment
-                        val canSave = areSetsValid && !state.isSaving
-
-                        if (!state.isFinished) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = { viewModel.submitScore(isFinal = false) },
-                                    modifier = Modifier.weight(1f).height(50.dp),
-                                    enabled = canSave
-                                ) {
-                                    Text("Mentés (Még tart)")
-                                }
-
-                                Button(
-                                    onClick = { viewModel.submitScore(isFinal = true) },
-                                    modifier = Modifier.weight(1f).height(50.dp),
-                                    enabled = canSave && isMatchOver, // A véglegesítéshez még a 3 nyert szett is kell
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(
-                                            0xFF4CAF50
-                                        )
-                                    )
-                                ) {
-                                    Text("VÉGLEGESÍTÉS")
-                                }
+                            // --- MENTÉS GOMBOK ---
+                            val isMatchOver = state.homeSetsWon == 3 || state.guestSetsWon == 3
+                            val areSetsValid = state.sets.all { set ->
+                                (set.home.isEmpty() && set.guest.isEmpty()) || (set.home.isNotEmpty() && set.guest.isNotEmpty())
                             }
+                            val canSave = areSetsValid && !state.isSaving
 
-                            // Ha a gombok tiltva vannak egy "félig" beírt szett miatt, jelezzük a felhasználónak!
-                            if (!areSetsValid) {
-                                Text(
-                                    text = "Kérlek, töltsd ki mindkét pontszámot a megkezdett szettekben!",
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                    textAlign = TextAlign.Center
-                                )
+                            if (!state.isFinished) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { viewModel.submitScore(isFinal = false) },
+                                        modifier = Modifier.weight(1f).height(50.dp),
+                                        enabled = canSave
+                                    ) {
+                                        Text("Mentés (Még tart)")
+                                    }
+
+                                    Button(
+                                        onClick = { viewModel.submitScore(isFinal = true) },
+                                        modifier = Modifier.weight(1f).height(50.dp),
+                                        enabled = canSave && isMatchOver,
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                    ) {
+                                        Text("VÉGLEGESÍTÉS")
+                                    }
+                                }
+
+                                if (!areSetsValid) {
+                                    Text(
+                                        text = "Kérlek, töltsd ki mindkét pontszámot a megkezdett szettekben!",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            } else {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
+                                ) {
+                                    Text(
+                                        "A mérkőzés lezárult.",
+                                        color = Color(0xFF4CAF50),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
                     }

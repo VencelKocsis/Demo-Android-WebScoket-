@@ -52,18 +52,20 @@ class MatchScorerViewModel @Inject constructor(
             observeMatchEventsUseCase().collect { event ->
                 when (event) {
                     is MatchWsEvent.IndividualScoreUpdated -> {
-                        // Csak akkor frissítjük a UI-t, ha ez a MI meccsünk eseménye!
                         if (event.individualMatchId == individualMatchId) {
 
-                            // A szerverről kapott "11-8, 9-11" szöveg visszaalakítása dobozokká
-                            val loadedSets = event.setScores.split(", ").mapNotNull {
-                                val parts = it.split("-")
-                                if (parts.size == 2) SetScoreInput(parts[0], parts[1]) else null
-                            }.toMutableList()
+                            // JAVÍTVA: Bolondbiztos szövegfeldolgozás
+                            val loadedSets = if (event.setScores.isBlank()) {
+                                mutableListOf(SetScoreInput())
+                            } else {
+                                event.setScores.split(",").mapNotNull {
+                                    val parts = it.split("-")
+                                    if (parts.size == 2) SetScoreInput(parts[0].trim(), parts[1].trim()) else null
+                                }.toMutableList()
+                            }
 
                             if (loadedSets.isEmpty()) loadedSets.add(SetScoreInput())
 
-                            // Ha még nincs vége, nyitunk egy üres sort a folytatásnak
                             val isFinished = event.status == "finished"
                             if (!isFinished && loadedSets.size < 5) {
                                 val lastSet = loadedSets.last()
@@ -87,7 +89,7 @@ class MatchScorerViewModel @Inject constructor(
         }
     }
 
-    private fun loadMatch() {
+    fun loadMatch() {
         viewModelScope.launch {
             try {
                 val matches = getTeamMatchesUseCase()
