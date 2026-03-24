@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.teamOperation
+package hu.bme.aut.android.demo.team
 
 import android.Manifest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -9,8 +9,10 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.runner.AndroidJUnit4
 import hu.bme.aut.android.demo.MainActivity
 import hu.bme.aut.android.demo.data.DataStructure.CaptainTestUser
+import hu.bme.aut.android.demo.data.DataStructure.FullTestUser
 import hu.bme.aut.android.demo.data.DataStructure.RegularTestUser
 import hu.bme.aut.android.demo.data.DataStructure.TeamData
+import hu.bme.aut.android.demo.data.DataStructure.TeamMatchData
 import hu.bme.aut.android.demo.functions.Authentication.login
 import hu.bme.aut.android.demo.functions.Authentication.logout
 import hu.bme.aut.android.demo.functions.Navigation
@@ -31,6 +33,30 @@ class AddUserToTeamTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     val teams = listOf(
+
+        // --- ALL IN DB ---
+        // BEAC I.
+        TeamData(
+            captain = CaptainTestUser("NZ@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Szarvas Tamás"),
+                RegularTestUser("Bíró Csaba"),
+                RegularTestUser("Halász Gábor")
+            ),
+            teamName = "BEAC I."
+        ),
+
+        // BEAC II.
+        TeamData(
+            captain = CaptainTestUser("BG@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Nagy Tamás"),
+                RegularTestUser("Váczi Attila"),
+                RegularTestUser("Simon Dániel")
+            ),
+            teamName = "BEAC II."
+        ),
+
         // BEAC III.
         TeamData(
             captain = CaptainTestUser("tf@test.com", "bestpassword"),
@@ -42,6 +68,7 @@ class AddUserToTeamTest {
             ),
             teamName = "BEAC III."
         ),
+
         // BEAC IV.
         TeamData(
             captain = CaptainTestUser("nzs@test.com", "bestpassword"),
@@ -53,6 +80,7 @@ class AddUserToTeamTest {
             ),
             teamName = "BEAC IV."
         ),
+
         // BEAC V.
         TeamData(
             captain = CaptainTestUser("id@test.com", "bestpassword"),
@@ -67,6 +95,7 @@ class AddUserToTeamTest {
             ),
             teamName = "BEAC V."
         ),
+
         // BEAC VI.
         TeamData(
             captain = CaptainTestUser("kp@test.com", "bestpassword"),
@@ -77,6 +106,69 @@ class AddUserToTeamTest {
                 RegularTestUser("Reszler Balázs")
             ),
             teamName = "BEAC VI."
+        ),
+
+        // MAFC I.
+        TeamData(
+            captain = CaptainTestUser("NA@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Kovács Bence"),
+                RegularTestUser("Tóth Dávid"),
+                RegularTestUser("Szabó Eszter")
+            ),
+            teamName = "MAFC I."
+        ),
+
+        // MAFC II.
+        TeamData(
+            captain = CaptainTestUser("HGA@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Varga Zita"),
+                RegularTestUser("Kocsis Károly"),
+                RegularTestUser("Molnár Orsolya")
+            ),
+            teamName = "MAFC II."
+        ),
+
+        // MAFC III.
+        TeamData(
+            captain = CaptainTestUser("NB@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Farkas Kinga"),
+                RegularTestUser("Balogh Tamás"),
+                RegularTestUser("Papp Judit")
+            ),
+            teamName = "MAFC III."
+        ),
+        // MAFC IV.
+        TeamData(
+            captain = CaptainTestUser("TL@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Juhász Dóra"),
+                RegularTestUser("Mészáros Zoltán"),
+                RegularTestUser("Simon Réka")
+            ),
+            teamName = "MAFC IV."
+        ),
+        // MAFC V.
+        TeamData(
+            captain = CaptainTestUser("FM@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Szilágyi Tímea"),
+                RegularTestUser("Török Gergely"),
+                RegularTestUser("Fehér Andrea"),
+            ),
+            teamName = "MAFC V."
+        ),
+        // MAFC VI.
+        TeamData(
+            captain = CaptainTestUser("GD@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Hegedűs Katalin"),
+                RegularTestUser("Sipos Márton"),
+                RegularTestUser("Lukács Boglárka")
+            ),
+            teamName = "MAFC VI."
         )
     )
 
@@ -93,18 +185,14 @@ class AddUserToTeamTest {
             // NAVIGÁCIÓ CSAPAT KÉPERNYŐRE
             navigate(composeTestRule, "Csapat", Navigation.OnNodeWith.TEXT)
 
-            // --- ÚJ BIZTONSÁGI VÁRAKOZÁS ---
-            // Várunk 2 másodpercet, hogy a hálózati/adatbázis lekérdezés biztosan befejeződjön,
-            // és a Csapat képernyő adatai feltöltődjenek.
+            // --- BIZTONSÁGI VÁRAKOZÁS ---
             composeTestRule.waitForIdle()
             Thread.sleep(2000)
 
             // BELÉPÉS A CSAPATSZERKESZTŐBE
             navigate(composeTestRule, "Csapat szerkesztése", Navigation.OnNodeWith.DESCRIPTION)
 
-            // --- ÚJ BIZTONSÁGI VÁRAKOZÁS 2 ---
-            // Itt is adunk 1 másodpercet, hogy a lenyíló lista (Dropdown) adatai biztosan betöltsenek,
-            // mielőtt elkezdenénk a játékosokon iterálni.
+            // --- BIZTONSÁGI VÁRAKOZÁS 2 ---
             composeTestRule.waitForIdle()
             Thread.sleep(1000)
 
@@ -119,9 +207,9 @@ class AddUserToTeamTest {
             navigate(composeTestRule, "Visszalépés", Navigation.OnNodeWith.DESCRIPTION)
 
             composeTestRule.waitForIdle()
-            Thread.sleep(1000) // Biztonsági tartalék, amíg betölt a BottomBar
+            Thread.sleep(1000)
 
-            // KIJELENTKEZÉS a csapatépítés végén, jöhet a következő kapitány
+            // KIJELENTKEZÉS
             logout(composeTestRule)
         }
     }

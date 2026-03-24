@@ -1,7 +1,5 @@
 package hu.bme.aut.android.demo.feature.tournament.match
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -453,7 +451,7 @@ fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading:
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Icon(if (isSelected) Icons.Default.Remove else Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(if (isSelected) Icons.Default.Remove else Icons.Default.Add, contentDescription = "Betesz", modifier = Modifier.size(20.dp))
             }
         }
     }

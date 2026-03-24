@@ -18,12 +18,14 @@ object DataStructure {
     )
 
     data class TeamData<T>(
+        val id: Int = -1,
         val teamName: String,
         val captain: CaptainTestUser,
         val members: List<T>
     )
 
     data class TeamMatchData<T>(
+        val id: Int = -1,
         val homeTeam: TeamData<T>,
         val guestTeam: TeamData<T>
     )

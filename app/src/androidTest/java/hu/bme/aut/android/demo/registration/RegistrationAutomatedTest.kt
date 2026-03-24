@@ -36,12 +36,19 @@ class RegistrationAutomatedTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun createMultipleTestUsers() {
-        // Hozzunk létre 3 teszt felhasználót a MAFC II csapatba
         val testUsers = listOf(
-            // BEAC I.
+            /*
+            // BEAC I. in DB
+            TestUser("Zoltán", "Nagy", "NZ@test.com", "bestpassword"),
+            TestUser("Tamás", "Szarvas", "SZT@test.com", "bestpassword"),
+            TestUser("Csaba", "Bíró", "BCS@test.com", "bestpassword"),
+            TestUser("Gábor", "Halász", "HG@test.com", "bestpassword"),
 
-
-            // BEAC II.
+            // BEAC II. in DB
+            TestUser("Gergő", "Botlik", "BG@test.com", "bestpassword"),
+            TestUser("Tamás", "Nagy", "NT@test.com", "bestpassword"),
+            TestUser("Attila", "Váczi", "VAM@test.com", "bestpassword"),
+            TestUser("Dániel", "Simon", "SD@test.com", "bestpassword"),
 
 
             // BEAC III. in DB
@@ -73,10 +80,49 @@ class RegistrationAutomatedTest {
             TestUser("Tamás", "Sipos", "ST@test.com", "bestpassword"),
             TestUser("Tibor", "Tengerdi", "TT@test.com", "bestpassword"),
             TestUser("Botond", "Böröcz", "BB@test.com", "bestpassword"),
-            TestUser("Balázs", "Reszler", "RB@test.com", "bestpassword")
-
+            TestUser("Balázs", "Reszler", "RB@test.com", "bestpassword"),
 
             //TestUser("firstName", "lastName", "email@test.com", "bestpassword")
+
+            // MAFC I. in DB
+            TestUser("Anna", "Nagy", "NA@test.com", "bestpassword"),
+            TestUser("Bence", "Kovács", "KB@test.com", "bestpassword"),
+            TestUser("Dávid", "Tóth", "TD@test.com", "bestpassword"),
+            TestUser("Eszter", "Szabó", "SZE@test.com", "bestpassword"),
+
+            // MAFC II. in DB
+            TestUser("Gábor", "Horváth", "HGA@test.com", "bestpassword"),
+            TestUser("Zita", "Varga", "VZ@test.com", "bestpassword"),
+            TestUser("Károly", "Kocsis", "KK@test.com", "bestpassword"),
+            TestUser("Orsolya", "Molnár", "MO@test.com", "bestpassword"),
+
+            // MAFC III. in DB
+            TestUser("Balázs", "Németh", "NB@test.com", "bestpassword"),
+            TestUser("Kinga", "Farkas", "FK@test.com", "bestpassword"),
+            TestUser("Tamás", "Balogh", "BT@test.com", "bestpassword"),
+            TestUser("Judit", "Papp", "PJ@test.com", "bestpassword"),
+
+            // MAFC IV. in DB
+            TestUser("László", "Takács", "TL@test.com", "bestpassword"),
+            TestUser("Dóra", "Juhász", "JD@test.com", "bestpassword"),
+            TestUser("Zoltán", "Mészáros", "MZ@test.com", "bestpassword"),
+            TestUser("Réka", "Simon", "SR@test.com", "bestpassword"),
+
+            // MAFC V. in DB
+            TestUser("Miklós", "Fekete", "FM@test.com", "bestpassword"),
+            TestUser("Tímea", "Szilágyi", "SZTI@test.com", "bestpassword"),
+            TestUser("Gergely", "Török", "TG@test.com", "bestpassword"),
+            TestUser("Andrea", "Fehér", "FA@test.com", "bestpassword"),
+
+            // MAFC VI. in DB
+            TestUser("Dániel", "Gál", "GD@test.com", "bestpassword"),
+            TestUser("Katalin", "Hegedűs", "HK@test.com", "bestpassword"),
+            TestUser("Márton", "Sipos", "SM@test.com", "bestpassword"),
+            TestUser("Boglárka", "Lukács", "LB@test.com", "bestpassword"),
+
+            */
+
+            TestUser("firstName", "lastName", "email@test.com", "bestpassword")
         )
 
         testUsers.forEach { user ->

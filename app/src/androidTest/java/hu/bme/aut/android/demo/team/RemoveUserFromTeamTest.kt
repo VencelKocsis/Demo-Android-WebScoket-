@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import hu.bme.aut.android.demo.MainActivity
 import hu.bme.aut.android.demo.data.DataStructure.CaptainTestUser
+import hu.bme.aut.android.demo.data.DataStructure.FullTestUser
 import hu.bme.aut.android.demo.data.DataStructure.RegularTestUser
 import hu.bme.aut.android.demo.data.DataStructure.TeamData
 import hu.bme.aut.android.demo.functions.Authentication.login
@@ -34,6 +35,30 @@ class RemoveUserFromTeamTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     val teams = listOf(
+
+        // --- ALL IN DB ---
+        // BEAC I.
+        TeamData(
+            captain = CaptainTestUser("NZ@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Szarvas Tamás"),
+                RegularTestUser("Bíró Csaba"),
+                RegularTestUser("Halász Gábor")
+            ),
+            teamName = "BEAC I."
+        ),
+
+        // BEAC II.
+        TeamData(
+            captain = CaptainTestUser("BG@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Nagy Tamás"),
+                RegularTestUser("Váczi Attila"),
+                RegularTestUser("Simon Dániel")
+            ),
+            teamName = "BEAC II."
+        ),
+
         // BEAC III.
         TeamData(
             captain = CaptainTestUser("tf@test.com", "bestpassword"),
@@ -45,6 +70,7 @@ class RemoveUserFromTeamTest {
             ),
             teamName = "BEAC III."
         ),
+
         // BEAC IV.
         TeamData(
             captain = CaptainTestUser("nzs@test.com", "bestpassword"),
@@ -56,6 +82,7 @@ class RemoveUserFromTeamTest {
             ),
             teamName = "BEAC IV."
         ),
+
         // BEAC V.
         TeamData(
             captain = CaptainTestUser("id@test.com", "bestpassword"),
@@ -70,6 +97,7 @@ class RemoveUserFromTeamTest {
             ),
             teamName = "BEAC V."
         ),
+
         // BEAC VI.
         TeamData(
             captain = CaptainTestUser("kp@test.com", "bestpassword"),
@@ -80,6 +108,69 @@ class RemoveUserFromTeamTest {
                 RegularTestUser("Reszler Balázs")
             ),
             teamName = "BEAC VI."
+        ),
+
+        // MAFC I.
+        TeamData(
+            captain = CaptainTestUser("NA@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Kovács Bence"),
+                RegularTestUser("Tóth Dávid"),
+                RegularTestUser("Szabó Eszter")
+            ),
+            teamName = "MAFC I."
+        ),
+
+        // MAFC II.
+        TeamData(
+            captain = CaptainTestUser("HGA@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Varga Zita"),
+                RegularTestUser("Kocsis Károly"),
+                RegularTestUser("Molnár Orsolya")
+            ),
+            teamName = "MAFC II."
+        ),
+
+        // MAFC III.
+        TeamData(
+            captain = CaptainTestUser("NB@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Farkas Kinga"),
+                RegularTestUser("Balogh Tamás"),
+                RegularTestUser("Papp Judit")
+            ),
+            teamName = "MAFC III."
+        ),
+        // MAFC IV.
+        TeamData(
+            captain = CaptainTestUser("TL@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Juhász Dóra"),
+                RegularTestUser("Mészáros Zoltán"),
+                RegularTestUser("Simon Réka")
+            ),
+            teamName = "MAFC IV."
+        ),
+        // MAFC V.
+        TeamData(
+            captain = CaptainTestUser("FM@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Szilágyi Tímea"),
+                RegularTestUser("Török Gergely"),
+                RegularTestUser("Fehér Andrea"),
+            ),
+            teamName = "MAFC V."
+        ),
+        // MAFC VI.
+        TeamData(
+            captain = CaptainTestUser("GD@test.com", "bestpassword"),
+            members = listOf(
+                RegularTestUser("Hegedűs Katalin"),
+                RegularTestUser("Sipos Márton"),
+                RegularTestUser("Lukács Boglárka")
+            ),
+            teamName = "MAFC VI."
         )
     )
 
@@ -113,7 +204,6 @@ class RemoveUserFromTeamTest {
                 composeTestRule.onNodeWithText("Eltávolítás").performClick()
 
                 // --- VÁRAKOZÁS A TÖRLÉS SIKERESSÉGÉRE ---
-                // Adunk egy pici időt a Compose-nak, hogy frissítse a listát a törölt elem nélkül
                 composeTestRule.waitForIdle()
                 Thread.sleep(500)
             }
