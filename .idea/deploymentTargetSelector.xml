@@ -38,6 +38,9 @@
       <SelectionState runConfigName="CancelApplyForMatchTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="ApplyAndCancelMatchApplicationTestSuite">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>
