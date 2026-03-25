@@ -37,6 +37,7 @@ espressoCore = "3.5.1"
 mockk = "1.13.10"
 turbine = "1.1.0"
 rules = "1.7.0"
+appcompat = "1.7.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -102,6 +103,7 @@ mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 androidx-rules = { group = "androidx.test", name = "rules", version.ref = "rules" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

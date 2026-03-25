@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -20,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.firebase.auth.FirebaseUser
+import hu.bme.aut.android.demo.R
+import hu.bme.aut.android.demo.util.LanguageSelector
 
 // A navigációs események kezelésére szolgáló lambda (pl. navigálás a főképernyőre)
 typealias OnAuthSuccess = (FirebaseUser) -> Unit
@@ -45,7 +48,7 @@ fun LoginScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bejelentkezés / Regisztráció") }
+                title = { Text(stringResource(R.string.login_registration)) }
             )
         },
         content = { padding ->
@@ -61,7 +64,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.emailInput,
                     onValueChange = viewModel::updateEmail,
-                    label = { Text("E-mail cím") },
+                    label = { Text(stringResource(R.string.e_mail_address)) },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = "E-mail") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
@@ -79,7 +82,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.passwordInput,
                     onValueChange = viewModel::updatePassword,
-                    label = { Text("Jelszó") },
+                    label = { Text(stringResource(R.string.password)) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Jelszó") },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
@@ -126,7 +129,7 @@ fun LoginScreen(
                         enabled = !state.isLoading && state.emailInput.isNotBlank()
                         // Csak akkor kattintható, ha beírt egy e-mail címet!
                     ) {
-                        Text("Elfelejtetted a jelszavad?")
+                        Text(stringResource(R.string.forgot_password))
                     }
                 }
 
@@ -143,7 +146,7 @@ fun LoginScreen(
                     if (state.isLoading) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
-                        Text("Bejelentkezés")
+                        Text(stringResource(R.string.login))
                     }
                 }
 
@@ -157,7 +160,7 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
-                    Text("Regisztráció")
+                    Text(stringResource(R.string.register))
                 }
             }
         }

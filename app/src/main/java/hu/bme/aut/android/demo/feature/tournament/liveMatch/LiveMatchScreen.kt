@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.common.LiveIndicator
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
@@ -59,7 +61,7 @@ fun LiveMatchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Élő Mérkőzés") },
+                title = { Text(stringResource(R.string.live_match)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Vissza")
@@ -79,7 +81,9 @@ fun LiveMatchScreen(
         ) {
             // Ha épp a szerverre küldünk adatot, egy finom csíkot mutatunk felül
             if (state.isMutating) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+                LinearProgressIndicator(modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter))
             }
 
             // Ha engedélyezett a frissítés, beletesszük a dobozba
@@ -164,23 +168,25 @@ fun LineupSetupContent(
     })
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (state.isSpectator) "Csapatkeret" else "Állítsd be a sorrendet!",
+            text = if (state.isSpectator) stringResource(R.string.team_frame) else stringResource(R.string.select_positions),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = if (state.isSpectator) {
-                "Nézőként csak megtekintheted az eddigi felállást.\nHúzd le a frissítéshez!"
+                stringResource(R.string.tx_viewer_only_can_watch)
             } else {
-                "Húzd a játékosokat a megfelelő helyre! Az első 4 pozíció lép pályára, a többiek a kispadon maradnak."
+                stringResource(R.string.tx_drag_user)
             },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -213,7 +219,9 @@ fun LineupSetupContent(
                         )
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (!state.isSpectator) {
@@ -223,7 +231,9 @@ fun LineupSetupContent(
 
                             Column {
                                 Text(
-                                    text = if (isStarter) "${index + 1}. Játékos" else "Kispad",
+                                    text = if (isStarter) stringResource(R.string.player, index + 1) else stringResource(
+                                        R.string.bench_player
+                                    ),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (isStarter) MaterialTheme.colorScheme.primary else Color.Gray
                                 )
@@ -245,11 +255,13 @@ fun LineupSetupContent(
             val isReady = state.lineupList.size >= 4
             Button(
                 onClick = { onEvent(LiveMatchEvent.SubmitLineup) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 enabled = isReady && !state.isMutating,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Sorrend beküldése")
+                Text(stringResource(R.string.send_order))
             }
         }
     }
@@ -261,17 +273,22 @@ fun WaitingForOpponentContent(
     onRefresh: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         CircularProgressIndicator()
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Sorrend leadva! ✅", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.order_placed), style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Várakozás a(z) ${if (state.myTeamSide == "HOME") "vendég" else "hazai"} csapatra, hogy ők is beállítsák a sorrendet...\n\nHúzd lefelé a képernyőt a frissítéshez!",
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            text = stringResource(
+                R.string.wait_for_order,
+                if (state.myTeamSide == "HOME") stringResource(R.string.guest) else stringResource(R.string.home)
+            ),
+            textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -283,18 +300,20 @@ fun MatchGridContent(
     onEvent: (LiveMatchEvent) -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
         item {
             Text(
-                text = "Egyéni Mérkőzések",
+                text = stringResource(R.string.individual_matches),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
-                text = "Válaszd ki a meccset a pontozáshoz! Az eredmények automatikusan (élőben) frissülnek.",
+                text = stringResource(R.string.tx_choose_match_to_score),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -308,7 +327,7 @@ fun MatchGridContent(
         for ((round, matches) in matchesByRound) {
             item(key = "round_$round") {
                 Text(
-                    text = "$round. Kör",
+                    text = stringResource(R.string.round, round),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -356,7 +375,7 @@ fun MatchGridContent(
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "vs",
+                                    text = stringResource(R.string.vs),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(vertical = 4.dp)
@@ -376,21 +395,21 @@ fun MatchGridContent(
                             ) {
                                 Text(
                                     text = "${game.homeScore} - ${game.guestScore}",
-                                    style = MaterialTheme.typography.headlineMedium, // Kicsit nagyobbra vettük
+                                    style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Black,
                                     color = if (game.status == "finished") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
 
                                 Spacer(modifier = Modifier.height(6.dp))
 
-                                // ÚJ DESIGN: Státusz "Jelvények" (Badges)
+                                // Státusz "Jelvények" (Badges)
                                 when (game.status) {
                                     "in_progress" -> {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             LiveIndicator(color = Color(0xFFFF4081))
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text(
-                                                text = "ÉLŐ",
+                                                text = stringResource(R.string.live),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFFFF4081)
@@ -405,7 +424,7 @@ fun MatchGridContent(
                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
                                             Text(
-                                                text = "Befejezve",
+                                                text = stringResource(R.string.finished),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF388E3C)
@@ -420,7 +439,7 @@ fun MatchGridContent(
                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
                                             Text(
-                                                text = "Várakozik",
+                                                text = stringResource(R.string.waiting),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = Color.Gray
                                             )
@@ -453,14 +472,14 @@ fun MatchGridContent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Jegyzőkönyv Hitelesítése",
+                            text = stringResource(R.string.protocol_authentication),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Minden mérkőzés véget ért. Kérjük a csapatok képviselőit, hogy hagyják jóvá az eredményt!",
+                            text = stringResource(R.string.tx_all_round_is_over),
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
@@ -473,7 +492,7 @@ fun MatchGridContent(
                         ) {
                             // HAZAI CSAPAT ÁLLAPOTA
                             SignatureStatusColumn(
-                                teamName = "Hazai",
+                                teamName = stringResource(R.string.home),
                                 isSigned = state.match.homeTeamSigned,
                                 isMyTeam = state.myTeamSide == "HOME" && !state.isSpectator,
                                 onSignClick = { onEvent(LiveMatchEvent.SignMatch) }
@@ -481,7 +500,7 @@ fun MatchGridContent(
 
                             // VENDÉG CSAPAT ÁLLAPOTA
                             SignatureStatusColumn(
-                                teamName = "Vendég",
+                                teamName = stringResource(R.string.guest),
                                 isSigned = state.match.guestTeamSigned,
                                 isMyTeam = state.myTeamSide == "GUEST" && !state.isSpectator,
                                 onSignClick = { onEvent(LiveMatchEvent.SignMatch) }
@@ -492,7 +511,7 @@ fun MatchGridContent(
                             Spacer(modifier = Modifier.height(16.dp))
                             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50))) {
                                 Text(
-                                    text = "A MÉRKŐZÉS HIVATALOSAN LEZÁRULT!",
+                                    text = stringResource(R.string.tx_match_officially_over),
                                     color = Color.White,
                                     fontWeight = FontWeight.Black,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -519,16 +538,16 @@ fun SignatureStatusColumn(
 
         if (isSigned) {
             Icon(Icons.Default.CheckCircle, contentDescription = "Aláírva", tint = Color(0xFF4CAF50), modifier = Modifier.size(32.dp))
-            Text("Jóváhagyva", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.approved), color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
         } else {
             if (isMyTeam) {
                 Button(onClick = onSignClick, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
-                    Text("Aláírom")
+                    Text(stringResource(R.string.sign))
                 }
             } else {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Várakozás...", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.wait_for), style = MaterialTheme.typography.labelSmall)
             }
         }
     }

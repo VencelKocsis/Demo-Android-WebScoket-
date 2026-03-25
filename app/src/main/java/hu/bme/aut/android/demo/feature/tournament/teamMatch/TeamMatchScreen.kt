@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +45,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.ui.common.MatchDateRow
 import hu.bme.aut.android.demo.ui.common.MatchLocationButton
@@ -85,7 +87,7 @@ fun TeamMatchScreenContent(
     onMatchClick: (Int) -> Unit
 ) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Bajnokság Mérkőzések") }) }
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.championship)) }) }
     ) { paddingValues ->
 
         // --- PULL TO REFRESH DOBOZ A TELJES KÉPERNYŐRE ---
@@ -105,7 +107,7 @@ fun TeamMatchScreenContent(
                 } else if (state.teamMatchesByRound.isEmpty() && state.errorMessage == null) {
                     // Ha nincs meccs
                     Text(
-                        text = "Nincsenek elérhető mérkőzések a bajnokságban.",
+                        text = stringResource(R.string.no_available_matches),
                         modifier = Modifier.align(Alignment.Center),
                         color = Color.Gray
                     )
@@ -150,7 +152,7 @@ fun TeamMatchScreenContent(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(onClick = { onEvent(TeamMatchScreenEvent.LoadTeamMatches) }) {
-                                Text("Újrapóbálkozás")
+                                Text(stringResource(R.string.retry))
                             }
                         }
                     }
@@ -170,7 +172,7 @@ fun RoundHeader(roundNumber: Int) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Forduló $roundNumber",
+            text = stringResource(R.string.f_round, roundNumber),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -226,7 +228,7 @@ fun TeamMatchSimpleCard(
             if (teamMatch.status == "finished") {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Végeredmény: ${teamMatch.homeTeamScore} - ${teamMatch.guestTeamScore}",
+                    text = stringResource(R.string.final_result, teamMatch.homeTeamScore, teamMatch.guestTeamScore),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary

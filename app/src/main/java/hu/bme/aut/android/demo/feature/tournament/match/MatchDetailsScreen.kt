@@ -55,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -63,6 +64,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
 import hu.bme.aut.android.demo.domain.teammatch.model.MatchParticipant
 import hu.bme.aut.android.demo.ui.common.LiveIndicator
@@ -105,7 +107,7 @@ fun MatchDetailsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Mérkőzés Részletei") },
+                title = { Text(stringResource(R.string.match_details)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Visszalépés")
@@ -126,7 +128,9 @@ fun MatchDetailsScreen(
             Box(modifier = Modifier.fillMaxSize()) {
 
                 if (state.isMutating) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+                    LinearProgressIndicator(modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter))
                 }
 
                 if (state.errorMessage != null && state.match == null) {
@@ -134,10 +138,10 @@ fun MatchDetailsScreen(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "Hiba: ${state.errorMessage}", color = MaterialTheme.colorScheme.error)
+                        Text(text = stringResource(R.string.failure, state.errorMessage!!), color = MaterialTheme.colorScheme.error)
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(onClick = { viewModel.onEvent(MatchDetailsEvent.LoadMatch) }) {
-                            Text("Újratöltés")
+                            Text(stringResource(R.string.reload))
                         }
                     }
                 } else {
@@ -163,7 +167,11 @@ fun MatchDetailsScreen(
                                 // Eredmény megjelenítése dinamikusan
                                 if (match.status == "finished") {
                                     Text(
-                                        text = "Végeredmény: $liveHomeScore - $liveGuestScore",
+                                        text = stringResource(
+                                            R.string.final_result,
+                                            liveHomeScore,
+                                            liveGuestScore
+                                        ),
                                         style = MaterialTheme.typography.titleLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Black
@@ -174,7 +182,11 @@ fun MatchDetailsScreen(
                                         LiveIndicator(color = Color(0xFFFF4081))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "Élő állás: $liveHomeScore - $liveGuestScore",
+                                            text = stringResource(
+                                                R.string.live_state,
+                                                liveHomeScore,
+                                                liveGuestScore
+                                            ),
                                             style = MaterialTheme.typography.titleLarge,
                                             color = Color(0xFFFF4081),
                                             fontWeight = FontWeight.Black
@@ -192,7 +204,6 @@ fun MatchDetailsScreen(
                             item {
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    // JAVÍTVA: Szürke háttér helyett tiszta felület (fehér/sötét téma alap), finom körvonallal és árnyékkal
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                     border = CardDefaults.outlinedCardBorder(),
                                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -208,7 +219,7 @@ fun MatchDetailsScreen(
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(
-                                                text = "Mérkőzés Információk",
+                                                text = stringResource(R.string.match_information),
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -227,7 +238,9 @@ fun MatchDetailsScreen(
 
                                 Spacer(modifier = Modifier.height(32.dp))
                                 Text(
-                                    text = if (match.status == "scheduled") "Jelentkezők és Keretek" else "Kezdőcsapat és Statisztika",
+                                    text = if (match.status == "scheduled") stringResource(R.string.applicants_and_frames) else stringResource(
+                                        R.string.starting_team_and_statistics
+                                    ),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Black
                                 )
@@ -239,7 +252,10 @@ fun MatchDetailsScreen(
                                 if (match.status == "scheduled") {
                                     // TERVEZETT MECCS: Szerkeszthető keretek a plusz/mínusz gombokkal
                                     RosterCard(
-                                        teamName = "${match.homeTeamName} (Hazai)",
+                                        teamName = stringResource(
+                                            R.string.x_home,
+                                            match.homeTeamName
+                                        ),
                                         participants = match.participants.filter { it.teamSide == "HOME" },
                                         canEdit = state.isHomeCaptain && match.status == "scheduled",
                                         isLoading = state.isMutating,
@@ -248,7 +264,10 @@ fun MatchDetailsScreen(
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     RosterCard(
-                                        teamName = "${match.guestTeamName} (Vendég)",
+                                        teamName = stringResource(
+                                            R.string.x_guest,
+                                            match.guestTeamName
+                                        ),
                                         participants = match.participants.filter { it.teamSide == "GUEST" },
                                         canEdit = state.isGuestCaptain && match.status == "scheduled",
                                         isLoading = state.isMutating,
@@ -258,13 +277,18 @@ fun MatchDetailsScreen(
                                 } else {
                                     // ELINDULT / BEFEJEZETT MECCS: Aktív kezdőcsapat és egyéni győzelmek!
                                     ActiveRosterCard(
-                                        teamName = "${match.homeTeamName} (Hazai)",
+                                        teamName = stringResource(
+                                            R.string.x_home,
+                                            match.homeTeamName),
                                         participants = match.participants.filter { it.teamSide == "HOME" },
                                         individualMatches = match.individualMatches
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     ActiveRosterCard(
-                                        teamName = "${match.guestTeamName} (Vendég)",
+                                        teamName = stringResource(
+                                            R.string.x_guest,
+                                            match.guestTeamName
+                                        ),
                                         participants = match.participants.filter { it.teamSide == "GUEST" },
                                         individualMatches = match.individualMatches
                                     )
@@ -279,31 +303,46 @@ fun MatchDetailsScreen(
                                     if (match.status == "in_progress" || match.status == "finished") {
                                         Button(
                                             onClick = onNavigateToLiveMatch,
-                                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(56.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
                                         ) {
-                                            Text(if (match.status == "finished") "RÉSZLETES EREDMÉNYEK 🏓" else "TOVÁBB AZ ÉLŐ MÉRKŐZÉSRE 🏓", fontWeight = FontWeight.Bold)
+                                            Text(if (match.status == "finished") stringResource(R.string.detailed_results) else stringResource(
+                                                R.string.to_live_match
+                                            ), fontWeight = FontWeight.Bold)
                                         }
                                     }
                                     else if (match.status == "scheduled") {
                                         if (!state.hasApplied) {
                                             Button(
                                                 onClick = { viewModel.onEvent(MatchDetailsEvent.OnApply) },
-                                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(56.dp),
                                                 enabled = !state.isMutating
                                             ) {
-                                                Text("Jelentkezem a mérkőzésre", fontWeight = FontWeight.Bold)
+                                                Text(stringResource(R.string.apply_for_match), fontWeight = FontWeight.Bold)
                                             }
                                         } else {
-                                            val statusMsg = if (state.myStatus == "SELECTED") "A kapitány beválogatott a keretbe! Készülj!" else "Jelentkezésed rögzítve. Várj a kapitány döntésére."
+                                            val statusMsg = if (state.myStatus == "SELECTED") stringResource(
+                                                R.string.captain_selected_you
+                                            ) else stringResource(R.string.wait_for_captain_selection)
                                             val statusColor = if (state.myStatus == "SELECTED") Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
 
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                                 Box(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .background(statusColor.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                                                        .border(1.dp, statusColor.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                                        .background(
+                                                            statusColor.copy(alpha = 0.1f),
+                                                            RoundedCornerShape(12.dp)
+                                                        )
+                                                        .border(
+                                                            1.dp,
+                                                            statusColor.copy(alpha = 0.3f),
+                                                            RoundedCornerShape(12.dp)
+                                                        )
                                                         .padding(16.dp),
                                                     contentAlignment = Alignment.Center
                                                 ) {
@@ -314,7 +353,7 @@ fun MatchDetailsScreen(
                                                     onClick = { viewModel.onEvent(MatchDetailsEvent.OnWithdrawApplication) },
                                                     enabled = !state.isMutating
                                                 ) {
-                                                    Text("Jelentkezés visszavonása", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                                                    Text(stringResource(R.string.cancel_apply), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                                                 }
                                             }
                                         }
@@ -335,19 +374,23 @@ fun MatchDetailsScreen(
                                                         viewModel.onEvent(MatchDetailsEvent.OnFinalizeRoster)
                                                         onNavigateToLiveMatch()
                                                     },
-                                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(56.dp),
                                                     enabled = !state.isMutating,
                                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
                                                 ) {
-                                                    Text("MÉRKŐZÉS ELINDÍTÁSA 🏁", fontWeight = FontWeight.Black)
+                                                    Text(stringResource(R.string.start_match), fontWeight = FontWeight.Black)
                                                 }
                                             } else {
                                                 Button(
                                                     onClick = { },
-                                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(56.dp),
                                                     enabled = false
                                                 ) {
-                                                    Text("Mérkőzés elindítása")
+                                                    Text(stringResource(R.string.start_match))
                                                 }
                                             }
                                         }
@@ -381,13 +424,17 @@ fun RosterCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = teamName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Box(
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
                         .background(if (selectedCount >= 4) Color(0xFF4CAF50).copy(alpha = 0.2f) else MaterialTheme.colorScheme.errorContainer)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
@@ -401,7 +448,9 @@ fun RosterCard(
             }
 
             if (participants.isEmpty()) {
-                Text("Még senki nem jelentkezett.", color = Color.Gray, modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                Text("Még senki nem jelentkezett.", color = Color.Gray, modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(), textAlign = TextAlign.Center)
             } else {
                 Column(modifier = Modifier.padding(8.dp)) {
                     participants.forEach { p ->
@@ -424,13 +473,20 @@ fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading:
     val isSelected = status == "SELECTED" || status == "LOCKED"
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp).clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else Color.Transparent).padding(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp, horizontal = 8.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else Color.Transparent)
+            .padding(8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
             Box(
-                modifier = Modifier.size(32.dp).clip(CircleShape).background(if (isSelected) Color(0xFF4CAF50) else MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) Color(0xFF4CAF50) else MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
@@ -476,7 +532,10 @@ fun ActiveRosterCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)).padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.SportsScore, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -502,7 +561,9 @@ fun ActiveRosterCard(
                     }
 
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -523,7 +584,10 @@ fun ActiveRosterCard(
 
                         // Statisztika "Pilula"
                         Row(
-                            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Gy: ", style = MaterialTheme.typography.labelSmall, color = Color.Gray)

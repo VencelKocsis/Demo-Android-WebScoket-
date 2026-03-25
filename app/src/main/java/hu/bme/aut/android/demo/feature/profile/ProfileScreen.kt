@@ -54,28 +54,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.racketEditor.Blade
 import hu.bme.aut.android.demo.feature.racketEditor.Racket
 import hu.bme.aut.android.demo.feature.racketEditor.Rubber
+import hu.bme.aut.android.demo.util.LanguageSelector
 
 @Composable
 fun ColorCircle(color: Color, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .size(16.dp) // Kicsit megnöveltem, hogy jobban látszódjon
+            .size(16.dp)
             .background(color, CircleShape)
     )
 }
 
 fun stringToColor(colorName: String): Color {
     return when (colorName.lowercase()) {
-        "red" -> Color(0xFFD32F2F) // Szebb, Material piros
-        "black" -> Color(0xFF212121) // Szebb, Material fekete
+        "red" -> Color(0xFFD32F2F)
+        "black" -> Color(0xFF212121)
         "blue" -> Color(0xFF1976D2)
         "green" -> Color(0xFF388E3C)
         "yellow" -> Color(0xFFFBC02D)
@@ -126,15 +129,17 @@ fun ProfileScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Játékos Profil") },
+                title = { Text(stringResource(R.string.user_profile)) },
                 actions = {
+                    LanguageSelector()
+
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Menü")
                     }
 
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
-                            text = { Text("Profil szerkesztése") },
+                            text = { Text(stringResource(R.string.edit_profile)) },
                             onClick = {
                                 showMenu = false
                                 editFirstName = user?.firstName ?: ""
@@ -145,7 +150,7 @@ fun ProfileScreen(
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
-                            text = { Text("Kijelentkezés", color = MaterialTheme.colorScheme.error) },
+                            text = { Text(stringResource(R.string.logout), color = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 showMenu = false
                                 onLogoutClick()
@@ -197,7 +202,7 @@ fun ProfileScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = user?.email ?: "Nincs email",
+                        text = user?.email ?: stringResource(R.string.no_email),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )
@@ -218,7 +223,8 @@ fun ProfileScreen(
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = if (teamNames.isEmpty()) "Nincs csapatban" else "Csapat: ${teamNames.joinToString(", ")}",
+                        text = if (teamNames.isEmpty()) stringResource(R.string.no_team) else stringResource(
+                            R.string.team, teamNames.joinToString(", ")),
                         color = teamTextCol,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
@@ -242,7 +248,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Saját Statisztika", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.personal_statistics), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text(seasonName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     }
 
@@ -252,14 +258,14 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        ProfileStatItem(label = "Meccs", value = matchesPlayed.toString(), type = "neutral")
-                        ProfileStatItem(label = "Győzelem", value = matchesWon.toString(), type = "success")
-                        ProfileStatItem(label = "Arány", value = "$winRate%", type = "primary")
+                        ProfileStatItem(label = stringResource(R.string.match), value = matchesPlayed.toString(), type = "neutral")
+                        ProfileStatItem(label = stringResource(R.string.victory), value = matchesWon.toString(), type = "success")
+                        ProfileStatItem(label = stringResource(R.string.ratio), value = "$winRate%", type = "primary")
                     }
                 }
             }
 
-            // --- 3. ÜTŐK (FELSZERELÉS) ---
+            // --- 3. ÜTŐK (FELSZERELÉS) --- // TODO
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -298,7 +304,9 @@ fun ProfileScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                        Column(modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()) {
                             Text(text = "Ütőfa", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             Text(text = racketExample.blade, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
 
@@ -346,20 +354,20 @@ fun ProfileScreen(
     if (showEditDialog) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
-            title = { Text("Profil szerkesztése", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.edit_profile), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     OutlinedTextField(
                         value = editLastName,
                         onValueChange = { editLastName = it },
-                        label = { Text("Vezetéknév") },
+                        label = { Text(stringResource(R.string.last_name)) },
                         singleLine = true,
                         enabled = !profileState.isLoading
                     )
                     OutlinedTextField(
                         value = editFirstName,
                         onValueChange = { editFirstName = it },
-                        label = { Text("Keresztnév") },
+                        label = { Text(stringResource(R.string.first_name)) },
                         singleLine = true,
                         enabled = !profileState.isLoading
                     )
@@ -373,12 +381,12 @@ fun ProfileScreen(
                     },
                     enabled = editFirstName.isNotBlank() && editLastName.isNotBlank() && !profileState.isLoading
                 ) {
-                    Text("Mentés")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }, enabled = !profileState.isLoading) {
-                    Text("Mégse", color = Color.Gray)
+                    Text(stringResource(R.string.cancel), color = Color.Gray)
                 }
             }
         )
@@ -399,7 +407,7 @@ fun ProfileStatItem(label: String, value: String, type: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(56.dp) // Kicsit nagyobb buborékok a profilon
+                .size(56.dp)
                 .clip(CircleShape)
                 .background(bgColor),
             contentAlignment = Alignment.Center

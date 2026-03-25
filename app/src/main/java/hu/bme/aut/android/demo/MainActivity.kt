@@ -7,16 +7,17 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import hu.bme.aut.android.demo.navigation.AppNavHost
 import hu.bme.aut.android.demo.ui.theme.DemoTheme
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val CHANNEL_ID = "DEMO_CHANNEL"
     private val CHANNEL_NAME = "Demó Értesítések"
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -44,8 +46,6 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
 
                 // 2. Meghívjuk a KÜLÖN fájlban lévő AppNavHost-ot (navigation package)
-                // Fontos: Itt NEM kérünk le ViewModelt vagy AuthState-et,
-                // mert azt az AppNavHost.kt intézi belül Hilt segítségével.
                 AppNavHost(navController = navController)
             }
         }

@@ -27,7 +27,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.util.toDisplayDate
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun MatchLocationButton(
@@ -59,7 +61,7 @@ fun MatchLocationButton(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "Térkép: $location",
+            text = stringResource(R.string.map, location),
             style = MaterialTheme.typography.labelMedium
         )
     }
@@ -124,13 +126,14 @@ fun getStatusTheme(status: String?): Pair<Color, Color> {
     }
 }
 
+@Composable
 fun getStatusText(status: String?): String {
     return when (status) {
-        "scheduled" -> "Tervezve"
-        "in_progress" -> "FOLYAMATBAN"
-        "finished" -> "Befejezve"
-        "cancelled" -> "Törölve"
-        else -> status ?: "Ismeretlen"
+        "scheduled" -> stringResource(R.string.status_scheduled)
+        "in_progress" -> stringResource(R.string.status_in_progress)
+        "finished" -> stringResource(R.string.status_finished)
+        "cancelled" -> stringResource(R.string.status_cancelled)
+        else -> status ?: stringResource(R.string.status_unknown)
     }
 }
 

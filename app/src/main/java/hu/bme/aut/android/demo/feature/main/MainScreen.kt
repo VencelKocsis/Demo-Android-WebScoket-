@@ -1,8 +1,10 @@
 package hu.bme.aut.android.demo.feature.main
 
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
@@ -24,6 +26,7 @@ import hu.bme.aut.android.demo.navigation.Screen
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.delay
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(
     onLogout: () -> Unit, // Callback a kijelentkezéshez (a Profilról érhető el)

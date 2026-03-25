@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +53,7 @@ fun MatchScorerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Eredmény rögzítése") },
+                title = { Text(stringResource(R.string.save_result)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Vissza") }
                 }
@@ -62,7 +64,9 @@ fun MatchScorerScreen(
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { viewModel.loadMatch() },
-            modifier = Modifier.fillMaxSize().padding(paddingValues)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 if (state.isLoading && state.match == null) {
@@ -70,14 +74,18 @@ fun MatchScorerScreen(
                 } else {
                     state.match?.let { match ->
 
-                        // <--- ÚJ: Eldöntjük, hogy szerkeszthető-e még a felület --->
+                        // Eldöntjük, hogy szerkeszthető-e még a felület --->
                         val isReadOnly = state.isFinished || state.isTeamMatchFinished
 
-                        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        Column(modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)) {
 
-                            Text("Állás (Szettek)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.CenterHorizontally))
+                            Text(stringResource(R.string.set_state), style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.CenterHorizontally))
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
                                 horizontalArrangement = Arrangement.SpaceEvenly,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -100,7 +108,7 @@ fun MatchScorerScreen(
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("Szettek részletei", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.set_details), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(16.dp))
 
                                     state.sets.forEachIndexed { index, setScore ->
@@ -111,7 +119,9 @@ fun MatchScorerScreen(
                                         val isGuestWinner = gScore >= 11 && (gScore - hScore) >= 2
 
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.Center
                                         ) {
@@ -119,7 +129,7 @@ fun MatchScorerScreen(
                                                 value = setScore.home,
                                                 onValueChange = { viewModel.updateSetScore(index, it, setScore.guest) },
                                                 isWinner = isHomeWinner,
-                                                enabled = !isReadOnly // <--- JAVÍTVA
+                                                enabled = !isReadOnly
                                             )
 
                                             Text(" : ", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -128,7 +138,7 @@ fun MatchScorerScreen(
                                                 value = setScore.guest,
                                                 onValueChange = { viewModel.updateSetScore(index, setScore.home, it) },
                                                 isWinner = isGuestWinner,
-                                                enabled = !isReadOnly // <--- JAVÍTVA
+                                                enabled = !isReadOnly
                                             )
                                         }
                                     }
@@ -143,7 +153,7 @@ fun MatchScorerScreen(
                             }
                             val canSave = areSetsValid && !state.isSaving
 
-                            // <--- JAVÍTVA: Ha olvasható mód, akkor eltüntetjük a mentés gombokat --->
+                            // Ha olvasható mód, akkor eltüntetjük a mentés gombokat
                             if (!isReadOnly) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -151,28 +161,34 @@ fun MatchScorerScreen(
                                 ) {
                                     OutlinedButton(
                                         onClick = { viewModel.submitScore(isFinal = false) },
-                                        modifier = Modifier.weight(1f).height(50.dp),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(50.dp),
                                         enabled = canSave
                                     ) {
-                                        Text("Mentés (Még tart)")
+                                        Text(stringResource(R.string.saving))
                                     }
 
                                     Button(
                                         onClick = { viewModel.submitScore(isFinal = true) },
-                                        modifier = Modifier.weight(1f).height(50.dp),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(50.dp),
                                         enabled = canSave && isMatchOver,
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                                     ) {
-                                        Text("VÉGLEGESÍTÉS")
+                                        Text(stringResource(R.string.finalize))
                                     }
                                 }
 
                                 if (!areSetsValid) {
                                     Text(
-                                        text = "Kérlek, töltsd ki mindkét pontszámot a megkezdett szettekben!",
+                                        text = stringResource(R.string.tx_fill_sets),
                                         color = MaterialTheme.colorScheme.error,
                                         style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp),
                                         textAlign = TextAlign.Center
                                     )
                                 }
@@ -183,10 +199,14 @@ fun MatchScorerScreen(
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
                                 ) {
                                     Text(
-                                        text = if (state.isTeamMatchFinished) "A csapatmérkőzés hitelesítve lett, az eredmények véglegesek." else "A mérkőzés lezárult.",
+                                        text = if (state.isTeamMatchFinished) stringResource(R.string.tx_match_authenticated) else stringResource(
+                                            R.string.match_over
+                                        ),
                                         color = Color(0xFF4CAF50),
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
                                         textAlign = TextAlign.Center
                                     )
                                 }

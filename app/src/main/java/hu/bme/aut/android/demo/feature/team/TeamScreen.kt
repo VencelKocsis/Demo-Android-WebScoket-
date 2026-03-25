@@ -46,12 +46,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.team.model.Team
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
 import kotlin.collections.isNotEmpty
@@ -123,7 +125,7 @@ fun TeamScreenContent(
     var expanded by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Klubház") }) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.club)) }) },
         floatingActionButton = {
             if (state.isCurrentUserCaptain && state.selectedTeam != null) {
                 FloatingActionButton(
@@ -139,7 +141,9 @@ fun TeamScreenContent(
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { onEvent(TeamScreenEvent.LoadInitialData) },
-            modifier = Modifier.fillMaxSize().padding(paddingValues)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
             if (state.errorMessage != null && state.teamList.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -158,16 +162,18 @@ fun TeamScreenContent(
                                 onExpandedChange = { expanded = !expanded }
                             ) {
                                 OutlinedTextField(
-                                    value = state.selectedTeam?.name ?: "Válassz csapatot",
+                                    value = state.selectedTeam?.name ?: stringResource(R.string.select_team),
                                     onValueChange = {},
                                     readOnly = true,
-                                    label = { Text("Kiválasztott Csapat") },
+                                    label = { Text(stringResource(R.string.selected_team)) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                                     colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
                                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                                     ),
-                                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor()
                                 )
 
                                 ExposedDropdownMenu(
@@ -195,7 +201,7 @@ fun TeamScreenContent(
                             Text(team.clubName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                             if (!team.division.isNullOrEmpty()) {
                                 Text(
-                                    text = "Divízió: ${team.division}",
+                                    text = stringResource(R.string.division, team.division),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold
@@ -210,19 +216,21 @@ fun TeamScreenContent(
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    StatItem(label = "Meccs", value = team.matchesPlayed.toString(), type = "neutral")
-                                    StatItem(label = "Gy", value = team.wins.toString(), type = "success")
-                                    StatItem(label = "D", value = team.draws.toString(), type = "warning")
-                                    StatItem(label = "V", value = team.losses.toString(), type = "error")
-                                    StatItem(label = "Pont", value = team.points.toString(), type = "primary")
+                                    StatItem(label = stringResource(R.string.match), value = team.matchesPlayed.toString(), type = "neutral")
+                                    StatItem(label = stringResource(R.string.victory), value = team.wins.toString(), type = "success")
+                                    StatItem(label = stringResource(R.string.draw), value = team.draws.toString(), type = "warning")
+                                    StatItem(label = stringResource(R.string.lose), value = team.losses.toString(), type = "error")
+                                    StatItem(label = stringResource(R.string.point), value = team.points.toString(), type = "primary")
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(32.dp))
-                            Text("Csapatkeret", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.team_frame), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
@@ -234,7 +242,7 @@ fun TeamScreenContent(
                         // LEGUTÓBBI MECCSEK
                         item {
                             Spacer(modifier = Modifier.height(32.dp))
-                            Text("Legutóbbi meccsek", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.previous_matches), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
@@ -297,12 +305,16 @@ fun MatchResultRow(match: MatchResult) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = CardDefaults.outlinedCardBorder()
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -333,17 +345,23 @@ fun MatchResultRow(match: MatchResult) {
 @Composable
 fun PlayerCardRow(name: String, isCaptain: Boolean) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = CardDefaults.outlinedCardBorder()
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Profil avatar helyettkeztető
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -360,7 +378,7 @@ fun PlayerCardRow(name: String, isCaptain: Boolean) {
                         .background(Color(0xFFFFC107).copy(alpha = 0.2f))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Text("KAPITÁNY", color = Color(0xFFF57F17), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
+                    Text(stringResource(R.string.captain), color = Color(0xFFF57F17), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
                 }
             }
         }

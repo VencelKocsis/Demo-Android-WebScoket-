@@ -53,10 +53,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.team.model.TeamMember
 
 // --- ÁLLAPOT ÉS ESEMÉNYEK ---
@@ -115,7 +117,7 @@ fun TeamEditorContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Csapat szerkesztése") },
+                title = { Text(stringResource(R.string.edit_team)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Visszalépés")
@@ -128,7 +130,9 @@ fun TeamEditorContent(
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { onEvent(TeamEditorEvent.LoadTeamData) },
-            modifier = Modifier.fillMaxSize().padding(paddingValues)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
 
@@ -139,17 +143,21 @@ fun TeamEditorContent(
                 ) {
                     // --- 0. CSAPAT NEVÉNEK MÓDOSÍTÁSA ---
                     item {
-                        Text("Csapat neve", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.team_name), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Card(
-                            modifier = Modifier.fillMaxWidth().clickable { onEvent(TeamEditorEvent.OnEditNameClicked) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onEvent(TeamEditorEvent.OnEditNameClicked) },
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
                             ) {
                                 Text(
                                     text = state.teamName,
@@ -172,7 +180,7 @@ fun TeamEditorContent(
 
                     // --- 1. ÚJ TAG FELVÉTELE ---
                     item {
-                        Text("Új tag felvétele", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.add_new_member), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         ExposedDropdownMenuBox(
@@ -180,7 +188,7 @@ fun TeamEditorContent(
                             onExpandedChange = { expanded = !expanded }
                         ) {
                             OutlinedTextField(
-                                value = "Válassz szabad játékost...",
+                                value = stringResource(R.string.choose_available_user),
                                 onValueChange = {},
                                 readOnly = true,
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -188,12 +196,14 @@ fun TeamEditorContent(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                                 ),
-                                modifier = Modifier.fillMaxWidth().menuAnchor()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor()
                             )
                             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                                 if (state.availableUsers.isEmpty()) {
                                     DropdownMenuItem(
-                                        text = { Text("Nincs szabad játékos", color = Color.Gray) },
+                                        text = { Text(stringResource(R.string.no_available_user), color = Color.Gray) },
                                         onClick = { expanded = false }
                                     )
                                 } else {
@@ -218,7 +228,7 @@ fun TeamEditorContent(
 
                     // --- 2. JELENLEGI TAGOK LISTÁJA ---
                     item {
-                        Text("Jelenlegi csapattagok", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.team_members), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
@@ -235,19 +245,19 @@ fun TeamEditorContent(
                     }
                 }
             }
-        } // --- PullToRefreshBox VÉGE ---
+        }
 
         // --- DIALÓGUSOK ---
         if (state.isEditNameDialogVisible) {
             AlertDialog(
                 onDismissRequest = { onEvent(TeamEditorEvent.OnDismissEditName) },
-                title = { Text("Csapatnév módosítása") },
+                title = { Text(stringResource(R.string.edit_team_name)) },
                 text = {
                     OutlinedTextField(
                         value = state.newNameInput,
                         onValueChange = { onEvent(TeamEditorEvent.OnNameInputChanged(it)) },
                         singleLine = true,
-                        label = { Text("Új név") },
+                        label = { Text(stringResource(R.string.new_name)) },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
                     )
@@ -257,12 +267,12 @@ fun TeamEditorContent(
                         onClick = { onEvent(TeamEditorEvent.OnSaveNameClicked) },
                         enabled = state.newNameInput.isNotBlank() && state.newNameInput != state.teamName
                     ) {
-                        Text("Mentés", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.save), fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { onEvent(TeamEditorEvent.OnDismissEditName) }) {
-                        Text("Mégse", color = Color.Gray)
+                        Text(stringResource(R.string.cancel), color = Color.Gray)
                     }
                 }
             )
@@ -271,16 +281,16 @@ fun TeamEditorContent(
         state.memberToKick?.let { member ->
             AlertDialog(
                 onDismissRequest = { onEvent(TeamEditorEvent.OnDismissKick) },
-                title = { Text("Tag eltávolítása") },
-                text = { Text("Biztosan el szeretnéd távolítani ${member.name} játékost a csapatból?") },
+                title = { Text(stringResource(R.string.remove_member)) },
+                text = { Text(stringResource(R.string.alert_remove_member, member.name)) },
                 confirmButton = {
                     TextButton(onClick = { onEvent(TeamEditorEvent.OnConfirmKick) }) {
-                        Text("Eltávolítás", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.remove), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { onEvent(TeamEditorEvent.OnDismissKick) }) {
-                        Text("Mégse", color = Color.Gray)
+                        Text(stringResource(R.string.cancel), color = Color.Gray)
                     }
                 }
             )
@@ -289,16 +299,16 @@ fun TeamEditorContent(
         state.userToAdd?.let { user ->
             AlertDialog(
                 onDismissRequest = { onEvent(TeamEditorEvent.OnDismissAdd) },
-                title = { Text("Új tag felvétele") },
-                text = { Text("Szeretnéd felvenni ${user.name} játékost a csapatba?") },
+                title = { Text(stringResource(R.string.add_new_member)) },
+                text = { Text(stringResource(R.string.alert_add_new_member, user.name)) },
                 confirmButton = {
                     TextButton(onClick = { onEvent(TeamEditorEvent.OnConfirmAdd) }) {
-                        Text("Felvétel", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.add), fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { onEvent(TeamEditorEvent.OnDismissAdd) }) {
-                        Text("Mégse", color = Color.Gray)
+                        Text(stringResource(R.string.cancel), color = Color.Gray)
                     }
                 }
             )
@@ -323,19 +333,26 @@ fun EditorPlayerCardRow(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = CardDefaults.outlinedCardBorder()
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 // Avatar ikon
                 Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -355,7 +372,7 @@ fun EditorPlayerCardRow(
                                 .background(captainBg)
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text("KAPITÁNY", color = captainText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
+                            Text(stringResource(R.string.captain), color = captainText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
                         }
                     }
                 }

@@ -96,6 +96,7 @@ dependencies {
     // Hilt és KSP
     implementation(libs.hilt.android)
     implementation(libs.androidx.rules)
+    implementation(libs.androidx.appcompat)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
