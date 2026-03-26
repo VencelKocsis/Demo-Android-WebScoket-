@@ -250,29 +250,22 @@ fun MatchDetailsScreen(
                             // --- 3. CSAPATKERETEK / STATISZTIKÁK ---
                             item {
                                 if (match.status == "scheduled") {
-                                    // TERVEZETT MECCS: Szerkeszthető keretek a plusz/mínusz gombokkal
                                     RosterCard(
-                                        teamName = stringResource(
-                                            R.string.x_home,
-                                            match.homeTeamName
-                                        ),
-                                        participants = match.participants.filter { it.teamSide == "HOME" },
-                                        canEdit = state.isHomeCaptain && match.status == "scheduled",
+                                        teamName = stringResource(R.string.x_home, match.homeTeamName),
+                                        roster = state.homeRoster,
+                                        canEdit = state.isHomeCaptain,
                                         isLoading = state.isMutating,
                                         selectedCount = state.homeSelectedCount,
-                                        onToggle = { pId, pStatus -> viewModel.onEvent(MatchDetailsEvent.OnToggleParticipantStatus(pId, pStatus)) }
+                                        onToggle = { rosterItem -> viewModel.onEvent(MatchDetailsEvent.OnCaptainTogglePlayer(rosterItem)) }
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     RosterCard(
-                                        teamName = stringResource(
-                                            R.string.x_guest,
-                                            match.guestTeamName
-                                        ),
-                                        participants = match.participants.filter { it.teamSide == "GUEST" },
-                                        canEdit = state.isGuestCaptain && match.status == "scheduled",
+                                        teamName = stringResource(R.string.x_guest, match.guestTeamName),
+                                        roster = state.guestRoster,
+                                        canEdit = state.isGuestCaptain,
                                         isLoading = state.isMutating,
                                         selectedCount = state.guestSelectedCount,
-                                        onToggle = { pId, pStatus -> viewModel.onEvent(MatchDetailsEvent.OnToggleParticipantStatus(pId, pStatus)) }
+                                        onToggle = { rosterItem -> viewModel.onEvent(MatchDetailsEvent.OnCaptainTogglePlayer(rosterItem)) }
                                     )
                                 } else {
                                     // ELINDULT / BEFEJEZETT MECCS: Aktív kezdőcsapat és egyéni győzelmek!
@@ -411,11 +404,11 @@ fun MatchDetailsScreen(
 @Composable
 fun RosterCard(
     teamName: String,
-    participants: List<MatchParticipant>,
+    roster: List<MatchRosterItem>,
     canEdit: Boolean,
     isLoading: Boolean,
     selectedCount: Int,
-    onToggle: (Int, String) -> Unit
+    onToggle: (MatchRosterItem) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -447,21 +440,15 @@ fun RosterCard(
                 }
             }
 
-            if (participants.isEmpty()) {
-                Text("Még senki nem jelentkezett.", color = Color.Gray, modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(), textAlign = TextAlign.Center)
-            } else {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    participants.forEach { p ->
-                        ParticipantRow(
-                            name = p.playerName,
-                            status = p.status,
-                            showAction = canEdit,
-                            isLoading = isLoading,
-                            onToggle = { onToggle(p.id, p.status) }
-                        )
-                    }
+            Column(modifier = Modifier.padding(8.dp)) {
+                roster.forEach { p ->
+                    ParticipantRow(
+                        name = p.playerName,
+                        status = p.status,
+                        showAction = canEdit,
+                        isLoading = isLoading,
+                        onToggle = { onToggle(p) }
+                    )
                 }
             }
         }
@@ -471,6 +458,11 @@ fun RosterCard(
 @Composable
 fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading: Boolean, onToggle: () -> Unit) {
     val isSelected = status == "SELECTED" || status == "LOCKED"
+    val isNotApplied = status == "NOT_APPLIED"
+
+    // Ha még nem jelentkezett, halványabban jelenítjük meg a nevét
+    val rowAlpha = if (isNotApplied) 0.5f else 1f
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -486,17 +478,17 @@ fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading:
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) Color(0xFF4CAF50) else MaterialTheme.colorScheme.surfaceVariant),
+                    .background(if (isSelected) Color(0xFF4CAF50) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = rowAlpha)),
                 contentAlignment = Alignment.Center
             ) {
                 if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                else Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+                else Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray.copy(alpha = rowAlpha), modifier = Modifier.size(18.dp))
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = name, style = MaterialTheme.typography.bodyLarge,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = rowAlpha)
             )
         }
         if (showAction) {
@@ -507,7 +499,7 @@ fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading:
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Icon(if (isSelected) Icons.Default.Remove else Icons.Default.Add, contentDescription = "Betesz", modifier = Modifier.size(20.dp))
+                Icon(if (isSelected) Icons.Default.Remove else Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
             }
         }
     }

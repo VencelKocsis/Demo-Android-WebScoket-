@@ -1,6 +1,7 @@
 package hu.bme.aut.android.demo.data.teammatch.repository
 
 import hu.bme.aut.android.demo.data.network.api.RetrofitApi
+import hu.bme.aut.android.demo.data.network.model.teamMatch.AddParticipantDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.LineupSubmitDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ScoreSubmitDTO
@@ -24,6 +25,11 @@ class TeamMatchRepositoryImpl @Inject constructor(
 
     override suspend fun updateParticipantStatus(participantId: Int, status: String) {
         retrofitApi.updateParticipantStatus(participantId, ParticipantStatusUpdateDTO(status))
+    }
+
+    override suspend fun captainAddParticipantToMatch(matchId: Int, userId: Int) {
+        val request = AddParticipantDTO(userId = userId)
+        retrofitApi.captainAddParticipantToMatch(matchId, request)
     }
 
     override suspend fun withdrawFromMatch(matchId: Int) {

@@ -9,6 +9,7 @@ import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.ApplyForMatchUseCase
+import hu.bme.aut.android.demo.domain.teammatch.usecase.CaptainAddParticipantUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.FinalizeMatchUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.UpdateParticipantStatusUseCase
@@ -26,6 +27,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class MatchRosterItem(
+    val participantId: Int?, // null, ha még nem jelentkezett
+    val userId: Int,
+    val playerName: String,
+    val status: String // "NOT_APPLIED", "APPLIED", "SELECTED", "LOCKED"
+)
+
 data class MatchDetailsUiState(
     val isLoading: Boolean = true,
     val isMutating: Boolean = false,
@@ -39,16 +47,18 @@ data class MatchDetailsUiState(
     val hasApplied: Boolean = false,
     val myStatus: String? = null,
     val homeSelectedCount: Int = 0,
-    val guestSelectedCount: Int = 0
+    val guestSelectedCount: Int = 0,
+    val homeRoster: List<MatchRosterItem> = emptyList(),
+    val guestRoster: List<MatchRosterItem> = emptyList()
 )
 
 sealed class MatchDetailsEvent {
     object LoadMatch : MatchDetailsEvent()
     object OnApply : MatchDetailsEvent()
     object OnWithdrawApplication: MatchDetailsEvent()
-    data class OnToggleParticipantStatus(val participantId: Int, val currentStatus: String) : MatchDetailsEvent()
+    data class OnCaptainTogglePlayer(val rosterItem: MatchRosterItem) : MatchDetailsEvent()
     object OnFinalizeRoster: MatchDetailsEvent()
-    object ClearActionError: MatchDetailsEvent() // A Snackbar eltüntetéséhez
+    object ClearActionError: MatchDetailsEvent()
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -61,7 +71,8 @@ class MatchDetailsViewModel @Inject constructor(
     private val updateParticipantStatusUseCase: UpdateParticipantStatusUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val withdrawFromMatchUseCase: WithdrawFromMatchUseCase,
-    private val finalizeMatchUseCase: FinalizeMatchUseCase
+    private val finalizeMatchUseCase: FinalizeMatchUseCase,
+    private val captainAddParticipantUseCase: CaptainAddParticipantUseCase
 ) : ViewModel() {
 
     private val matchId: Int = checkNotNull(savedStateHandle["matchId"])
@@ -99,13 +110,16 @@ class MatchDetailsViewModel @Inject constructor(
         val allMatches = dataPair?.second ?: emptyList()
 
         val match = allMatches.find { it.id == matchId }
-        val loadError = if (dataPair != null && match == null) "A meccs nem található!" else dataResource.exceptionOrNull()?.message
+        val loadError =
+            if (dataPair != null && match == null) "A meccs nem található!" else dataResource.exceptionOrNull()?.message
 
-        // Jogosultságok kiszámítása
         val currentUserUid = getCurrentUserUseCase()?.uid
         var currentName = ""
         val userTeams = mutableListOf<Int>()
         val userCaptainTeams = mutableListOf<Int>()
+
+        val homeTeam = allTeams.find { it.id == match?.homeTeamId }
+        val guestTeam = allTeams.find { it.id == match?.guestTeamId }
 
         if (currentUserUid != null) {
             allTeams.forEach { team ->
@@ -118,14 +132,38 @@ class MatchDetailsViewModel @Inject constructor(
             }
         }
 
-        val isInvolved = match != null && (userTeams.contains(match.homeTeamId) || userTeams.contains(match.guestTeamId))
+        // --- A TELJES CSAPATLISTA ÖSSZEÁLLÍTÁSA ---
+        val homeRoster = homeTeam?.members?.map { member ->
+            val participant = match?.participants?.find { it.playerName == member.name }
+            MatchRosterItem(
+                participantId = participant?.id,
+                userId = member.id,
+                playerName = member.name,
+                status = participant?.status ?: "NOT_APPLIED"
+            )
+        } ?: emptyList()
+
+        val guestRoster = guestTeam?.members?.map { member ->
+            val participant = match?.participants?.find { it.playerName == member.name }
+            MatchRosterItem(
+                participantId = participant?.id,
+                userId = member.id,
+                playerName = member.name,
+                status = participant?.status ?: "NOT_APPLIED"
+            )
+        } ?: emptyList()
+
+        val isInvolved =
+            match != null && (userTeams.contains(match.homeTeamId) || userTeams.contains(match.guestTeamId))
         val homeCap = match != null && userCaptainTeams.contains(match.homeTeamId)
         val guestCap = match != null && userCaptainTeams.contains(match.guestTeamId)
 
         val myParticipantData = match?.participants?.find { it.playerName == currentName }
 
-        val homeSelectedCount = match?.participants?.count { it.teamSide == "HOME" && it.status == "SELECTED" } ?: 0
-        val guestSelectedCount = match?.participants?.count { it.teamSide == "GUEST" && it.status == "SELECTED" } ?: 0
+        val homeSelectedCount =
+            match?.participants?.count { it.teamSide == "HOME" && it.status == "SELECTED" } ?: 0
+        val guestSelectedCount =
+            match?.participants?.count { it.teamSide == "GUEST" && it.status == "SELECTED" } ?: 0
 
         MatchDetailsUiState(
             isLoading = dataResource.isLoading,
@@ -140,7 +178,9 @@ class MatchDetailsViewModel @Inject constructor(
             hasApplied = myParticipantData != null,
             myStatus = myParticipantData?.status,
             homeSelectedCount = homeSelectedCount,
-            guestSelectedCount = guestSelectedCount
+            guestSelectedCount = guestSelectedCount,
+            homeRoster = homeRoster,
+            guestRoster = guestRoster
         )
     }.stateIn(
         scope = viewModelScope,
@@ -152,19 +192,33 @@ class MatchDetailsViewModel @Inject constructor(
         when (event) {
             is MatchDetailsEvent.LoadMatch -> _refreshTrigger.value += 1
             is MatchDetailsEvent.ClearActionError -> _actionError.value = null
-
             is MatchDetailsEvent.OnApply -> executeAction("Sikertelen jelentkezés") {
-                applyForMatchUseCase(matchId)
+                applyForMatchUseCase(
+                    matchId
+                )
             }
+
             is MatchDetailsEvent.OnWithdrawApplication -> executeAction("Sikertelen visszavonás") {
-                withdrawFromMatchUseCase(matchId)
+                withdrawFromMatchUseCase(
+                    matchId
+                )
             }
-            is MatchDetailsEvent.OnToggleParticipantStatus -> executeAction("Sikertelen státusz frissítés") {
-                val newStatus = if (event.currentStatus == "SELECTED") "APPLIED" else "SELECTED"
-                updateParticipantStatusUseCase(event.participantId, newStatus)
-            }
+
             is MatchDetailsEvent.OnFinalizeRoster -> executeAction("Sikertelen véglegesítés") {
-                finalizeMatchUseCase(matchId)
+                finalizeMatchUseCase(
+                    matchId
+                )
+            }
+
+            is MatchDetailsEvent.OnCaptainTogglePlayer -> executeAction("Sikertelen módosítás") {
+                if (event.rosterItem.participantId == null) {
+                    captainAddParticipantUseCase(matchId, event.rosterItem.userId)
+                } else {
+                    // Ha már jelentkezett (APPLIED vagy SELECTED), akkor a meglévő UseCase működik.
+                    val newStatus =
+                        if (event.rosterItem.status == "SELECTED") "APPLIED" else "SELECTED"
+                    updateParticipantStatusUseCase(event.rosterItem.participantId, newStatus)
+                }
             }
         }
     }
