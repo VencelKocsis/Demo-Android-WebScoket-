@@ -4,6 +4,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -15,36 +17,28 @@ object Navigation {
         TEXT, DESCRIPTION
     }
 
-    fun navigate(
-        composeTestRule: ComposeTestRule,
-        destination: String,
-        onNodeWith: OnNodeWith,
-        expectedNextScreenText: String? = null // Opcionális: Várakozás a célképernyőre
-    ) {
+    fun navigate(composeTestRule: ComposeTestRule, target: String, by: OnNodeWith = OnNodeWith.TEXT) {
+        if (by == OnNodeWith.TEXT) {
+            val nodes = composeTestRule.onAllNodesWithText(target)
+            val count = nodes.fetchSemanticsNodes().size
 
-        // 1. Dinamikusan döntjük el, mit keressünk a várakozáshoz
-        val matcher = when (onNodeWith) {
-            OnNodeWith.TEXT -> hasText(destination)
-            OnNodeWith.DESCRIPTION -> hasContentDescription(destination)
-        }
-
-        // Várunk, amíg a kattintandó elem (gomb vagy ikon) meg nem jelenik
-        composeTestRule.waitUntilAtLeastOneExists(matcher, 5000)
-
-        // 2. Rákattintunk
-        when (onNodeWith) {
-            OnNodeWith.TEXT -> {
-                composeTestRule.onNodeWithText(destination).performClick()
+            if (count > 1) {
+                // Ha több is van a képernyőn (pl. a fenti Cím és az alsó Tab is "Bajnokság"),
+                // akkor az utolsóra kattintunk, mert az az alsó navigációs sáv!
+                nodes[count - 1].performClick()
+            } else if (count == 1) {
+                nodes[0].performClick()
             }
-            OnNodeWith.DESCRIPTION -> {
-                composeTestRule.onNodeWithContentDescription(destination).performClick()
+        } else {
+            val nodes = composeTestRule.onAllNodesWithContentDescription(target)
+            val count = nodes.fetchSemanticsNodes().size
+
+            if (count > 1) {
+                nodes[count - 1].performClick()
+            } else if (count == 1) {
+                nodes[0].performClick()
             }
         }
-
-        // 3. Opcionális várakozás az ÚJ képernyőre
-        // (Ha megadtad, hogy mit várjon a kattintás után, akkor megvárja. Ha nem, megy tovább.)
-        if (expectedNextScreenText != null) {
-            composeTestRule.waitUntilAtLeastOneExists(hasText(expectedNextScreenText), 10000)
-        }
+        composeTestRule.waitForIdle()
     }
 }

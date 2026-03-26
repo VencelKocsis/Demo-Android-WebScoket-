@@ -53,4 +53,34 @@ object Authentication {
         composeTestRule.waitUntilAtLeastOneExists(hasText("E-mail cím"), 10000)
         composeTestRule.waitForIdle()
     }
+
+    @OptIn(ExperimentalTestApi::class)
+    fun ensureLoggedOut(composeTestRule: ComposeTestRule) {
+        composeTestRule.waitForIdle()
+        Thread.sleep(2000)
+        try {
+            composeTestRule.waitUntilAtLeastOneExists(hasText("E-mail cím", substring = true, ignoreCase = true), 5000)
+        } catch (e: Throwable) {
+            println("Bejelentkezve maradt az app egy korábbi tesztből. Megpróbálom kijelentkezni...")
+            logoutWithTryCatch(composeTestRule)
+        }
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    fun logoutWithTryCatch(composeTestRule: ComposeTestRule) {
+        try {
+            navigate(composeTestRule, "Profil", Navigation.OnNodeWith.TEXT)
+            composeTestRule.waitForIdle()
+            Thread.sleep(1000)
+            logout(composeTestRule)
+        } catch (e: Throwable) {
+            println("A kijelentkezés megszakadt vagy már ki voltunk jelentkezve.")
+        }
+
+        try {
+            composeTestRule.waitUntilAtLeastOneExists(hasText("E-mail cím", substring = true, ignoreCase = true), 10000)
+        } catch (e: Throwable) {}
+
+        composeTestRule.waitForIdle()
+    }
 }

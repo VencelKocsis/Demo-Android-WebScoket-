@@ -55,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -493,7 +494,11 @@ fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading:
         }
         if (showAction) {
             IconButton(
-                onClick = onToggle, enabled = !isLoading, modifier = Modifier.size(36.dp),
+                onClick = onToggle,
+                enabled = !isLoading,
+                modifier = Modifier
+                    .testTag("toggle_$name")
+                    .size(36.dp),
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimary

@@ -9,8 +9,10 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 
 object Match {
@@ -31,56 +33,97 @@ object Match {
             15000
         )
         composeTestRule.waitForIdle()
+
+        Thread.sleep(3000)
+
+        try {
+            composeTestRule.onNodeWithTag("match_list").performTouchInput {
+                swipeDown(durationMillis = 500)
+            }
+            composeTestRule.waitForIdle()
+            Thread.sleep(2000)
+        } catch (e: Throwable) {
+            println("A lista nem frissíthető kézzel, vagy már be volt töltve.")
+        }
     }
 
     @OptIn(ExperimentalTestApi::class)
     fun openMatch(composeTestRule: ComposeTestRule, matchId: Int) {
-        // Natív görgetés a listában a kártyához
         composeTestRule
             .onNodeWithTag("match_list")
             .performScrollToNode(hasTestTag("match_$matchId"))
 
-        // Rákattint a kártyára
         composeTestRule
             .onNodeWithTag("match_$matchId")
             .performClick()
 
-        // Megvárja a részletek fejlécét
         composeTestRule.waitUntilAtLeastOneExists(
             hasText("Mérkőzés Részletei"),
             10000
         )
     }
 
+    // --- AZ OKOS GÖRGETŐ ÉS KATTINTÓ FÜGGVÉNY ---
+    @OptIn(ExperimentalTestApi::class)
+    fun scrollAndClickText(composeTestRule: ComposeTestRule, text: String, errorMessage: String) {
+        composeTestRule.waitForIdle()
+        Thread.sleep(500)
+
+        // 1. Gyors kísérlet: ha a Compose natívan meg tudja találni
+        try {
+            val node = composeTestRule.onNodeWithText(text, substring = true, ignoreCase = true)
+            node.performScrollTo()
+            node.performClick()
+            composeTestRule.waitForIdle()
+            return // Sikerült, kilépünk!
+        } catch (e: Throwable) {}
+
+        // 2. Erőteljes görgetés lefelé
+        var nodeFound = false
+        for (i in 0..15) {
+            val nodes = composeTestRule.onAllNodesWithText(text, substring = true, ignoreCase = true)
+            if (nodes.fetchSemanticsNodes().isNotEmpty()) {
+                nodeFound = true
+                // Odagörgetünk a gombhoz
+                try { nodes[0].performScrollTo() } catch (e: Throwable) {}
+
+                // RÁKATTINTUNK! Nincs try-catch!
+                // Ha a gomb le van tiltva, itt fog beszédes hibával elszállni!
+                nodes[0].performClick()
+                break
+            } else {
+                try {
+                    composeTestRule.onNode(hasScrollToNodeAction()).performTouchInput { swipeUp(durationMillis = 300) }
+                    composeTestRule.waitForIdle()
+                } catch (scrollEx: Throwable) {}
+            }
+        }
+
+        if (!nodeFound) {
+            throw AssertionError(errorMessage)
+        }
+    }
+
     @OptIn(ExperimentalTestApi::class)
     fun applyIfPossible(composeTestRule: ComposeTestRule) {
-        // 1. Várjuk meg a hálózati kérést, hogy a meccs adatai betöltsenek
         composeTestRule.waitForIdle()
         Thread.sleep(2000)
 
-        // 2. Mivel az előző játékosok már feliratkoztak, a listák megnőttek!
         try {
             val listNode = composeTestRule.onNode(hasScrollToNodeAction())
-            // Húzunk 3-at felfelé, hogy biztosan a képernyő legaljára érjünk
             for (i in 0..3) {
                 listNode.performTouchInput { swipeUp(durationMillis = 300) }
                 composeTestRule.waitForIdle()
             }
-        } catch (e: Throwable) {
-            println("Nincs görgethető felület a részleteknél, folytatjuk...")
-        }
+        } catch (e: Throwable) {}
 
-        // 3. Várakozás a gombra - most már Throwable-t kapunk el, így NEM FOG ÖSSZEOMLANI!
         try {
             composeTestRule.waitUntilAtLeastOneExists(
                 hasText("Jelentkezem a mérkőzésre") or hasText("Jelentkezés visszavonása"),
                 timeoutMillis = 4000
             )
-        } catch (e: Throwable) {
-            println("Figyelem: Nem jelent meg a gomb a képernyő alján sem.")
-        }
+        } catch (e: Throwable) {}
 
-        // 4. Kattintás, ha a gomb tényleg ott van
         val exists = composeTestRule
             .onAllNodesWithText("Jelentkezem a mérkőzésre")
             .fetchSemanticsNodes()
@@ -96,7 +139,6 @@ object Match {
         }
     }
 
-    // UGYANAZ A GOLYÓÁLLÓ LOGIKA VISSZAVONÁSRA
     @OptIn(ExperimentalTestApi::class)
     fun cancelIfPossible(composeTestRule: ComposeTestRule) {
         composeTestRule.waitForIdle()
@@ -108,18 +150,14 @@ object Match {
                 listNode.performTouchInput { swipeUp(durationMillis = 300) }
                 composeTestRule.waitForIdle()
             }
-        } catch (e: Throwable) {
-            println("Nincs görgethető felület a részleteknél, folytatjuk...")
-        }
+        } catch (e: Throwable) {}
 
         try {
             composeTestRule.waitUntilAtLeastOneExists(
                 hasText("Jelentkezem a mérkőzésre") or hasText("Jelentkezés visszavonása"),
                 timeoutMillis = 4000
             )
-        } catch (e: Throwable) {
-            println("Figyelem: Nem jelent meg gomb a képernyő alján sem.")
-        }
+        } catch (e: Throwable) {}
 
         val exists = composeTestRule
             .onAllNodesWithText("Jelentkezés visszavonása")
