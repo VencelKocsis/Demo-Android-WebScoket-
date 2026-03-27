@@ -173,4 +173,19 @@ object Match {
             Thread.sleep(1500)
         }
     }
+
+    @OptIn(ExperimentalTestApi::class)
+    fun swipeToBottom(composeTestRule: ComposeTestRule) {
+        try {
+            // Lekeressük a görgethető listát, és kíméletlenül húzunk rajta 8-at felfelé (így a lista lefelé görged)
+            val listNode = composeTestRule.onNode(hasScrollToNodeAction())
+            for (i in 0..8) {
+                listNode.performTouchInput { swipeUp(durationMillis = 200) }
+            }
+            composeTestRule.waitForIdle()
+            Thread.sleep(500)
+        } catch (e: Throwable) {
+            println("Nem tudtam a lista aljára görgetni.")
+        }
+    }
 }

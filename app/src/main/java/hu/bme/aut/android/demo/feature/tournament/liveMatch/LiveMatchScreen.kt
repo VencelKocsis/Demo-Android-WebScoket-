@@ -64,7 +64,10 @@ fun LiveMatchScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.live_match)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.testTag("back_button")
+                    ) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Vissza")
                     }
                 }
@@ -303,7 +306,8 @@ fun MatchGridContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .testTag("match_grid_list"),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
         item {
@@ -347,7 +351,7 @@ fun MatchGridContent(
 
                 Card(
                     modifier = Modifier
-                        .testTag("individual_match_card")
+                        .testTag("individual_match_card_${game.orderNumber}")
                         .fillMaxWidth()
                         .padding(vertical = 6.dp)
                         .alpha(cardAlpha)

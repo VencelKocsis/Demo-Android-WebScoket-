@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.feature.tournament.scorer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -129,7 +131,8 @@ fun MatchScorerScreen(
                                                 value = setScore.home,
                                                 onValueChange = { viewModel.updateSetScore(index, it, setScore.guest) },
                                                 isWinner = isHomeWinner,
-                                                enabled = !isReadOnly
+                                                enabled = !isReadOnly,
+                                                testTag = "input_home_$index"
                                             )
 
                                             Text(" : ", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -138,7 +141,8 @@ fun MatchScorerScreen(
                                                 value = setScore.guest,
                                                 onValueChange = { viewModel.updateSetScore(index, setScore.home, it) },
                                                 isWinner = isGuestWinner,
-                                                enabled = !isReadOnly
+                                                enabled = !isReadOnly,
+                                                testTag = "input_guest_$index"
                                             )
                                         }
                                     }
@@ -224,7 +228,8 @@ fun ScoreInputBox(
     value: String,
     onValueChange: (String) -> Unit,
     isWinner: Boolean,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    testTag: String = ""
 ) {
     val containerColor = if (isWinner) MaterialTheme.colorScheme.primaryContainer
     else if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -237,6 +242,9 @@ fun ScoreInputBox(
     val borderColor = if (isWinner || !enabled) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
 
     BasicTextField(
+        modifier = Modifier
+            .testTag(testTag)
+            .focusable(),
         value = value,
         onValueChange = { newValue ->
             if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
