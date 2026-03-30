@@ -98,6 +98,9 @@ fun AppNavHost(
                 TeamScreen(
                     onNavigateToEditor = { teamId ->
                         navController.navigate(Screen.TeamEditor.createRoute(teamId))
+                    },
+                    onNavigateToMatch = { matchId ->
+                        navController.navigate(Screen.MatchDetails.createRoute(matchId))
                     }
                 )
             }

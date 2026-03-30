@@ -72,6 +72,7 @@ class TeamViewModel @Inject constructor(
                     val oppScore = if (isHome) match.guestTeamScore else match.homeTeamScore
 
                     MatchResult(
+                        matchId = match.id,
                         opponent = opponentName,
                         date = match.matchDate?.substringBefore("T") ?: "", // Dátum formázása
                         homeScore = myScore,

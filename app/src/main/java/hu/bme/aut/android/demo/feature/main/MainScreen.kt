@@ -122,7 +122,7 @@ fun MainScreen(
                 navController = bottomNavController,
                 startDestination = Screen.Tournament.route
             ) {
-                // --- 1. JAVÍTOTT: Bajnokság (Tournament) képernyő ---
+                // --- 1. Bajnokság (Tournament) képernyő ---
                 composable(Screen.Tournament.route) {
                     TeamMatchScreen(
                         onNavigateToMatchDetails = onNavigateToMatchDetails
@@ -132,7 +132,8 @@ fun MainScreen(
                 // --- 2. Csapat (Team) képernyő ---
                 composable(Screen.Team.route) {
                     TeamScreen(
-                        onNavigateToEditor = onNavigateToTeamEditor
+                        onNavigateToEditor = onNavigateToTeamEditor,
+                        onNavigateToMatch = onNavigateToMatchDetails
                     )
                 }
 

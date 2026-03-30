@@ -60,6 +60,7 @@ import kotlin.collections.isNotEmpty
 
 // --- Adatmodellek ---
 data class MatchResult(
+    val matchId: Int,
     val opponent: String,
     val date: String,
     val homeScore: Int,
@@ -85,7 +86,8 @@ sealed class TeamScreenEvent {
 @Composable
 fun TeamScreen(
     viewModel: TeamViewModel = hiltViewModel(),
-    onNavigateToEditor: (Int) -> Unit = {}
+    onNavigateToEditor: (Int) -> Unit = {},
+    onNavigateToMatch: (Int) -> Unit = {}
 ) {
     // Állapot kinyerése a ViewModel-ből
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -107,7 +109,8 @@ fun TeamScreen(
     TeamScreenContent(
         state = uiState,
         onEvent = viewModel::onEvent,
-        onNavigateToEditor = onNavigateToEditor
+        onNavigateToEditor = onNavigateToEditor,
+        onNavigateToMatch = onNavigateToMatch
     )
 }
 
@@ -116,7 +119,8 @@ fun TeamScreen(
 fun TeamScreenContent(
     state: TeamScreenState,
     onEvent: (TeamScreenEvent) -> Unit,
-    onNavigateToEditor: (Int) -> Unit
+    onNavigateToEditor: (Int) -> Unit,
+    onNavigateToMatch: (Int) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -248,7 +252,7 @@ fun TeamScreenContent(
                         }
 
                         items(state.recentMatches) { match ->
-                            MatchResultRow(match)
+                            MatchResultRow(match = match, onClick = { onNavigateToMatch(match.matchId) })
                         }
                     }
                 }
@@ -296,7 +300,10 @@ fun StatItem(label: String, value: String, type: String) {
 }
 
 @Composable
-fun MatchResultRow(match: MatchResult) {
+fun MatchResultRow(
+    match: MatchResult,
+    onClick: () -> Unit = {}
+) {
     val isDark = isSystemInDarkTheme()
 
     val (bgColor, textColor) = if (match.isWin) {
@@ -306,6 +313,7 @@ fun MatchResultRow(match: MatchResult) {
     }
 
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
