@@ -20,9 +20,23 @@ data class ProfileUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val userTeamNames: List<String> = emptyList(),
+
+    // Alap statisztikák
     val matchesPlayed: Int = 0,
     val matchesWon: Int = 0,
-    val winRate: Int = 0
+    val winRate: Int = 0,
+
+    // 1. Forma és Élő-pont (Rating)
+    val recentForm: List<Boolean> = emptyList(), // Utolsó 5 meccs (true = győzelem)
+    val ratingHistory: List<Float> = emptyList(), // Grafikonhoz
+
+    // 2. Szett Mutatók (Best of 5 alapján)
+    val sweeps: Int = 0, // 3-0-ás győzelmek
+    val decidingSetWins: Int = 0, // 3-2-es győzelmek (Clutch)
+
+    // 3. Egymás elleni (H2H)
+    val favoriteOpponent: Pair<String, Int>? = null, // Név és Győzelmek száma
+    val nemesis: Pair<String, Int>? = null // Név és Vereségek száma
 )
 
 @HiltViewModel
@@ -43,27 +57,19 @@ class ProfileViewModel @Inject constructor(
     private fun loadUserTeams() {
         viewModelScope.launch {
             val firebaseUid = getCurrentUserUseCase()?.uid ?: return@launch
-
             try {
-                // Lekérjük az összes csapatot
                 val allTeams = getTeamsUseCase()
-
-                // Kiszűrjük azokat, ahol a members listában van olyan, akinek a uid-ja a miénk
                 val myTeams = allTeams.filter { team ->
                     team.members.any { member -> member.uid == firebaseUid }
-                }.map { it.name } // Csak a nevekre van szükségünk
-
+                }.map { it.name }
                 _uiState.update { it.copy(userTeamNames = myTeams) }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
     fun initUser(userDTO: UserDTO?) {
         if (userDTO != null && _uiState.value.user?.id != userDTO.id) {
             _uiState.update { it.copy(user = userDTO, isLoading = false) }
-            // Ha megvan a felhasználó (és a neve), betöltjük a statisztikát ---
             loadUserStats(userDTO)
         }
     }
@@ -72,39 +78,69 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val allMatches = getTeamMatchesUseCase()
-                // A magyar névkonvenció alapján összerakjuk a teljes nevet
                 val fullName = "${user.lastName} ${user.firstName}"
+
+                // Összegyűjtjük az egyéni meccseit dátummal együtt, majd időrendbe (növekvő) rakjuk
+                val userMatches = allMatches.flatMap { teamMatch ->
+                    teamMatch.individualMatches
+                        .filter { it.status == "finished" && (it.homePlayerName == fullName || it.guestPlayerName == fullName) }
+                        .map { it to (teamMatch.matchDate ?: "") }
+                }.sortedBy { it.second } // Növekvő sorrend a grafikon miatt!
 
                 var played = 0
                 var won = 0
+                var sweepsCount = 0
+                var decidingWinsCount = 0
 
-                allMatches.forEach { teamMatch ->
-                    // Csak a már befejezett egyéni meccseket nézzük
-                    teamMatch.individualMatches.forEach { im ->
-                        if (im.status == "finished") {
-                            val isHome = im.homePlayerName == fullName
-                            val isGuest = im.guestPlayerName == fullName
+                val oppStats = mutableMapOf<String, Pair<Int, Int>>() // Név -> (Győzelem, Vereség)
+                val formList = mutableListOf<Boolean>()
 
-                            // Ha játszott ezen a meccsen
-                            if (isHome || isGuest) {
-                                played++
-                                val myScore = if (isHome) im.homeScore else im.guestScore
-                                val oppScore = if (isHome) im.guestScore else im.homeScore
+                var currentRating = 1000f // Kezdő Élő-pont
+                val historyList = mutableListOf<Float>(currentRating)
 
-                                if (myScore > oppScore) {
-                                    won++
-                                }
-                            }
-                        }
-                    }
+                for ((im, _) in userMatches) {
+                    val isHome = im.homePlayerName == fullName
+                    val oppName = if (isHome) im.guestPlayerName else im.homePlayerName
+                    val myScore = if (isHome) im.homeScore else im.guestScore
+                    val oppScore = if (isHome) im.guestScore else im.homeScore
+                    val isWin = myScore > oppScore
+
+                    played++
+                    if (isWin) won++
+
+                    // Szett mutatók
+                    if (isWin && oppScore == 0) sweepsCount++
+                    if (isWin && oppScore == 2) decidingWinsCount++
+
+                    // H2H Statisztika
+                    val currentStats = oppStats.getOrDefault(oppName, Pair(0, 0))
+                    oppStats[oppName] = if (isWin) Pair(currentStats.first + 1, currentStats.second) else Pair(currentStats.first, currentStats.second + 1)
+
+                    // Forma
+                    formList.add(isWin)
+
+                    // Rating változás (+10 győzelemért, -10 vereségért egyszerűsítve)
+                    currentRating += if (isWin) 10f else -10f
+                    historyList.add(currentRating)
                 }
 
                 val rate = if (played > 0) (won * 100) / played else 0
+                val recentForm = formList.takeLast(5) // Csak az utolsó 5
+
+                // Legtöbbször legyőzött és akitől a legtöbbször kikapott
+                val favOpponent = oppStats.filter { it.value.first > 0 }.maxByOrNull { it.value.first }
+                val nemesisOpponent = oppStats.filter { it.value.second > 0 }.maxByOrNull { it.value.second }
 
                 _uiState.update { it.copy(
                     matchesPlayed = played,
                     matchesWon = won,
-                    winRate = rate
+                    winRate = rate,
+                    recentForm = recentForm,
+                    ratingHistory = historyList,
+                    sweeps = sweepsCount,
+                    decidingSetWins = decidingWinsCount,
+                    favoriteOpponent = favOpponent?.let { Pair(it.key, it.value.first) },
+                    nemesis = nemesisOpponent?.let { Pair(it.key, it.value.second) }
                 )}
             } catch (e: Exception) {
                 e.printStackTrace()

@@ -1,59 +1,28 @@
 package hu.bme.aut.android.demo.feature.profile
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.SportsTennis
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,13 +35,10 @@ import hu.bme.aut.android.demo.feature.racketEditor.Racket
 import hu.bme.aut.android.demo.feature.racketEditor.Rubber
 import hu.bme.aut.android.demo.util.LanguageSelector
 
+// --- SEGÉDFÜGGVÉNYEK ÉS GRAFIKON ---
 @Composable
 fun ColorCircle(color: Color, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(16.dp)
-            .background(color, CircleShape)
-    )
+    Box(modifier = modifier.size(16.dp).background(color, CircleShape))
 }
 
 fun stringToColor(colorName: String): Color {
@@ -83,6 +49,76 @@ fun stringToColor(colorName: String): Color {
         "green" -> Color(0xFF388E3C)
         "yellow" -> Color(0xFFFBC02D)
         else -> Color.Gray
+    }
+}
+
+// Saját, pehelysúlyú grafikon
+@Composable
+fun PerformanceGraph(data: List<Float>, color: Color = MaterialTheme.colorScheme.primary) {
+    if (data.size < 2) {
+        Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+            Text("Nincs elég adat a grafikonhoz", color = Color.Gray, style = MaterialTheme.typography.labelMedium)
+        }
+        return
+    }
+
+    val max = data.maxOrNull() ?: 1000f
+    val min = data.minOrNull() ?: 1000f
+    val range = (max - min).coerceAtLeast(10f)
+    val padding = range * 0.1f
+    val yMax = max + padding
+    val yMin = min - padding
+    val yRange = yMax - yMin
+
+    Canvas(modifier = Modifier.fillMaxWidth().height(120.dp).padding(vertical = 8.dp)) {
+        val width = size.width
+        val height = size.height
+        val stepX = width / (data.size - 1)
+
+        val path = Path()
+        val fillPath = Path()
+        val points = mutableListOf<Offset>()
+
+        data.forEachIndexed { i, value ->
+            val x = i * stepX
+            val y = height - ((value - yMin) / yRange) * height
+            points.add(Offset(x, y))
+
+            if (i == 0) {
+                path.moveTo(x, y)
+                fillPath.moveTo(x, height)
+                fillPath.lineTo(x, y)
+            } else {
+                path.lineTo(x, y)
+                fillPath.lineTo(x, y)
+            }
+        }
+
+        fillPath.lineTo(width, height)
+        fillPath.close()
+
+        // Átmenetes kitöltés a vonal alatt
+        drawPath(
+            path = fillPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(color.copy(alpha = 0.4f), Color.Transparent),
+                startY = 0f,
+                endY = height
+            )
+        )
+
+        // Vastag vonal rajzolása
+        drawPath(
+            path = path,
+            color = color,
+            style = Stroke(width = 6f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+
+        // Pöttyök (mérkőzések)
+        points.forEach { point ->
+            drawCircle(color = color, radius = 6f, center = point)
+            drawCircle(color = Color.White, radius = 3f, center = point)
+        }
     }
 }
 
@@ -115,14 +151,11 @@ fun ProfileScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var editFirstName by remember { mutableStateOf("") }
     var editLastName by remember { mutableStateOf("") }
+    var showGraphInfoDialog by remember { mutableStateOf(false) }
+    var showH2HInfoDialog by remember { mutableStateOf(false) }
 
     val user = profileState.user
     val teamNames = profileState.userTeamNames
-
-    // --- JAVÍTVA: Valós adatok a ProfileState-ből ---
-    val matchesPlayed = profileState.matchesPlayed
-    val matchesWon = profileState.matchesWon
-    val winRate = profileState.winRate
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -169,7 +202,7 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- 1. FELHASZNÁLÓI ALAPADATOK ---
+            // --- 1. FELHASZNÁLÓI ALAPADATOK (AVATAR ÉS NÉV) ---
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -207,6 +240,7 @@ fun ProfileScreen(
                     )
                 }
 
+                // Csapat "Pilula"
                 val (teamBg, teamTextCol) = if (teamNames.isEmpty()) {
                     if (isDark) Color(0xFFD32F2F).copy(alpha = 0.2f) to Color(0xFFFF8A80) else Color(0xFFFFEBEE) to Color(0xFFD32F2F)
                 } else {
@@ -222,8 +256,7 @@ fun ProfileScreen(
                 ) {
                     Text(
                         text = if (teamNames.isEmpty()) stringResource(R.string.no_team) else stringResource(
-                            R.string.team, teamNames.joinToString(", ")
-                        ),
+                            R.string.team, teamNames.joinToString(", ")),
                         color = teamTextCol,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
@@ -231,40 +264,136 @@ fun ProfileScreen(
                 }
             }
 
-            // --- 2. STATISZTIKA ---
+            // --- 2. ALAP STATISZTIKA (Kártya) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Összesített Mérleg", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        ProfileStatItem(label = stringResource(R.string.match), value = profileState.matchesPlayed.toString(), type = "neutral")
+                        ProfileStatItem(label = stringResource(R.string.victory), value = profileState.matchesWon.toString(), type = "success")
+                        ProfileStatItem(label = stringResource(R.string.ratio), value = "${profileState.winRate}%", type = "primary")
+                    }
+                }
+            }
+
+            // --- 3. FORMA & SZETT MUTATÓK ---
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Aktuális Forma
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
+                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Forma (Utolsó 5)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (profileState.recentForm.isEmpty()) Text("-", color = Color.Gray)
+                            profileState.recentForm.forEach { isWin ->
+                                Box(
+                                    modifier = Modifier.size(24.dp).clip(CircleShape).background(if (isWin) Color(0xFF4CAF50) else Color(0xFFF44336)),
+                                    contentAlignment = Alignment.Center
+                                ) { Text(if (isWin) "Gy" else "V", color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                            }
+                        }
+                    }
+                }
+
+                // Clutch / Söprések
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Szett Mutatók", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${profileState.sweeps}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = Color(0xFF4CAF50))
+                                Text("Söprés (3-0)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${profileState.decidingSetWins}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                Text("Döntő szett", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- 4. H2H (Nemezis és Kedvenc) ---
+            if (profileState.favoriteOpponent != null || profileState.nemesis != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Egymás Elleni (H2H)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            IconButton(onClick = { showH2HInfoDialog = true }, modifier = Modifier.size(28.dp)) {
+                                Icon(Icons.Default.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        profileState.favoriteOpponent?.let { (name, wins) ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.ThumbUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Kedvenc ellenfél:", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.weight(1f))
+                                Text("$name ($wins győzelem)", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        if (profileState.favoriteOpponent != null && profileState.nemesis != null) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                        }
+
+                        profileState.nemesis?.let { (name, losses) ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF44336), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Nemezis:", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.weight(1f))
+                                Text("$name ($losses vereség)", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- 5. GRAFIKON (Élő-pont változás) ---
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(stringResource(R.string.personal_statistics), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text("Összesített", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Text("Fejlődési Görbe (Forma)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { showGraphInfoDialog = true }, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Default.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        ProfileStatItem(label = stringResource(R.string.match), value = matchesPlayed.toString(), type = "neutral")
-                        ProfileStatItem(label = stringResource(R.string.victory), value = matchesWon.toString(), type = "success")
-                        ProfileStatItem(label = stringResource(R.string.ratio), value = "$winRate%", type = "primary")
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PerformanceGraph(data = profileState.ratingHistory)
                 }
             }
 
-            // --- 3. ÜTŐK (FELSZERELÉS) ---
+            // --- 6. ÜTŐK (FELSZERELÉS) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -390,9 +519,44 @@ fun ProfileScreen(
             }
         )
     }
+
+    // --- INFO DIALÓGUSOK ---
+    if (showGraphInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { showGraphInfoDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Fejlődési Görbe", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text("Ez a grafikon a becsült Élő-pontszámod (Rating) változását mutatja az idő előrehaladtával.\n\nMinden győzelem növeli, míg minden vereség csökkenti a pontszámodat. A grafikon segít átlátni a hosszútávú fejlődésedet és formádat a lejátszott mérkőzéseid alapján.")
+            },
+            confirmButton = { TextButton(onClick = { showGraphInfoDialog = false }) { Text("Értem") } }
+        )
+    }
+
+    if (showH2HInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { showH2HInfoDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Egymás Elleni (H2H)", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text("Kedvenc ellenfél: Az a játékos, akit a legtöbbször győztél le a pályafutásod során.\n\nNemezis: Az a játékos, akitől a legtöbbször kaptál ki.")
+            },
+            confirmButton = { TextButton(onClick = { showH2HInfoDialog = false }) { Text("Értem") } }
+        )
+    }
 }
 
-// KOMPONENS A PROFIL STATISZTIKÁHOZ
+// KÖZÖS KOMPONENS A PROFIL STATISZTIKÁHOZ
 @Composable
 fun ProfileStatItem(label: String, value: String, type: String) {
     val isDark = isSystemInDarkTheme()

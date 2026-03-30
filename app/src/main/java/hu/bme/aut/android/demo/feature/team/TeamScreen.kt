@@ -330,7 +330,7 @@ fun MatchResultRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = match.opponent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "📅 ${match.date}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(text = match.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
 
             Box(
