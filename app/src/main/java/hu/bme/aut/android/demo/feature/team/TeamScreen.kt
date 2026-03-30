@@ -72,7 +72,8 @@ data class TeamScreenState(
     val teamList: List<Team> = emptyList(),
     val selectedTeam: TeamDetails? = null,
     val isCurrentUserCaptain: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val recentMatches: List<MatchResult> = emptyList()
 )
 
 sealed class TeamScreenEvent {
@@ -115,12 +116,7 @@ fun TeamScreen(
 fun TeamScreenContent(
     state: TeamScreenState,
     onEvent: (TeamScreenEvent) -> Unit,
-    onNavigateToEditor: (Int) -> Unit,
-    playedMatches: List<MatchResult> = listOf(
-        MatchResult("Asztal Királyai", "2025-09-01", 9, 7, true),
-        MatchResult("PingPong Heroes", "2025-09-08", 8, 8, false),
-        MatchResult("Ping Pong Kings", "2025-09-15", 12, 4, true)
-    )
+    onNavigateToEditor: (Int) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -244,9 +240,14 @@ fun TeamScreenContent(
                             Spacer(modifier = Modifier.height(32.dp))
                             Text(stringResource(R.string.previous_matches), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
+
+                            // Ha nincs egyetlen lejátszott meccsük sem
+                            if (state.recentMatches.isEmpty()) {
+                                Text("Ennek a csapatnak még nincsenek befejezett mérkőzései.", color = Color.Gray)
+                            }
                         }
 
-                        items(playedMatches) { match ->
+                        items(state.recentMatches) { match ->
                             MatchResultRow(match)
                         }
                     }

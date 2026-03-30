@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.model.toSimpleTeam
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
+import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
 import hu.bme.aut.android.demo.util.Resource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,68 +18,91 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
-import kotlin.collections.emptyList
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TeamViewModel @Inject constructor(
     private val getTeamsUseCase: GetTeamsUseCase,
+    private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
-    // 1. Különálló, reaktív állapotok (Int számláló a Unit helyett)
     private val _refreshTrigger = MutableStateFlow(0)
-    private val _selectedTeamId = MutableStateFlow<Int?>(null) // A kiválasztott csapat azonosítója
+    private val _selectedTeamId = MutableStateFlow<Int?>(null)
 
-    // 2. Csapatok lekérdezése (Modern mapLatest + onStart a villogás ellen)
-    private val teamsFlow = _refreshTrigger.mapLatest {
+    // A mapLatest-ben lekérjük a Csapatokat ÉS a Meccseket is egyszerre
+    private val dataFlow = _refreshTrigger.mapLatest {
         val teams = getTeamsUseCase()
-        // Csak a sikeres adatot adjuk vissza, a loading az onStart-ban van!
-        Resource.success(teams)
+        val matches = getTeamMatchesUseCase()
+        Resource.success(Pair(teams, matches))
     }.onStart {
-        // Ez gondoskodik a legelső betöltőképernyőről
         emit(Resource.loading())
     }.catch { e ->
         emit(Resource.error(e))
     }
 
-    // 3. A UI Állapot "összegyúrása" (Deklaratív megközelítés)
     val uiState: StateFlow<TeamScreenState> = combine(
-        teamsFlow,
+        dataFlow,
         _selectedTeamId
-    ) { teamsResource, selectedId ->
+    ) { dataResource, selectedId ->
 
-        val teams = teamsResource.getOrNull() ?: emptyList()
+        val dataPair = dataResource.getOrNull()
+        val teams = dataPair?.first ?: emptyList()
+        val allMatches = dataPair?.second ?: emptyList()
         val currentUserUid = getCurrentUserUseCase()?.uid
 
-        // Meghatározzuk, melyik csapat legyen kiválasztva
         val currentTeam = teams.find { it.id == selectedId }
             ?: teams.find { team -> team.members.any { it.uid == currentUserUid } }
             ?: teams.firstOrNull()
 
-        // Meghatározzuk, hogy a jelenlegi felhasználó kapitány-e a kiválasztott csapatban
         val isCaptain = currentTeam?.members?.any { it.uid == currentUserUid && it.isCaptain } == true
 
-        // Beállítjuk a hibaüzenetet, ha van (vagy ha üres a lista betöltés után)
-        val errorMessage = teamsResource.exceptionOrNull()?.message
-            ?: if (teams.isEmpty() && !teamsResource.isLoading) "Nincsenek csapatok" else null
+        // --- A legutóbbi 3 befejezett meccs kiszámítása ---
+        val selectedTeamId = currentTeam?.id
+        val recentMatches = if (selectedTeamId != null) {
+            allMatches
+                .filter { it.status == "finished" && (it.homeTeamId == selectedTeamId || it.guestTeamId == selectedTeamId) }
+                .sortedByDescending { it.matchDate } // Rendezzük dátum szerint csökkenőbe (legújabb elöl)
+                .take(3) // Csak a legutóbbi 3-at tartjuk meg
+                .map { match ->
+                    val isHome = match.homeTeamId == selectedTeamId
+
+                    val opponentName = if (isHome) match.guestTeamName else match.homeTeamName
+                    val myScore = if (isHome) match.homeTeamScore else match.guestTeamScore
+                    val oppScore = if (isHome) match.guestTeamScore else match.homeTeamScore
+
+                    MatchResult(
+                        opponent = opponentName,
+                        date = match.matchDate?.substringBefore("T") ?: "", // Dátum formázása
+                        homeScore = myScore,
+                        awayScore = oppScore,
+                        isWin = myScore > oppScore
+                    )
+                }
+        } else {
+            emptyList()
+        }
+        // -------------------------------------------------------------
+
+        val errorMessage = dataResource.exceptionOrNull()?.message
+            ?: if (teams.isEmpty() && !dataResource.isLoading) "Nincsenek csapatok" else null
 
         TeamScreenState(
-            isLoading = teamsResource.isLoading,
+            isLoading = dataResource.isLoading,
             teamList = teams.map { it.toSimpleTeam() },
             selectedTeam = currentTeam,
             isCurrentUserCaptain = isCaptain,
-            errorMessage = errorMessage
+            errorMessage = errorMessage,
+            recentMatches = recentMatches
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Automatikus indítás és leállítás
+        started = SharingStarted.WhileSubscribed(5000),
         initialValue = TeamScreenState(isLoading = true)
     )
 
     fun onEvent(event: TeamScreenEvent) {
         when (event) {
-            // A triggert nem Unit-ra állítjuk, hanem megnöveljük, így MINDIG lefut
             is TeamScreenEvent.LoadInitialData -> _refreshTrigger.value += 1
             is TeamScreenEvent.OnTeamSelected -> _selectedTeamId.value = event.teamId
         }

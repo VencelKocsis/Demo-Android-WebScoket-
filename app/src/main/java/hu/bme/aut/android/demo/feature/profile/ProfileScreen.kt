@@ -119,11 +119,10 @@ fun ProfileScreen(
     val user = profileState.user
     val teamNames = profileState.userTeamNames
 
-    // Dummy adatok a statisztikához
-    val seasonName = "2026 Tavasz"
-    val matchesPlayed = 12
-    val matchesWon = 9
-    val winRate = if (matchesPlayed > 0) (matchesWon * 100) / matchesPlayed else 0
+    // --- JAVÍTVA: Valós adatok a ProfileState-ből ---
+    val matchesPlayed = profileState.matchesPlayed
+    val matchesWon = profileState.matchesWon
+    val winRate = profileState.winRate
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -165,12 +164,12 @@ fun ProfileScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()) // GÖRGETHETŐSÉG!
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp), // Kicsit szellősebb térköz
+            verticalArrangement = Arrangement.spacedBy(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- 1. FELHASZNÁLÓI ALAPADATOK (AVATAR ÉS NÉV) ---
+            // --- 1. FELHASZNÁLÓI ALAPADATOK ---
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -208,7 +207,6 @@ fun ProfileScreen(
                     )
                 }
 
-                // Csapat "Pilula"
                 val (teamBg, teamTextCol) = if (teamNames.isEmpty()) {
                     if (isDark) Color(0xFFD32F2F).copy(alpha = 0.2f) to Color(0xFFFF8A80) else Color(0xFFFFEBEE) to Color(0xFFD32F2F)
                 } else {
@@ -224,7 +222,8 @@ fun ProfileScreen(
                 ) {
                     Text(
                         text = if (teamNames.isEmpty()) stringResource(R.string.no_team) else stringResource(
-                            R.string.team, teamNames.joinToString(", ")),
+                            R.string.team, teamNames.joinToString(", ")
+                        ),
                         color = teamTextCol,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
@@ -249,7 +248,7 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(stringResource(R.string.personal_statistics), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text(seasonName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Text("Összesített", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -265,7 +264,7 @@ fun ProfileScreen(
                 }
             }
 
-            // --- 3. ÜTŐK (FELSZERELÉS) --- // TODO
+            // --- 3. ÜTŐK (FELSZERELÉS) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -393,7 +392,7 @@ fun ProfileScreen(
     }
 }
 
-// ÚJ KÖZÖS KOMPONENS A PROFIL STATISZTIKÁHOZ
+// KOMPONENS A PROFIL STATISZTIKÁHOZ
 @Composable
 fun ProfileStatItem(label: String, value: String, type: String) {
     val isDark = isSystemInDarkTheme()
