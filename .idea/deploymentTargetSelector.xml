@@ -38,6 +38,9 @@
       <SelectionState runConfigName="FinalizeParticipantsTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="FillAllMatchResultsTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>

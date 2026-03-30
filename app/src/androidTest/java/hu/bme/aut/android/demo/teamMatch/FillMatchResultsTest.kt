@@ -105,7 +105,6 @@ class FillMatchResultsTest {
 
                 Thread.sleep(500)
 
-                // 🔥 HAZAI PONT BEÍRÁSA LASSÍTVA
                 val homeNode = composeTestRule.onNode(hasTestTag("input_home_$setIndex"), useUnmergedTree = true)
                 homeNode.performClick()
                 composeTestRule.waitForIdle()
