@@ -68,7 +68,7 @@ fun LiveMatchScreen(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("back_button")
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Vissza")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Visszalépés")
                     }
                 }
             )

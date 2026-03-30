@@ -209,4 +209,46 @@ object TestData {
         TeamMatchData(id = 21, homeTeam = teams[5], guestTeam = teams[10]),
         TeamMatchData(id = 22, homeTeam = teams[5], guestTeam = teams[11])
     )
+
+    /**
+     * Valósághű asztalitenisz meccseredmény generátor.
+     */
+    fun generateRandomSets(): List<Pair<Int, Int>> {
+        val sets = mutableListOf<Pair<Int, Int>>()
+        var homeWins = 0
+        var guestWins = 0
+
+        while (homeWins < 3 && guestWins < 3) {
+            val homeWinsSet = (0..1).random() == 1
+            val isDeuce = (1..100).random() <= 8
+            val homeScore: Int
+            val guestScore: Int
+
+            if (isDeuce) {
+                val winnerScore = (12..20).random()
+                val loserScore = winnerScore - 2
+
+                if (homeWinsSet) {
+                    homeScore = winnerScore
+                    guestScore = loserScore
+                } else {
+                    homeScore = loserScore
+                    guestScore = winnerScore
+                }
+            } else {
+                val loserScore = (0..9).random()
+                if (homeWinsSet) {
+                    homeScore = 11
+                    guestScore = loserScore
+                } else {
+                    homeScore = loserScore
+                    guestScore = 11
+                }
+            }
+
+            sets.add(Pair(homeScore, guestScore))
+            if (homeWinsSet) homeWins++ else guestWins++
+        }
+        return sets
+    }
 }

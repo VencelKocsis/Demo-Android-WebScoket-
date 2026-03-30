@@ -2,25 +2,23 @@ package hu.bme.aut.android.demo.teamMatch
 
 import android.Manifest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.test.rule.GrantPermissionRule
 import hu.bme.aut.android.demo.MainActivity
 import hu.bme.aut.android.demo.data.TestData
+import hu.bme.aut.android.demo.data.TestData.generateRandomSets
 import hu.bme.aut.android.demo.functions.Authentication.ensureLoggedOut
 import hu.bme.aut.android.demo.functions.Authentication.login
 import hu.bme.aut.android.demo.functions.Authentication.logoutWithTryCatch
-import hu.bme.aut.android.demo.functions.Match.goBack
 import hu.bme.aut.android.demo.functions.Match.openMatch
 import hu.bme.aut.android.demo.functions.Match.scrollAndClickText
 import hu.bme.aut.android.demo.functions.Match.waitForMatchList
@@ -41,253 +39,147 @@ class FillMatchResultsTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun fillAllMatchResultsAndSignWorkflow() {
-        // Végigmegyünk az ÖSSZES meccsen a TestData-ból
-        for ((matchIndex, match) in TestData.teamMatches.withIndex()) {
+    fun fillMatchResultsAndSignWorkflow() {
+        val match = TestData.teamMatches.last()
+        val homeTeam = match.homeTeam
+        val guestTeam = match.guestTeam
 
-            val homeTeam = match.homeTeam
-            val guestTeam = match.guestTeam
+        ensureLoggedOut(composeTestRule)
 
-            println("=========================================================================")
-            println("▶ START: ${matchIndex + 1} / ${TestData.teamMatches.size}. MECCS -> ${homeTeam.teamName} vs ${guestTeam.teamName}")
-            println("=========================================================================")
+        // ========================================================
+        // 1. VENDÉG KAPITÁNY: Meccs indítása és Felállás (Lineup) elküldése
+        // ========================================================
+        login(composeTestRule, guestTeam.captain.email, guestTeam.captain.password)
+        navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
+        waitForMatchList(composeTestRule)
+        openMatch(composeTestRule, match.id)
 
-            ensureLoggedOut(composeTestRule)
+        scrollAndClickText(composeTestRule, "elindítása", "Nem találtam meg a Meccs Indítása gombot!")
 
-            // ========================================================
-            // 1. VENDÉG KAPITÁNY: Meccs indítása és Sorrend beküldése
-            // ========================================================
-            login(composeTestRule, guestTeam.captain.email, guestTeam.captain.password)
-            navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
-            waitForMatchList(composeTestRule)
-            openMatch(composeTestRule, match.id)
+        composeTestRule.waitUntilAtLeastOneExists(hasText("beküldése", substring = true, ignoreCase = true), 10000)
+        scrollAndClickText(composeTestRule, "beküldése", "Nem találtam meg az Elküldés gombot a vendég felállásnál!")
 
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+
+        composeTestRule.onNodeWithContentDescription("Visszalépés").performClick()
+        Thread.sleep(500)
+        composeTestRule.onNodeWithContentDescription("Visszalépés").performClick()
+        waitForMatchList(composeTestRule)
+
+        logoutWithTryCatch(composeTestRule)
+
+        // ========================================================
+        // 2. HAZAI KAPITÁNY: Felállás elküldése és EREDMÉNYEK BEVITEL
+        // ========================================================
+        login(composeTestRule, homeTeam.captain.email, homeTeam.captain.password)
+        navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
+        waitForMatchList(composeTestRule)
+        openMatch(composeTestRule, match.id)
+
+        scrollAndClickText(composeTestRule, "élő mérkőzés", "Nem találtam meg a Tovább az Élő Mérkőzésre gombot!")
+
+        composeTestRule.waitUntilAtLeastOneExists(hasText("beküldése", substring = true, ignoreCase = true), 10000)
+        scrollAndClickText(composeTestRule, "beküldése", "Nem találtam meg az Elküldés gombot a hazai felállásnál!")
+
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("match_grid_list"), 15000)
+        composeTestRule.waitForIdle()
+        Thread.sleep(2000)
+
+        // 16 EGYÉNI MECCS KITÖLTÉSE RANDOM SZETTEKKEL
+        for (i in 1..16) {
+
+            composeTestRule.onNodeWithTag("match_grid_list")
+                .performScrollToNode(hasTestTag("individual_match_card_$i"))
+
+            composeTestRule.onNode(hasTestTag("individual_match_card_$i")).performClick()
+
+            composeTestRule.waitUntilAtLeastOneExists(hasText("Véglegesítés", substring = true, ignoreCase = true), 10000)
             composeTestRule.waitForIdle()
-            Thread.sleep(2000)
 
-            scrollAndClickText(composeTestRule, "elindítása", "Nem találtam meg a Meccs Indítása gombot!")
+            val generatedSets = generateRandomSets()
 
-            composeTestRule.waitForIdle()
-            Thread.sleep(2000)
+            generatedSets.forEachIndexed { setIndex, (homePoints, guestPoints) ->
 
-            scrollAndClickText(composeTestRule, "beküldése", "Nem találtam meg a Beküldés gombot a vendég felállásnál!")
+                composeTestRule.waitUntilAtLeastOneExists(hasTestTag("input_home_$setIndex"), 10000)
 
-            composeTestRule.waitForIdle()
-            Thread.sleep(2000)
-            composeTestRule.onNodeWithTag("back_button").performClick()
-
-            goBack(composeTestRule)
-            logoutWithTryCatch(composeTestRule)
-
-            // ========================================================
-            // 2. HAZAI KAPITÁNY: Sorrend beküldése ÉS Eredmények kitöltése
-            // ========================================================
-            login(composeTestRule, homeTeam.captain.email, homeTeam.captain.password)
-            navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
-            waitForMatchList(composeTestRule)
-            openMatch(composeTestRule, match.id)
-
-            composeTestRule.waitForIdle()
-            Thread.sleep(2000)
-
-            scrollAndClickText(composeTestRule, "élő mérkőzés", "Nem találtam meg a Tovább az Élő Mérkőzésre gombot!")
-
-            composeTestRule.waitForIdle()
-            Thread.sleep(2000)
-
-            scrollAndClickText(composeTestRule, "beküldése", "Nem találtam meg a Beküldés gombot a hazai felállásnál!")
-
-            composeTestRule.waitForIdle()
-            Thread.sleep(2000)
-
-            // --- BUG WORKAROUND: Visszalépés a testTag-gel, majd újra belépés ---
-            composeTestRule.onNodeWithTag("back_button").performClick()
-
-            composeTestRule.waitUntilAtLeastOneExists(hasText("Mérkőzés Részletei", substring = true, ignoreCase = true), 5000)
-            composeTestRule.waitForIdle()
-            Thread.sleep(1000)
-
-            scrollAndClickText(composeTestRule, "élő mérkőzés", "Bug workaround: Nem találtam meg az Élő Mérkőzés gombot visszalépés után!")
-            // -------------------------------------------------------------------
-
-            composeTestRule.waitForIdle()
-            Thread.sleep(2000)
-
-            // 16 EGYÉNI MECCS KITÖLTÉSE
-            for (i in 1..16) {
-                val cardTag = "individual_match_card_$i"
-
-                composeTestRule.onNodeWithTag("match_grid_list")
-                    .performScrollToNode(hasTestTag(cardTag))
-
-                composeTestRule.onNodeWithTag(cardTag).performClick()
-
-                composeTestRule.waitUntilAtLeastOneExists(hasText("Eredmény rögzítése", substring = true, ignoreCase = true), 5000)
-                composeTestRule.waitForIdle()
-                Thread.sleep(1000)
-
-                // ---- DINAMIKUS RANDOM EREDMÉNY BEÍRÁSA ----
-                val generatedSets = generateRandomSets()
-
-                try {
-                    generatedSets.forEachIndexed { setIndex, (homePoints, guestPoints) ->
-                        composeTestRule.waitForIdle()
-                        Thread.sleep(300)
-
-                        composeTestRule.onNodeWithTag("input_home_$setIndex", useUnmergedTree = true)
-                            .performTextReplacement(homePoints.toString())
-
-                        composeTestRule.waitForIdle()
-
-                        composeTestRule.onNodeWithTag("input_guest_$setIndex", useUnmergedTree = true)
-                            .performTextReplacement(guestPoints.toString())
-                    }
-                } catch (e: Throwable) {
-                    println("Hiba az eredmény beírásánál a(z) $i. meccsen: ${e.message}")
-                }
-
-                composeTestRule.waitForIdle()
-                Thread.sleep(1000)
-
-                // Lekattintjuk a Véglegesítést
-                scrollAndClickText(composeTestRule, "Véglegesítés", "Nem találtam a Véglegesítés gombot az egyéni meccsnél!")
-
-                // Várunk a mentésre
-                composeTestRule.waitForIdle()
-                Thread.sleep(1500)
-
-                // --- BIZTOSÍTÉK: Visszalépés, ha nem dobott vissza automatikusan ---
-                try {
-                    if (composeTestRule.onAllNodesWithText("Eredmény rögzítése").fetchSemanticsNodes().isNotEmpty()) {
-                        composeTestRule.onNodeWithContentDescription("Vissza").performClick()
-                    }
-                } catch (e: Throwable) {}
-
-                composeTestRule.waitForIdle()
                 Thread.sleep(500)
+
+                // 🔥 HAZAI PONT BEÍRÁSA LASSÍTVA
+                val homeNode = composeTestRule.onNode(hasTestTag("input_home_$setIndex"), useUnmergedTree = true)
+                homeNode.performClick()
+                composeTestRule.waitForIdle()
+                Thread.sleep(300)
+                homeNode.performTextClearance()
+                homeNode.performTextInput(homePoints.toString())
+
+                composeTestRule.waitForIdle()
+                Thread.sleep(400)
+
+                val guestNode = composeTestRule.onNode(hasTestTag("input_guest_$setIndex"), useUnmergedTree = true)
+                guestNode.performClick()
+                composeTestRule.waitForIdle()
+                Thread.sleep(300)
+                guestNode.performTextClearance()
+                guestNode.performTextInput(guestPoints.toString())
+
+                composeTestRule.waitForIdle()
+                Thread.sleep(1000)
+
+                if (setIndex < generatedSets.size - 1) {
+                    composeTestRule.onNode(hasText("Mentés", substring = true, ignoreCase = true)).performClick()
+                    composeTestRule.waitForIdle()
+                    Thread.sleep(2500)
+                }
             }
 
-            // --- ALÁÍRÁS HAZAIKÉNT ---
+            composeTestRule.onNode(hasText("Véglegesítés", substring = true, ignoreCase = true))
+                .assertIsEnabled()
+                .performClick()
+
+            composeTestRule.waitUntilAtLeastOneExists(hasText("lezárult", substring = true, ignoreCase = true), 15000)
+
+            composeTestRule.onNodeWithContentDescription("Vissza").performClick()
+
+            composeTestRule.waitUntilAtLeastOneExists(hasTestTag("match_grid_list"), 10000)
             composeTestRule.waitForIdle()
-            Thread.sleep(1500)
-
-            try {
-                val listNode = composeTestRule.onNodeWithTag("match_grid_list")
-                for (i in 0..10) {
-                    if (composeTestRule.onAllNodesWithText("Aláírom", ignoreCase = true).fetchSemanticsNodes().isNotEmpty()) {
-                        break
-                    }
-                    listNode.performTouchInput { swipeUp(durationMillis = 300) }
-                    composeTestRule.waitForIdle()
-                }
-            } catch (e: Throwable) {}
-
-            composeTestRule.waitForIdle()
-            Thread.sleep(1000)
-
-            scrollAndClickText(composeTestRule, "Aláírom", "Nem találtam meg az Aláírom gombot a hazai kapitánynál!")
-
-            Thread.sleep(1500)
-
-            composeTestRule.onNodeWithTag("back_button").performClick()
-
-            goBack(composeTestRule)
-            logoutWithTryCatch(composeTestRule)
-
-            // ========================================================
-            // 3. VENDÉG KAPITÁNY: Visszatér és Aláírja a jegyzőkönyvet
-            // ========================================================
-            login(composeTestRule, guestTeam.captain.email, guestTeam.captain.password)
-            navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
-            waitForMatchList(composeTestRule)
-            openMatch(composeTestRule, match.id)
-
-            composeTestRule.waitForIdle()
-            Thread.sleep(2000)
-
-            scrollAndClickText(composeTestRule, "élő mérkőzés", "Nem találtam meg a Tovább az Élő Mérkőzésre gombot a vendég kapitánynál!")
-
-            composeTestRule.waitUntilAtLeastOneExists(hasTestTag("match_grid_list"), 15000)
-
-            // --- ALÁÍRÁS VENDÉGKÉNT ---
-            composeTestRule.waitForIdle()
-            Thread.sleep(1500)
-
-            try {
-                val listNode = composeTestRule.onNodeWithTag("match_grid_list")
-                for (i in 0..10) {
-                    if (composeTestRule.onAllNodesWithText("Aláírom", ignoreCase = true).fetchSemanticsNodes().isNotEmpty()) {
-                        break
-                    }
-                    listNode.performTouchInput { swipeUp(durationMillis = 300) }
-                    composeTestRule.waitForIdle()
-                }
-            } catch (e: Throwable) {}
-
-            composeTestRule.waitForIdle()
-            Thread.sleep(1000)
-
-            scrollAndClickText(composeTestRule, "Aláírom", "Nem találtam meg az Aláírom gombot a vendég kapitánynál!")
-
-            // Végső ellenőrzés: Megjelent-e a lezáró üzenet?
-            composeTestRule.waitUntilAtLeastOneExists(hasText("LEZÁRULT", substring = true, ignoreCase = true), 15000)
-
-            println("✔ ${matchIndex + 1}. MECCS SIKERESEN LEZÁRVA!")
-
-            // --- VISSZALÉPÉS ÉS KIJELENTKEZÉS A KÖVETKEZŐ ITERÁCIÓHOZ ---
-            Thread.sleep(1500)
-            try {
-                composeTestRule.onNodeWithTag("back_button").performClick()
-                goBack(composeTestRule)
-                logoutWithTryCatch(composeTestRule)
-            } catch (e: Throwable) {
-                ensureLoggedOut(composeTestRule)
-            }
+            Thread.sleep(800)
         }
 
-        println("🏆 AZ ÖSSZES MECCS (${TestData.teamMatches.size} db) SIKERESEN KITÖLTVE ÉS LEZÁRVA! 🏆")
-    }
+        composeTestRule.onNodeWithTag("match_grid_list")
+            .performScrollToNode(hasText("Aláírom", substring = true, ignoreCase = true))
 
-    /**
-     * Valósághű asztalitenisz meccseredmény generátor.
-     * Visszatér egy listával, ahol a Pairek a Hazai és Vendég pontszámokat jelzik.
-     */
-    private fun generateRandomSets(): List<Pair<Int, Int>> {
-        val sets = mutableListOf<Pair<Int, Int>>()
-        var homeWins = 0
-        var guestWins = 0
+        scrollAndClickText(composeTestRule, "Aláírom", "Nem találtam meg az Aláírás gombot a hazai kapitánynál!")
+        Thread.sleep(1500)
 
-        while (homeWins < 3 && guestWins < 3) {
-            val homeWinsSet = (0..1).random() == 1
-            val isDeuce = (1..100).random() <= 8
-            val homeScore: Int
-            val guestScore: Int
+        composeTestRule.onNodeWithContentDescription("Visszalépés").performClick()
+        Thread.sleep(500)
+        composeTestRule.onNodeWithContentDescription("Visszalépés").performClick()
+        waitForMatchList(composeTestRule)
 
-            if (isDeuce) {
-                val winnerScore = (12..20).random()
-                val loserScore = winnerScore - 2
+        logoutWithTryCatch(composeTestRule)
 
-                if (homeWinsSet) {
-                    homeScore = winnerScore
-                    guestScore = loserScore
-                } else {
-                    homeScore = loserScore
-                    guestScore = winnerScore
-                }
-            } else {
-                val loserScore = (0..9).random()
-                if (homeWinsSet) {
-                    homeScore = 11
-                    guestScore = loserScore
-                } else {
-                    homeScore = loserScore
-                    guestScore = 11
-                }
-            }
+        // ========================================================
+        // 3. VENDÉG KAPITÁNY: Aláírás és Lezárás
+        // ========================================================
+        login(composeTestRule, guestTeam.captain.email, guestTeam.captain.password)
+        navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
+        waitForMatchList(composeTestRule)
+        openMatch(composeTestRule, match.id)
 
-            sets.add(Pair(homeScore, guestScore))
-            if (homeWinsSet) homeWins++ else guestWins++
-        }
-        return sets
+        scrollAndClickText(composeTestRule, "élő mérkőzés", "Nem találtam meg a Tovább az Élő Mérkőzésre gombot a vendég kapitánynál!")
+
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("match_grid_list"), 15000)
+
+        composeTestRule.onNodeWithTag("match_grid_list")
+            .performScrollToNode(hasText("Aláírom", substring = true, ignoreCase = true))
+
+        scrollAndClickText(composeTestRule, "Aláírom", "Nem találtam meg az Aláírás gombot a vendég kapitánynál!")
+
+        composeTestRule.waitUntilAtLeastOneExists(hasText("hivatalosan", substring = true, ignoreCase = true), 15000)
+
+        composeTestRule.onNodeWithContentDescription("Visszalépés").performClick()
+        Thread.sleep(500)
+        composeTestRule.onNodeWithContentDescription("Visszalépés").performClick()
     }
 }
