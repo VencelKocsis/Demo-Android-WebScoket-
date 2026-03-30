@@ -15,7 +15,7 @@
     <string name="logout">Logout</string>
     <string name="no_email">No email</string>
     <string name="no_team">Without team</string>
-    <string name="team">Team: %1$s</string>
+    <string name="team_one_var">Team: %1$s</string>
     <string name="personal_statistics">Personal Statistics</string>
     <string name="match">Match</string>
     <string name="victory">Victory</string>
@@ -106,4 +106,27 @@
     <string name="status_cancelled">Cancelled</string>
     <string name="status_unknown">Unknown</string>
     <string name="map">Map: %1$s</string>
+    <string name="no_data_for_graph">Not enough data for graph</string>
+    <string name="aggregate_balance_sheet">Aggregate Balance Sheet</string>
+    <string name="from_last_5">Form (Last 5)</string>
+    <string name="victory_letter">V</string>
+    <string name="lose_letter">L</string>
+    <string name="set_of_indicators">Set of Indicators</string>
+    <string name="clutch">Clutch (3-0)</string>
+    <string name="final_set">Finals set</string>
+    <string name="againts_each_other">Against each other (H2H)</string>
+    <string name="two_var_victory">%1$s (%2$d victory)</string>
+    <string name="favorite_opponent">Favorite opponent</string>
+    <string name="nemesis">Nemesis:</string>
+    <string name="two_var_lose">%1$s (%2$d lose)</string>
+    <string name="improvement_graph">Improvement Graph (Form)</string>
+    <string name="improvement_graph_dialog">Improvement Graph</string>
+    <string name="improvement_graph_dialog_text">This graph shows how your estimated Live Rating has changed over time.\n\nEvery win increases your rating, while every loss decreases it. The graph helps you see your long-term development and form based on the matches you have played.</string>
+    <string name="against_each_other_dialog">Against each other (H2H)</string>
+    <string name="against_each_other_dialaog_text">Favorite opponent: The player you have defeated the most times in your career.\n\nNemesis: The player you have lost to the most times.</string>
+    <string name="aggregate_balance_sheet_dialog">Aggregate Balance Sheet</string>
+    <string name="aggregate_balance_sheet_dialog_text">This card shows you the aggregate statistics for your entire career (all seasons so far).\n\nThe win rate and number of matches played are calculated based on all your individual matches so far.</string>
+    <string name="understood">Understood</string>
+    <string name="history">History</string>
+    <string name="profile">Profile</string>
 </resources>

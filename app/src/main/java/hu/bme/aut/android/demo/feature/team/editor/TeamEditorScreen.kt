@@ -60,6 +60,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.team.model.TeamMember
+import hu.bme.aut.android.demo.ui.theme.CaptainYellow
+import hu.bme.aut.android.demo.ui.theme.CaptainYellowSolid
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeLight
 
 // --- ÁLLAPOT ÉS ESEMÉNYEK ---
 data class TeamEditorState(
@@ -327,9 +330,9 @@ fun EditorPlayerCardRow(
 
     // Kapitány jelvény dinamikus színei
     val (captainBg, captainText) = if (isDark) {
-        Color(0xFFFFC107).copy(alpha = 0.2f) to Color(0xFFFFD54F)
+        CaptainYellow.copy(alpha = 0.2f) to WarningOrangeLight
     } else {
-        Color(0xFFFFB300) to Color.White
+        CaptainYellowSolid to Color.White
     }
 
     Card(

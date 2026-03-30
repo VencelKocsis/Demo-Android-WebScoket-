@@ -30,6 +30,17 @@ import androidx.compose.ui.unit.dp
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.util.toDisplayDate
 import androidx.compose.ui.res.stringResource
+import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
+import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
+import hu.bme.aut.android.demo.ui.theme.FinishedGrayDark
+import hu.bme.aut.android.demo.ui.theme.FinishedGrayLight
+import hu.bme.aut.android.demo.ui.theme.FinishedGraySolid
+import hu.bme.aut.android.demo.ui.theme.NeutralGrayLight
+import hu.bme.aut.android.demo.ui.theme.ProgressPink
+import hu.bme.aut.android.demo.ui.theme.ProgressPinkDark
+import hu.bme.aut.android.demo.ui.theme.ProgressPinkSolid
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
 
 @Composable
 fun MatchLocationButton(
@@ -95,33 +106,33 @@ fun getStatusTheme(status: String?): Pair<Color, Color> {
 
     return when (status) {
         "scheduled" -> if (isDark) {
-            Color(0xFF2E7D32).copy(alpha = 0.2f) to Color(0xFF81C784)
+            SuccessGreenDark.copy(alpha = 0.2f) to SuccessGreenLight
         } else {
-            Color(0xFF2E7D32) to Color.White // Teli sötétzöld, fehér szöveg
+            SuccessGreenDark to Color.White // Teli sötétzöld, fehér szöveg
         }
 
         "in_progress" -> if (isDark) {
-            Color(0xFFE91E63).copy(alpha = 0.2f) to Color(0xFFFF4081)
+            ProgressPinkDark.copy(alpha = 0.2f) to ProgressPink
         } else {
-            Color(0xFFD81B60) to Color.White // Teli magenta, fehér szöveg
+            ProgressPinkSolid to Color.White // Teli magenta, fehér szöveg
         }
 
         "finished" -> if (isDark) {
-            Color(0xFF455A64).copy(alpha = 0.2f) to Color(0xFFCFD8DC)
+            FinishedGrayDark.copy(alpha = 0.2f) to FinishedGrayLight
         } else {
-            Color(0xFF546E7A) to Color.White // Teli kékesszürke, fehér szöveg
+            FinishedGraySolid to Color.White // Teli kékesszürke, fehér szöveg
         }
 
         "cancelled" -> if (isDark) {
-            Color(0xFFD32F2F).copy(alpha = 0.2f) to Color(0xFFFF8A80)
+            ErrorRedSolid.copy(alpha = 0.2f) to ErrorRedLight
         } else {
-            Color(0xFFD32F2F) to Color.White // Teli piros, fehér szöveg
+            ErrorRedSolid to Color.White // Teli piros, fehér szöveg
         }
 
         else -> if (isDark) {
             Color.Gray.copy(alpha = 0.2f) to Color.LightGray
         } else {
-            Color(0xFF757575) to Color.White // Teli szürke, fehér szöveg
+            NeutralGrayLight to Color.White // Teli szürke, fehér szöveg
         }
     }
 }

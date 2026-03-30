@@ -15,7 +15,7 @@
     <string name="logout">Kijelentkezés</string>
     <string name="no_email">Nincs email</string>
     <string name="no_team">Nincs csapatban</string>
-    <string name="team">Csapat: %1$s</string>
+    <string name="team_one_var">Csapat: %1$s</string>
     <string name="personal_statistics">Saját Statisztika</string>
     <string name="match">Meccs</string>
     <string name="victory">Győzelem</string>
@@ -106,4 +106,28 @@
     <string name="status_cancelled">Törölve</string>
     <string name="status_unknown">Ismeretlen</string>
     <string name="map">Térkép: %1$s</string>
+    <string name="no_data_for_graph">Nincs elég adat a grafikonhoz</string>
+    <string name="aggregate_balance_sheet">Összesített Mérleg</string>
+    <string name="from_last_5">Forma (Utolsó 5)</string>
+    <string name="victory_letter">Gy</string>
+    <string name="lose_letter">V</string>
+    <string name="set_of_indicators">Szett Mutatók</string>
+    <string name="clutch">Söprés (3-0)</string>
+    <string name="final_set">Döntő szett</string>
+    <string name="againts_each_other">Egymás Elleni (H2H)</string>
+    <string name="two_var_victory">%1$s (%2$d győzelem)</string>
+    <string name="favorite_opponent">Kedvenc ellenfél</string>
+    <string name="nemesis">Nemezis:</string>
+    <string name="two_var_lose">%1$s (%2$d vereség)</string>
+    <string name="improvement_graph">Fejlődési Görbe (Forma)</string>
+    <string name="improvement_graph_dialog">Fejlődési Görbe</string>
+    <string name="improvement_graph_dialog_text">Ez a grafikon a becsült Élő-pontszámod (Rating) változását mutatja az idő előrehaladtával.\n\nMinden győzelem növeli, míg minden vereség csökkenti a pontszámodat. A grafikon segít átlátni a hosszútávú fejlődésedet és formádat a lejátszott mérkőzéseid alapján.</string>
+    <string name="against_each_other_dialog">Egymás Elleni (H2H)</string>
+    <string name="against_each_other_dialaog_text">Kedvenc ellenfél: Az a játékos, akit a legtöbbször győztél le a pályafutásod során.\n\nNemezis: Az a játékos, akitől a legtöbbször kaptál ki.</string>
+    <string name="aggregate_balance_sheet_dialog">Összesített Mérleg</string>
+    <string name="aggregate_balance_sheet_dialog_text">Ez a kártya a teljes pályafutásod (minden eddigi szezon) összesített statisztikáját mutatja.\n\nA győzelmi arány és a lejátszott mérkőzések száma az eddigi összes egyéni meccsed alapján kerül kiszámításra.</string>
+    <string name="understood">Értem</string>
+    <string name="title_team">Csapat</string>
+    <string name="history">Előzmények</string>
+    <string name="profile">Profil</string>
 </resources>

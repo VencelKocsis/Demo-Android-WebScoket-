@@ -50,6 +50,21 @@ import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.ui.common.MatchDateRow
 import hu.bme.aut.android.demo.ui.common.MatchLocationButton
 import hu.bme.aut.android.demo.ui.common.MatchStatusChip
+import hu.bme.aut.android.demo.ui.theme.ErrorRedBg
+import hu.bme.aut.android.demo.ui.theme.ErrorRedBorder
+import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
+import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
+import hu.bme.aut.android.demo.ui.theme.FinishedGrayBg
+import hu.bme.aut.android.demo.ui.theme.FinishedGrayDark
+import hu.bme.aut.android.demo.ui.theme.FinishedGrayLight
+import hu.bme.aut.android.demo.ui.theme.ProgressPink
+import hu.bme.aut.android.demo.ui.theme.ProgressPinkBg
+import hu.bme.aut.android.demo.ui.theme.ProgressPinkBorder
+import hu.bme.aut.android.demo.ui.theme.ProgressPinkDark
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenBg
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenBorder
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -190,18 +205,18 @@ fun TeamMatchSimpleCard(
     val isDark = isSystemInDarkTheme()
 
     val statusColor = when (teamMatch.status) {
-        "scheduled" -> if (isDark) Color(0xFF2E7D32).copy(alpha = 0.15f) else Color(0xFFE8F5E9)
-        "in_progress" -> if (isDark) Color(0xFFE91E63).copy(alpha = 0.15f) else Color(0xFFFCE4EC)
-        "finished" -> if (isDark) Color(0xFF455A64).copy(alpha = 0.15f) else Color(0xFFECEFF1)
-        "cancelled" -> if (isDark) Color(0xFFD32F2F).copy(alpha = 0.15f) else Color(0xFFFFEBEE)
+        "scheduled" -> if (isDark) SuccessGreenDark.copy(alpha = 0.15f) else SuccessGreenBg
+        "in_progress" -> if (isDark) ProgressPinkDark.copy(alpha = 0.15f) else ProgressPinkBg
+        "finished" -> if (isDark) FinishedGrayDark.copy(alpha = 0.15f) else FinishedGrayBg
+        "cancelled" -> if (isDark) ErrorRedSolid.copy(alpha = 0.15f) else ErrorRedBg
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
     val borderColor = when (teamMatch.status) {
-        "scheduled" -> if (isDark) Color(0xFF81C784).copy(alpha = 0.5f) else Color(0xFFA5D6A7)
-        "in_progress" -> if (isDark) Color(0xFFFF4081).copy(alpha = 0.5f) else Color(0xFFF48FB1)
-        "finished" -> if (isDark) Color(0xFFCFD8DC).copy(alpha = 0.5f) else Color(0xFFCFD8DC)
-        "cancelled" -> if (isDark) Color(0xFFFF8A80).copy(alpha = 0.5f) else Color(0xFFEF9A9A)
+        "scheduled" -> if (isDark) SuccessGreenLight.copy(alpha = 0.5f) else SuccessGreenBorder
+        "in_progress" -> if (isDark) ProgressPink.copy(alpha = 0.5f) else ProgressPinkBorder
+        "finished" -> if (isDark) FinishedGrayLight.copy(alpha = 0.5f) else FinishedGrayLight
+        "cancelled" -> if (isDark) ErrorRedLight.copy(alpha = 0.5f) else ErrorRedBorder
         else -> MaterialTheme.colorScheme.outlineVariant
     }
 

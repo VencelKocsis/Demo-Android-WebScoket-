@@ -56,6 +56,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.team.model.Team
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
+import hu.bme.aut.android.demo.ui.theme.CaptainYellow
+import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
+import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
+import hu.bme.aut.android.demo.ui.theme.NeutralGraySolid
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeDark
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeLight
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeSolid
 import kotlin.collections.isNotEmpty
 
 // --- Adatmodellek ---
@@ -265,13 +275,12 @@ fun TeamScreenContent(
 fun StatItem(label: String, value: String, type: String) {
     val isDark = isSystemInDarkTheme()
 
-    // Színek: Világos módban teli színek, fehér szöveg. Sötétben áttetsző pasztell.
     val (bgColor, textColor) = when (type) {
-        "success" -> if(isDark) Color(0xFF2E7D32).copy(0.25f) to Color(0xFF81C784) else Color(0xFF388E3C) to Color.White
-        "error" -> if(isDark) Color(0xFFD32F2F).copy(0.25f) to Color(0xFFFF8A80) else Color(0xFFD32F2F) to Color.White
-        "warning" -> if(isDark) Color(0xFFF57F17).copy(0.25f) to Color(0xFFFFD54F) else Color(0xFFF57C00) to Color.White
+        "success" -> if(isDark) SuccessGreenDark.copy(0.25f) to SuccessGreenLight else SuccessGreenSolid to Color.White
+        "error" -> if(isDark) ErrorRedSolid.copy(0.25f) to ErrorRedLight else ErrorRedSolid to Color.White
+        "warning" -> if(isDark) WarningOrangeDark.copy(0.25f) to WarningOrangeLight else WarningOrangeSolid to Color.White
         "primary" -> if(isDark) MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
-        else -> if(isDark) Color.Gray.copy(0.2f) to Color.LightGray else Color(0xFF757575) to Color.White
+        else -> if(isDark) Color.Gray.copy(0.2f) to Color.LightGray else NeutralGraySolid to Color.White
     }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -307,9 +316,9 @@ fun MatchResultRow(
     val isDark = isSystemInDarkTheme()
 
     val (bgColor, textColor) = if (match.isWin) {
-        if(isDark) Color(0xFF2E7D32).copy(0.25f) to Color(0xFF81C784) else Color(0xFF388E3C) to Color.White
+        if(isDark) SuccessGreenDark.copy(0.25f) to SuccessGreenLight else SuccessGreenSolid to Color.White
     } else {
-        if(isDark) Color(0xFFD32F2F).copy(0.25f) to Color(0xFFFF8A80) else Color(0xFFD32F2F) to Color.White
+        if(isDark) ErrorRedSolid.copy(0.25f) to ErrorRedLight else ErrorRedSolid to Color.White
     }
 
     Card(
@@ -384,10 +393,10 @@ fun PlayerCardRow(name: String, isCaptain: Boolean) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFFFFC107).copy(alpha = 0.2f))
+                        .background(CaptainYellow.copy(alpha = 0.2f))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Text(stringResource(R.string.captain), color = Color(0xFFF57F17), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
+                    Text(stringResource(R.string.captain), color = WarningOrangeDark, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
                 }
             }
         }

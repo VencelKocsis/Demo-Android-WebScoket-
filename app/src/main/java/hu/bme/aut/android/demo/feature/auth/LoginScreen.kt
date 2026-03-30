@@ -22,7 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.firebase.auth.FirebaseUser
 import hu.bme.aut.android.demo.R
-import hu.bme.aut.android.demo.util.LanguageSelector
+import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 
 // A navigációs események kezelésére szolgáló lambda (pl. navigálás a főképernyőre)
 typealias OnAuthSuccess = (FirebaseUser) -> Unit
@@ -112,7 +112,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = it,
-                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50), // Zöld szín
+                        color = SuccessGreen, // Zöld szín
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth()

@@ -72,6 +72,11 @@ import hu.bme.aut.android.demo.ui.common.LiveIndicator
 import hu.bme.aut.android.demo.ui.common.MatchDateRow
 import hu.bme.aut.android.demo.ui.common.MatchLocationButton
 import hu.bme.aut.android.demo.ui.common.MatchStatusChip
+import hu.bme.aut.android.demo.ui.theme.ErrorRed
+import hu.bme.aut.android.demo.ui.theme.ProgressPink
+import hu.bme.aut.android.demo.ui.theme.ProgressPinkDark
+import hu.bme.aut.android.demo.ui.theme.SuccessGreen
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -180,7 +185,7 @@ fun MatchDetailsScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                 } else if (match.status == "in_progress") {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        LiveIndicator(color = Color(0xFFFF4081))
+                                        LiveIndicator(color = ProgressPink)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = stringResource(
@@ -189,7 +194,7 @@ fun MatchDetailsScreen(
                                                 liveGuestScore
                                             ),
                                             style = MaterialTheme.typography.titleLarge,
-                                            color = Color(0xFFFF4081),
+                                            color = ProgressPink,
                                             fontWeight = FontWeight.Black
                                         )
                                     }
@@ -300,7 +305,7 @@ fun MatchDetailsScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(56.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
+                                            colors = ButtonDefaults.buttonColors(containerColor = ProgressPinkDark)
                                         ) {
                                             Text(if (match.status == "finished") stringResource(R.string.detailed_results) else stringResource(
                                                 R.string.to_live_match
@@ -322,7 +327,7 @@ fun MatchDetailsScreen(
                                             val statusMsg = if (state.myStatus == "SELECTED") stringResource(
                                                 R.string.captain_selected_you
                                             ) else stringResource(R.string.wait_for_captain_selection)
-                                            val statusColor = if (state.myStatus == "SELECTED") Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
+                                            val statusColor = if (state.myStatus == "SELECTED") SuccessGreen else MaterialTheme.colorScheme.primary
 
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                                 Box(
@@ -372,7 +377,7 @@ fun MatchDetailsScreen(
                                                         .fillMaxWidth()
                                                         .height(56.dp),
                                                     enabled = !state.isMutating,
-                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
+                                                    colors = ButtonDefaults.buttonColors(containerColor = ProgressPinkDark)
                                                 ) {
                                                     Text(stringResource(R.string.start_match), fontWeight = FontWeight.Black)
                                                 }
@@ -429,14 +434,14 @@ fun RosterCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .background(if (selectedCount >= 4) Color(0xFF4CAF50).copy(alpha = 0.2f) else MaterialTheme.colorScheme.errorContainer)
+                        .background(if (selectedCount >= 4) SuccessGreen.copy(alpha = 0.2f) else MaterialTheme.colorScheme.errorContainer)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "$selectedCount / 4 Kiválasztva",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (selectedCount >= 4) Color(0xFF388E3C) else MaterialTheme.colorScheme.onErrorContainer
+                        color = if (selectedCount >= 4) SuccessGreenSolid else MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
             }
@@ -479,7 +484,7 @@ fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading:
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) Color(0xFF4CAF50) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = rowAlpha)),
+                    .background(if (isSelected) SuccessGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = rowAlpha)),
                 contentAlignment = Alignment.Center
             ) {
                 if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
@@ -588,10 +593,10 @@ fun ActiveRosterCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Gy: ", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("$wins", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                            Text("$wins", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = SuccessGreen)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("V: ", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("$losses", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFFF44336))
+                            Text("$losses", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = ErrorRed)
                         }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))

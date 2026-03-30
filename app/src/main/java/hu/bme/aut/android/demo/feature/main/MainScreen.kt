@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -98,8 +99,8 @@ fun MainScreen(
 
                 bottomNavItems.forEach { screen ->
                     NavigationBarItem(
-                        icon = { Icon(screen.icon!!, contentDescription = screen.title) },
-                        label = { Text(screen.title!!) },
+                        icon = { Icon(screen.icon!!, contentDescription = stringResource(id = screen.titleResId!!)) },
+                        label = { Text(stringResource(id = screen.titleResId!!)) },
                         selected = currentRoute == screen.route,
                         onClick = {
                             bottomNavController.navigate(screen.route) {

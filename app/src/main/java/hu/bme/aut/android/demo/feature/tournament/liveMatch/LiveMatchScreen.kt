@@ -32,6 +32,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.common.LiveIndicator
+import hu.bme.aut.android.demo.ui.theme.ProgressPink
+import hu.bme.aut.android.demo.ui.theme.SuccessGreen
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
@@ -358,7 +361,7 @@ fun MatchGridContent(
                         .clickable(enabled = isClickable) {
                             onEvent(LiveMatchEvent.OpenIndividualMatchScoring(game.id))
                         },
-                    // ÚJ DESIGN: Tiszta háttér, finom körvonal
+                    // Tiszta háttér, finom körvonal
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = CardDefaults.outlinedCardBorder(),
                     elevation = CardDefaults.cardElevation(defaultElevation = if (isClickable) 2.dp else 0.dp)
@@ -412,13 +415,13 @@ fun MatchGridContent(
                                 when (game.status) {
                                     "in_progress" -> {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            LiveIndicator(color = Color(0xFFFF4081))
+                                            LiveIndicator(color = ProgressPink)
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text(
                                                 text = stringResource(R.string.live),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFFFF4081)
+                                                color = ProgressPink
                                             )
                                         }
                                     }
@@ -426,14 +429,14 @@ fun MatchGridContent(
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(4.dp))
-                                                .background(Color(0xFF4CAF50).copy(alpha = 0.1f))
+                                                .background(SuccessGreen.copy(alpha = 0.1f))
                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
                                             Text(
                                                 text = stringResource(R.string.finished),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF388E3C)
+                                                color = SuccessGreenSolid
                                             )
                                         }
                                     }
@@ -515,7 +518,7 @@ fun MatchGridContent(
 
                         if (state.match.homeTeamSigned && state.match.guestTeamSigned) {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50))) {
+                            Card(colors = CardDefaults.cardColors(containerColor = SuccessGreen)) {
                                 Text(
                                     text = stringResource(R.string.tx_match_officially_over),
                                     color = Color.White,
@@ -543,8 +546,8 @@ fun SignatureStatusColumn(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (isSigned) {
-            Icon(Icons.Default.CheckCircle, contentDescription = "Aláírva", tint = Color(0xFF4CAF50), modifier = Modifier.size(32.dp))
-            Text(stringResource(R.string.approved), color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+            Icon(Icons.Default.CheckCircle, contentDescription = "Aláírva", tint = SuccessGreen, modifier = Modifier.size(32.dp))
+            Text(stringResource(R.string.approved), color = SuccessGreen, fontWeight = FontWeight.Bold)
         } else {
             if (isMyTeam) {
                 Button(onClick = onSignClick, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {

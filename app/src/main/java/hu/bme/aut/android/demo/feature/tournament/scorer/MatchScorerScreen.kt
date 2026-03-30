@@ -30,6 +30,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
+import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -179,7 +180,7 @@ fun MatchScorerScreen(
                                             .weight(1f)
                                             .height(50.dp),
                                         enabled = canSave && isMatchOver,
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                        colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
                                     ) {
                                         Text(stringResource(R.string.finalize))
                                     }
@@ -200,13 +201,13 @@ fun MatchScorerScreen(
                                 // Olvasható mód esetén a tájékoztató szöveg:
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
+                                    colors = CardDefaults.cardColors(containerColor = SuccessGreen.copy(alpha = 0.1f))
                                 ) {
                                     Text(
                                         text = if (state.isTeamMatchFinished) stringResource(R.string.tx_match_authenticated) else stringResource(
                                             R.string.match_over
                                         ),
-                                        color = Color(0xFF4CAF50),
+                                        color = SuccessGreen,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier
                                             .fillMaxWidth()

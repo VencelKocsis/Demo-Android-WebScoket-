@@ -25,7 +25,7 @@ data class MatchScorerUiState(
     val homeSetsWon: Int = 0,
     val guestSetsWon: Int = 0,
     val isFinished: Boolean = false,
-    val isTeamMatchFinished: Boolean = false // <--- ÚJ: Tudjuk-e, hogy az egész meccs lezárult?
+    val isTeamMatchFinished: Boolean = false
 )
 
 @HiltViewModel
@@ -131,7 +131,7 @@ class MatchScorerViewModel @Inject constructor(
                         homeSetsWon = hWins,
                         guestSetsWon = gWins,
                         isFinished = indMatch?.status == "finished",
-                        isTeamMatchFinished = parentMatch?.status == "finished" // <--- ÚJ: Szülő meccs státusza
+                        isTeamMatchFinished = parentMatch?.status == "finished"
                     )
                 }
             } catch (e: Exception) {

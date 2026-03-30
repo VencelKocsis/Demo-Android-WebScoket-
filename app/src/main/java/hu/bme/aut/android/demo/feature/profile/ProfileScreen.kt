@@ -33,21 +33,36 @@ import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.racketEditor.Blade
 import hu.bme.aut.android.demo.feature.racketEditor.Racket
 import hu.bme.aut.android.demo.feature.racketEditor.Rubber
+import hu.bme.aut.android.demo.ui.common.InfoDialog
+import hu.bme.aut.android.demo.ui.common.ProfileStatItem
+import hu.bme.aut.android.demo.ui.theme.ErrorRed
+import hu.bme.aut.android.demo.ui.theme.ErrorRedBg
+import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
+import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
+import hu.bme.aut.android.demo.ui.theme.RacketBlack
+import hu.bme.aut.android.demo.ui.theme.RacketBlue
+import hu.bme.aut.android.demo.ui.theme.RacketYellow
+import hu.bme.aut.android.demo.ui.theme.SuccessGreen
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 import hu.bme.aut.android.demo.util.LanguageSelector
 
 // --- SEGÉDFÜGGVÉNYEK ÉS GRAFIKON ---
 @Composable
 fun ColorCircle(color: Color, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.size(16.dp).background(color, CircleShape))
+    Box(modifier = modifier
+        .size(16.dp)
+        .background(color, CircleShape))
 }
 
 fun stringToColor(colorName: String): Color {
     return when (colorName.lowercase()) {
-        "red" -> Color(0xFFD32F2F)
-        "black" -> Color(0xFF212121)
-        "blue" -> Color(0xFF1976D2)
-        "green" -> Color(0xFF388E3C)
-        "yellow" -> Color(0xFFFBC02D)
+        "red" -> ErrorRedSolid
+        "black" -> RacketBlack
+        "blue" -> RacketBlue
+        "green" -> SuccessGreenSolid
+        "yellow" -> RacketYellow
         else -> Color.Gray
     }
 }
@@ -56,8 +71,10 @@ fun stringToColor(colorName: String): Color {
 @Composable
 fun PerformanceGraph(data: List<Float>, color: Color = MaterialTheme.colorScheme.primary) {
     if (data.size < 2) {
-        Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-            Text("Nincs elég adat a grafikonhoz", color = Color.Gray, style = MaterialTheme.typography.labelMedium)
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.no_data_for_graph), color = Color.Gray, style = MaterialTheme.typography.labelMedium)
         }
         return
     }
@@ -70,7 +87,10 @@ fun PerformanceGraph(data: List<Float>, color: Color = MaterialTheme.colorScheme
     val yMin = min - padding
     val yRange = yMax - yMin
 
-    Canvas(modifier = Modifier.fillMaxWidth().height(120.dp).padding(vertical = 8.dp)) {
+    Canvas(modifier = Modifier
+        .fillMaxWidth()
+        .height(120.dp)
+        .padding(vertical = 8.dp)) {
         val width = size.width
         val height = size.height
         val stepX = width / (data.size - 1)
@@ -153,6 +173,7 @@ fun ProfileScreen(
     var editLastName by remember { mutableStateOf("") }
     var showGraphInfoDialog by remember { mutableStateOf(false) }
     var showH2HInfoDialog by remember { mutableStateOf(false) }
+    var showOverallInfoDialog by remember { mutableStateOf(false) }
 
     val user = profileState.user
     val teamNames = profileState.userTeamNames
@@ -242,7 +263,7 @@ fun ProfileScreen(
 
                 // Csapat "Pilula"
                 val (teamBg, teamTextCol) = if (teamNames.isEmpty()) {
-                    if (isDark) Color(0xFFD32F2F).copy(alpha = 0.2f) to Color(0xFFFF8A80) else Color(0xFFFFEBEE) to Color(0xFFD32F2F)
+                    if (isDark) ErrorRedSolid.copy(alpha = 0.2f) to ErrorRedLight else ErrorRedBg to ErrorRedSolid
                 } else {
                     if (isDark) MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
                     else MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
@@ -256,7 +277,7 @@ fun ProfileScreen(
                 ) {
                     Text(
                         text = if (teamNames.isEmpty()) stringResource(R.string.no_team) else stringResource(
-                            R.string.team, teamNames.joinToString(", ")),
+                            R.string.team_one_var, teamNames.joinToString(", ")),
                         color = teamTextCol,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
@@ -264,7 +285,7 @@ fun ProfileScreen(
                 }
             }
 
-            // --- 2. ALAP STATISZTIKA (Kártya) ---
+            // --- 2. ALAP STATISZTIKA ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -272,7 +293,16 @@ fun ProfileScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Összesített Mérleg", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(stringResource(R.string.aggregate_balance_sheet), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { showOverallInfoDialog = true }, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Default.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                         ProfileStatItem(label = stringResource(R.string.match), value = profileState.matchesPlayed.toString(), type = "neutral")
@@ -290,15 +320,22 @@ fun ProfileScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Forma (Utolsó 5)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.from_last_5), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (profileState.recentForm.isEmpty()) Text("-", color = Color.Gray)
                             profileState.recentForm.forEach { isWin ->
                                 Box(
-                                    modifier = Modifier.size(24.dp).clip(CircleShape).background(if (isWin) Color(0xFF4CAF50) else Color(0xFFF44336)),
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isWin) SuccessGreen else ErrorRed),
                                     contentAlignment = Alignment.Center
-                                ) { Text(if (isWin) "Gy" else "V", color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                                ) { Text(
+                                    if (isWin) stringResource(R.string.victory_letter)
+                                    else stringResource(R.string.lose_letter),
+                                    color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold
+                                ) }
                             }
                         }
                     }
@@ -310,16 +347,16 @@ fun ProfileScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Szett Mutatók", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.set_of_indicators), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${profileState.sweeps}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = Color(0xFF4CAF50))
-                                Text("Söprés (3-0)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Text("${profileState.sweeps}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = SuccessGreen)
+                                Text(stringResource(R.string.clutch), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("${profileState.decidingSetWins}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                                Text("Döntő szett", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Text(stringResource(R.string.final_set), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             }
                         }
                     }
@@ -339,7 +376,7 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Egymás Elleni (H2H)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.againts_each_other), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             IconButton(onClick = { showH2HInfoDialog = true }, modifier = Modifier.size(28.dp)) {
                                 Icon(Icons.Default.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.primary)
                             }
@@ -348,10 +385,10 @@ fun ProfileScreen(
 
                         profileState.favoriteOpponent?.let { (name, wins) ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ThumbUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.ThumbUp, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Kedvenc ellenfél:", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.weight(1f))
-                                Text("$name ($wins győzelem)", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.favorite_opponent), style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.weight(1f))
+                                Text(stringResource(R.string.two_var_victory, name, wins), fontWeight = FontWeight.Bold)
                             }
                         }
 
@@ -361,10 +398,10 @@ fun ProfileScreen(
 
                         profileState.nemesis?.let { (name, losses) ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF44336), modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = ErrorRed, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Nemezis:", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.weight(1f))
-                                Text("$name ($losses vereség)", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.nemesis), style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.weight(1f))
+                                Text(stringResource(R.string.two_var_lose, name, losses), fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -383,7 +420,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Fejlődési Görbe (Forma)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.improvement_graph), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         IconButton(onClick = { showGraphInfoDialog = true }, modifier = Modifier.size(28.dp)) {
                             Icon(Icons.Default.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.primary)
                         }
@@ -521,73 +558,31 @@ fun ProfileScreen(
     }
 
     // --- INFO DIALÓGUSOK ---
+
+    // 1. Grafikon Info Dialógus
     if (showGraphInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showGraphInfoDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Fejlődési Görbe", fontWeight = FontWeight.Bold)
-                }
-            },
-            text = {
-                Text("Ez a grafikon a becsült Élő-pontszámod (Rating) változását mutatja az idő előrehaladtával.\n\nMinden győzelem növeli, míg minden vereség csökkenti a pontszámodat. A grafikon segít átlátni a hosszútávú fejlődésedet és formádat a lejátszott mérkőzéseid alapján.")
-            },
-            confirmButton = { TextButton(onClick = { showGraphInfoDialog = false }) { Text("Értem") } }
+        InfoDialog(
+            title = stringResource(R.string.improvement_graph_dialog),
+            text = stringResource(R.string.improvement_graph_dialog_text),
+            onDismiss = { showGraphInfoDialog = false }
         )
     }
 
+    // 2. H2H Info Dialógus
     if (showH2HInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showH2HInfoDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Egymás Elleni (H2H)", fontWeight = FontWeight.Bold)
-                }
-            },
-            text = {
-                Text("Kedvenc ellenfél: Az a játékos, akit a legtöbbször győztél le a pályafutásod során.\n\nNemezis: Az a játékos, akitől a legtöbbször kaptál ki.")
-            },
-            confirmButton = { TextButton(onClick = { showH2HInfoDialog = false }) { Text("Értem") } }
+        InfoDialog(
+            title = stringResource(R.string.against_each_other_dialog),
+            text = stringResource(R.string.against_each_other_dialaog_text),
+            onDismiss = { showH2HInfoDialog = false }
         )
     }
-}
 
-// KÖZÖS KOMPONENS A PROFIL STATISZTIKÁHOZ
-@Composable
-fun ProfileStatItem(label: String, value: String, type: String) {
-    val isDark = isSystemInDarkTheme()
-
-    val (bgColor, textColor) = when (type) {
-        "success" -> if(isDark) Color(0xFF2E7D32).copy(0.25f) to Color(0xFF81C784) else Color(0xFF388E3C) to Color.White
-        "primary" -> if(isDark) MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
-        else -> if(isDark) Color.Gray.copy(0.2f) to Color.LightGray else Color(0xFF757575) to Color.White
-    }
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(bgColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black,
-                color = textColor
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+    // 3. Összesített Mérleg Info Dialógus
+    if (showOverallInfoDialog) {
+        InfoDialog(
+            title = stringResource(R.string.aggregate_balance_sheet_dialog),
+            text = stringResource(R.string.aggregate_balance_sheet_dialog_text),
+            onDismiss = { showOverallInfoDialog = false }
         )
     }
 }
