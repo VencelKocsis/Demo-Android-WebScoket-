@@ -1,42 +1,36 @@
 package hu.bme.aut.android.demo.navigation
 
-import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Person
-import hu.bme.aut.android.demo.R
+import kotlinx.serialization.Serializable
 
-sealed class Screen(
-    val route: String,
-    @StringRes val titleResId: Int? = null,
-    val icon: ImageVector? = null
-) {
-    data object Login : Screen("login_screen")
-    data object Players : Screen("demo_screen")
+// --- FŐ KÉPERNYŐK ---
+@Serializable
+data object Login
 
-    data object Main : Screen("main_screen")
+@Serializable
+data object Main
 
-    data object Tournament : Screen("tournament", R.string.championship, Icons.Default.EmojiEvents)
-    data object Team : Screen("team", R.string.club, Icons.Default.Group)
-    data object History : Screen("history", R.string.history, Icons.Default.History)
-    data object Profile : Screen("profile", R.string.profile, Icons.Default.Person)
+// --- ALSÓ MENÜS (BOTTOM NAV) KÉPERNYŐK ---
+@Serializable
+data object Tournament
 
-    data object RacketEditor : Screen("racket_editor")
-    data object TeamEditor : Screen("team_editor") {
-        fun createRoute(teamId: Int): String = "$route/$teamId"
-    }
-    data object MatchDetails : Screen("match_details") {
-        fun createRoute(matchId: Int): String = "$route/$matchId"
-    }
+@Serializable
+data object Team
 
-    data object LiveMatch : Screen("live_match") {
-        fun createRoute(matchId: Int): String = "$route/$matchId"
-    }
+@Serializable
+data object History
 
-    data object MatchScorer : Screen("match_scorer") {
-        fun createRoute(matchId: Int, individualMatchId: Int): String = "$route/$matchId/$individualMatchId"
-    }
-}
+@Serializable
+data object Profile
+
+// --- PARAMÉTERES KÉPERNYŐK ---
+@Serializable
+data class TeamEditor(val teamId: Int)
+
+@Serializable
+data class MatchDetails(val matchId: Int)
+
+@Serializable
+data class LiveMatch(val matchId: Int)
+
+@Serializable
+data class MatchScorer(val matchId: Int, val individualMatchId: Int)

@@ -7,175 +7,104 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import hu.bme.aut.android.demo.feature.auth.AuthState
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
 import hu.bme.aut.android.demo.feature.team.editor.TeamEditorScreen
-import hu.bme.aut.android.demo.feature.team.TeamScreen
 import hu.bme.aut.android.demo.feature.tournament.match.MatchDetailsScreen
-// JAVÍTVA: Importáljuk be az új képernyőt!
 import hu.bme.aut.android.demo.feature.tournament.liveMatch.LiveMatchScreen
 import hu.bme.aut.android.demo.feature.tournament.scorer.MatchScorerScreen
 
-/**
- * Az alkalmazás fő navigációs konténere.
- * Kezeli az útvonalak közti váltást és a kezdőképernyő beállítását
- * a felhasználó bejelentkezési állapota alapján.
- *
- * @param navController A NavHostController, ami az aktuális képernyő állapotát kezeli.
- */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(
     navController: NavHostController
 ) {
-    // Az AuthViewModel Hilt általi beszerzése
     val authViewModel: AuthViewModel = hiltViewModel()
-
-    // A bejelentkezési állapot figyelése lifecycle-aware módon
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-    // A kezdőképernyő eldöntése a hitelesítési állapot alapján
-    val startDestination = when (authState) {
-        // Amíg az állapot ismeretlen (pl. token ellenőrzés fut), a Login útvonallal indulunk.
-        AuthState.UNKNOWN -> Screen.Login.route
-        // Ha be van jelentkezve, a Players képernyővel (DemoScreen) indul.
-        AuthState.AUTHENTICATED -> Screen.Main.route
-        // Ha nincs bejelentkezve, a Login képernyővel indul.
-        AuthState.UNAUTHENTICATED -> Screen.Login.route
+    // Itt a Típus (Osztály/Objektum) az indító útvonal
+    val startDestination: Any = when (authState) {
+        AuthState.UNKNOWN -> Login
+        AuthState.AUTHENTICATED -> Main
+        AuthState.UNAUTHENTICATED -> Login
     }
 
-    // Amíg az állapot UNKNOWN (ismeretlen), nem renderelünk NavHost-ot, hogy elkerüljük a gyorsan váltó képernyőket.
-    // Ha az állapot már AUTHENTICATED vagy UNAUTHENTICATED, elindul a NavHost.
     if (authState != AuthState.UNKNOWN) {
         NavHost(
             navController = navController,
             startDestination = startDestination
         ) {
             // --- 1. Login Képernyő ---
-            composable(Screen.Login.route) {
+            composable<Login> {
                 LoginScreen(
                     viewModel = authViewModel,
                     onAuthSuccess = {
-                        // Navigáció a PlayersScreen-re bejelentkezés után,
-                        // eltávolítva a LoginScreen-t a back stack-ből.
-                        navController.navigate(Screen.Main.route) {
-                            popUpTo(Screen.Login.route) {
-                                inclusive = true // Az LoginScreen-t is eltávolítja
-                            }
+                        navController.navigate(Main) {
+                            popUpTo<Login> { inclusive = true }
                         }
                     }
                 )
             }
 
-            // --- 2. FőKépernyő (MainScreen) ---
-            composable(Screen.Main.route) {
+            // --- 2. FőKépernyő ---
+            composable<Main> {
                 MainScreen(
                     authViewModel = authViewModel,
                     onLogout = {
                         authViewModel.signOut()
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Main.route) {
-                                inclusive = true
-                            }
+                        navController.navigate(Login) {
+                            popUpTo<Main> { inclusive = true }
                         }
                     },
-                    onNavigateToTeamEditor = { teamId ->
-                        navController.navigate(Screen.TeamEditor.createRoute(teamId))
-                    },
-                    onNavigateToMatchDetails = { matchId ->
-                        navController.navigate(Screen.MatchDetails.createRoute(matchId))
-                    }
+                    onNavigateToTeamEditor = { teamId -> navController.navigate(TeamEditor(teamId)) },
+                    onNavigateToMatchDetails = { matchId -> navController.navigate(MatchDetails(matchId)) }
                 )
             }
 
-            composable(Screen.Team.route) {
-                TeamScreen(
-                    onNavigateToEditor = { teamId ->
-                        navController.navigate(Screen.TeamEditor.createRoute(teamId))
-                    },
-                    onNavigateToMatch = { matchId ->
-                        navController.navigate(Screen.MatchDetails.createRoute(matchId))
-                    }
-                )
-            }
-
-            // --- 3. Csapatszerkesztő Képernyő ---
-            composable(
-                route = "${Screen.TeamEditor.route}/{teamId}",
-                arguments = listOf(
-                    navArgument("teamId") { type = NavType.IntType } // Megmondjuk, hogy ez egy Int
-                )
-            ) {
+            // --- 3. Csapatszerkesztő ---
+            composable<TeamEditor> { backStackEntry ->
+                // Automatikus típusos argumentum kinyerés!
+                val args = backStackEntry.toRoute<TeamEditor>()
                 TeamEditorScreen(
-                    onNavigateBack = {
-                        navController.popBackStack() // Visszalépés az előző képernyőre
-                    }
+                    onNavigateBack = { navController.popBackStack() }
+                    // A ViewModel majd a SavedStateHandle-ből automatikusan megkapja az ID-t!
                 )
             }
 
-            // --- 4. Meccs Részletek Képernyő ---
-            composable(
-                route = "${Screen.MatchDetails.route}/{matchId}",
-                arguments = listOf(
-                    navArgument("matchId") { type = NavType.IntType }
-                )
-            ) { backStackEntry ->
-                val matchId = backStackEntry.arguments?.getInt("matchId") ?: return@composable
-
+            // --- 4. Meccs Részletek ---
+            composable<MatchDetails> { backStackEntry ->
+                val args = backStackEntry.toRoute<MatchDetails>()
                 MatchDetailsScreen(
-                    matchId = matchId,
-                    onNavigateBack = {
-                        navController.popBackStack() // Visszalépés a listához
-                    },
-                    onNavigateToLiveMatch = {
-                        navController.navigate(Screen.LiveMatch.createRoute(matchId))
-                    }
+                    matchId = args.matchId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToLiveMatch = { navController.navigate(LiveMatch(args.matchId)) }
                 )
             }
 
-            // --- 5. Élő Mérkőzés (Sorrend leadás és Grid) ---
-            composable(
-                route = "${Screen.LiveMatch.route}/{matchId}",
-                arguments = listOf(
-                    navArgument("matchId") { type = NavType.IntType }
-                )
-            ) { backStackEntry ->
-                val matchId = backStackEntry.arguments?.getInt("matchId") ?: return@composable
-
+            // --- 5. Élő Mérkőzés ---
+            composable<LiveMatch> { backStackEntry ->
+                val args = backStackEntry.toRoute<LiveMatch>()
                 LiveMatchScreen(
-                    matchId = matchId,
-                    onNavigateBack = {
-                        navController.popBackStack() // Visszalép a MatchDetails-re
-                    },
-                    onNavigateToScorer = { individualMatchId ->
-                        navController.navigate(Screen.MatchScorer.createRoute(matchId, individualMatchId))
+                    matchId = args.matchId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToScorer = { individualId ->
+                        navController.navigate(MatchScorer(args.matchId, individualId))
                     }
                 )
             }
 
-            // --- 6. Egyéni Meccs Pontozó (Scorer) ---
-            composable(
-                route = "${Screen.MatchScorer.route}/{matchId}/{individualMatchId}",
-                arguments = listOf(
-                    navArgument("matchId") { type = NavType.IntType },
-                    navArgument("individualMatchId") { type = NavType.IntType }
-                )
-            ) { backStackEntry ->
-                val matchId = backStackEntry.arguments?.getInt("matchId") ?: return@composable
-                val individualMatchId = backStackEntry.arguments?.getInt("individualMatchId") ?: return@composable
-
+            // --- 6. Pontozó ---
+            composable<MatchScorer> { backStackEntry ->
+                val args = backStackEntry.toRoute<MatchScorer>()
                 MatchScorerScreen(
-                    matchId = matchId,
-                    individualMatchId = individualMatchId,
-                    onNavigateBack = {
-                        navController.popBackStack() // Visszalép az Élő Mérkőzés hálózatára (LiveMatch)
-                    }
+                    matchId = args.matchId,
+                    individualMatchId = args.individualMatchId,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

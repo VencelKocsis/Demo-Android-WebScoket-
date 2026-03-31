@@ -5,106 +5,125 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.messaging.FirebaseMessaging
+import hu.bme.aut.android.demo.R
+import hu.bme.aut.android.demo.feature.auth.AuthState
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.history.HistoryScreen
 import hu.bme.aut.android.demo.feature.history.demoData
 import hu.bme.aut.android.demo.feature.profile.ProfileScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
 import hu.bme.aut.android.demo.feature.tournament.teamMatch.TeamMatchScreen
-import hu.bme.aut.android.demo.navigation.Screen
+import hu.bme.aut.android.demo.navigation.History
+import hu.bme.aut.android.demo.navigation.Profile
+import hu.bme.aut.android.demo.navigation.Team
+import hu.bme.aut.android.demo.navigation.Tournament
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.delay
+
+// Segéd osztály az alsó menüpontoknak
+private data class BottomNavItem(
+    val route: Any,
+    @StringRes val titleResId: Int,
+    val icon: ImageVector
+)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(
-    onLogout: () -> Unit, // Callback a kijelentkezéshez (a Profilról érhető el)
+    onLogout: () -> Unit,
     authViewModel: AuthViewModel,
     onNavigateToTeamEditor: (Int) -> Unit = {},
     onNavigateToMatchDetails: (Int) -> Unit = {}
 ) {
-    // Külön NavController a belső (alsó menüs) navigációhoz
     val bottomNavController = rememberNavController()
-    val scope = rememberCoroutineScope()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-    // --- 1. ÉRTESÍTÉSI ENGEDÉLY KÉRÉSE (Android 13+) ---
+    // BIZTONSÁGI ŐR
+    LaunchedEffect(authState) {
+        if (authState == AuthState.UNAUTHENTICATED || authViewModel.getCurrentUser() == null) {
+            onLogout()
+        }
+    }
+
+    // ÉRTESÍTÉSI ENGEDÉLY
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
                 Log.d("MainScreen", "Push Notification engedély megadva az operációs rendszertől!")
+                // Itt akár egy Snackbar is lehet hogy "Értesítések bekapcsolva"
             } else {
                 Log.w("MainScreen", "Push Notification engedély MEGTAGADVA!")
             }
         }
     )
 
-    // --- 2. FCM TOKEN LEKÉRÉSE ÉS SZINKRONIZÁLÁSA ---
+    // FCM TOKEN
     LaunchedEffect(Unit) {
         var tokenRetrieved = false
         var retryCount = 0
-        val maxRetries = 3
-
-        while (!tokenRetrieved && retryCount < maxRetries) {
+        while (!tokenRetrieved && retryCount < 3) {
             try {
                 val token = FirebaseMessaging.getInstance().token.await()
                 val currentUserEmail = authViewModel.getCurrentUser()?.email
-
                 if (currentUserEmail != null) {
                     authViewModel.registerFcmToken(currentUserEmail, token)
-                    Log.d("MainScreen", "FCM Token sikeresen regisztrálva: $currentUserEmail")
                     tokenRetrieved = true
                 } else {
-                    Log.w("MainScreen", "Még nincs bejelentkezett felhasználó, várjunk...")
-                    delay(2000) // Várjunk 2 másodpercet, hátha az Auth még frissül
+                    delay(2000)
                 }
             } catch (e: Exception) {
                 retryCount++
-                Log.e("MainScreen", "Hiba az FCM token lekérésekor ($retryCount. próbálkozás): ${e.message}")
-                delay(5000) // 5 másodperc múlva újrapróbáljuk
+                delay(5000)
             }
         }
     }
 
-    // A menüpontok listája
     val bottomNavItems = listOf(
-        Screen.Tournament,
-        Screen.Team,
-        Screen.History,
-        Screen.Profile
+        BottomNavItem(Tournament, R.string.championship, Icons.Default.EmojiEvents),
+        BottomNavItem(Team, R.string.club, Icons.Default.Group),
+        BottomNavItem(History, R.string.history, Icons.Default.History),
+        BottomNavItem(Profile, R.string.profile, Icons.Default.Person)
     )
-
-    // TODO ha egy új telefonra telepítem az alkalmazást, akkor bedob a főképernyőre,
-    /* annak ellenére, hogy nincs bejelentkezve egy fiókba, ahelyett hogy a
-        register/login képernyőn kezdene a felhasználó
-     */
 
     Scaffold(
         bottomBar = {
             NavigationBar {
                 val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
+                val currentDestination = navBackStackEntry?.destination
 
-                bottomNavItems.forEach { screen ->
+                bottomNavItems.forEach { item ->
+                    // Az új módszerrel megvizsgáljuk, hogy az adott objektum osztálya szerepel-e a hierarchiában
+                    val isSelected = currentDestination?.hierarchy?.any { it.hasRoute(item.route::class) } == true
+
                     NavigationBarItem(
-                        icon = { Icon(screen.icon!!, contentDescription = stringResource(id = screen.titleResId!!)) },
-                        label = { Text(stringResource(id = screen.titleResId!!)) },
-                        selected = currentRoute == screen.route,
+                        icon = { Icon(item.icon, contentDescription = stringResource(item.titleResId)) },
+                        label = { Text(stringResource(item.titleResId)) },
+                        selected = isSelected,
                         onClick = {
-                            bottomNavController.navigate(screen.route) {
-                                // Visszaugrás a gráf kezdőpontjára, hogy ne teljen meg a stack
+                            bottomNavController.navigate(item.route) {
                                 popUpTo(bottomNavController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -117,38 +136,25 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        // Belső NavHost az alsó menü lapjaihoz
         Box(modifier = Modifier.padding(innerPadding)) {
             NavHost(
                 navController = bottomNavController,
-                startDestination = Screen.Tournament.route
+                startDestination = Tournament
             ) {
-                // --- 1. Bajnokság (Tournament) képernyő ---
-                composable(Screen.Tournament.route) {
-                    TeamMatchScreen(
-                        onNavigateToMatchDetails = onNavigateToMatchDetails
-                    )
+                composable<Tournament> {
+                    TeamMatchScreen(onNavigateToMatchDetails = onNavigateToMatchDetails)
                 }
-
-                // --- 2. Csapat (Team) képernyő ---
-                composable(Screen.Team.route) {
+                composable<Team> {
                     TeamScreen(
                         onNavigateToEditor = onNavigateToTeamEditor,
                         onNavigateToMatch = onNavigateToMatchDetails
                     )
                 }
-
-                // --- 3. Előzmények (History) képernyő ---
-                composable(Screen.History.route) {
-                    HistoryScreen(results = demoData) // TODO: ViewModelből adatok
+                composable<History> {
+                    HistoryScreen(results = demoData)
                 }
-
-                // --- 4. Profil (Profile) képernyő ---
-                composable(Screen.Profile.route) {
-                    ProfileScreen(
-                        authViewModel = authViewModel,
-                        onLogoutClick = onLogout
-                    )
+                composable<Profile> {
+                    ProfileScreen(authViewModel = authViewModel, onLogoutClick = onLogout)
                 }
             }
         }
