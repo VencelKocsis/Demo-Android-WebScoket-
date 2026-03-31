@@ -34,6 +34,7 @@ import hu.bme.aut.android.demo.feature.racketEditor.Blade
 import hu.bme.aut.android.demo.feature.racketEditor.Racket
 import hu.bme.aut.android.demo.feature.racketEditor.Rubber
 import hu.bme.aut.android.demo.ui.common.InfoDialog
+import hu.bme.aut.android.demo.ui.common.PerformanceGraph
 import hu.bme.aut.android.demo.ui.common.ProfileStatItem
 import hu.bme.aut.android.demo.ui.theme.ErrorRed
 import hu.bme.aut.android.demo.ui.theme.ErrorRedBg
@@ -64,81 +65,6 @@ fun stringToColor(colorName: String): Color {
         "green" -> SuccessGreenSolid
         "yellow" -> RacketYellow
         else -> Color.Gray
-    }
-}
-
-// Saját, pehelysúlyú grafikon
-@Composable
-fun PerformanceGraph(data: List<Float>, color: Color = MaterialTheme.colorScheme.primary) {
-    if (data.size < 2) {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.no_data_for_graph), color = Color.Gray, style = MaterialTheme.typography.labelMedium)
-        }
-        return
-    }
-
-    val max = data.maxOrNull() ?: 1000f
-    val min = data.minOrNull() ?: 1000f
-    val range = (max - min).coerceAtLeast(10f)
-    val padding = range * 0.1f
-    val yMax = max + padding
-    val yMin = min - padding
-    val yRange = yMax - yMin
-
-    Canvas(modifier = Modifier
-        .fillMaxWidth()
-        .height(120.dp)
-        .padding(vertical = 8.dp)) {
-        val width = size.width
-        val height = size.height
-        val stepX = width / (data.size - 1)
-
-        val path = Path()
-        val fillPath = Path()
-        val points = mutableListOf<Offset>()
-
-        data.forEachIndexed { i, value ->
-            val x = i * stepX
-            val y = height - ((value - yMin) / yRange) * height
-            points.add(Offset(x, y))
-
-            if (i == 0) {
-                path.moveTo(x, y)
-                fillPath.moveTo(x, height)
-                fillPath.lineTo(x, y)
-            } else {
-                path.lineTo(x, y)
-                fillPath.lineTo(x, y)
-            }
-        }
-
-        fillPath.lineTo(width, height)
-        fillPath.close()
-
-        // Átmenetes kitöltés a vonal alatt
-        drawPath(
-            path = fillPath,
-            brush = Brush.verticalGradient(
-                colors = listOf(color.copy(alpha = 0.4f), Color.Transparent),
-                startY = 0f,
-                endY = height
-            )
-        )
-
-        // Vastag vonal rajzolása
-        drawPath(
-            path = path,
-            color = color,
-            style = Stroke(width = 6f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
-
-        // Pöttyök (mérkőzések)
-        points.forEach { point ->
-            drawCircle(color = color, radius = 6f, center = point)
-            drawCircle(color = Color.White, radius = 3f, center = point)
-        }
     }
 }
 

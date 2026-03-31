@@ -85,6 +85,27 @@ class TeamViewModel @Inject constructor(
         }
         // -------------------------------------------------------------
 
+        // --- Pontszámok története a grafikonhoz ---
+        val pointsHistory = mutableListOf<Float>(0f) // 0 pontról indul a csapat
+        var currentPoints = 0f
+
+        if (selectedTeamId != null) {
+            allMatches
+                .filter { it.status == "finished" && (it.homeTeamId == selectedTeamId || it.guestTeamId == selectedTeamId) }
+                .sortedBy { it.matchDate } // NÖVEKVŐ sorrend az idővonal miatt!
+                .forEach { match ->
+                    val isHome = match.homeTeamId == selectedTeamId
+                    val myScore = if (isHome) match.homeTeamScore else match.guestTeamScore
+                    val oppScore = if (isHome) match.guestTeamScore else match.homeTeamScore
+
+                    // Egyszerű pontszámítás: Győzelem = 3 pont, Döntetlen = 1 pont
+                    if (myScore > oppScore) currentPoints += 3f
+                    else if (myScore == oppScore) currentPoints += 1f
+
+                    pointsHistory.add(currentPoints)
+                }
+        }
+
         val errorMessage = dataResource.exceptionOrNull()?.message
             ?: if (teams.isEmpty() && !dataResource.isLoading) "Nincsenek csapatok" else null
 
@@ -94,7 +115,8 @@ class TeamViewModel @Inject constructor(
             selectedTeam = currentTeam,
             isCurrentUserCaptain = isCaptain,
             errorMessage = errorMessage,
-            recentMatches = recentMatches
+            recentMatches = recentMatches,
+            pointsHistory = pointsHistory
         )
     }.stateIn(
         scope = viewModelScope,

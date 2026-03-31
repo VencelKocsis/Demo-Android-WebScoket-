@@ -129,4 +129,6 @@
     <string name="understood">Understood</string>
     <string name="history">History</string>
     <string name="profile">Profile</string>
+    <string name="team_improvement">Team Improvement</string>
+    <string name="team_improvement_dialog_text">This graph shows the change in the team\'s overall league score over time, from round to round.</string>
 </resources>

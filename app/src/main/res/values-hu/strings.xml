@@ -127,7 +127,8 @@
     <string name="aggregate_balance_sheet_dialog">Összesített Mérleg</string>
     <string name="aggregate_balance_sheet_dialog_text">Ez a kártya a teljes pályafutásod (minden eddigi szezon) összesített statisztikáját mutatja.\n\nA győzelmi arány és a lejátszott mérkőzések száma az eddigi összes egyéni meccsed alapján kerül kiszámításra.</string>
     <string name="understood">Értem</string>
-    <string name="title_team">Csapat</string>
     <string name="history">Előzmények</string>
     <string name="profile">Profil</string>
+    <string name="team_improvement">Csapat Fejlődése</string>
+    <string name="team_improvement_dialog_text">Ez a grafikon a csapat összesített bajnoki pontszámának változását mutatja az idő előrehaladtával, fordulóról fordulóra haladva.</string>
 </resources>

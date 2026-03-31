@@ -1,5 +1,6 @@
 package hu.bme.aut.android.demo.feature.team
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,6 +31,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -56,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.team.model.Team
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
+import hu.bme.aut.android.demo.ui.common.PerformanceGraph
 import hu.bme.aut.android.demo.ui.theme.CaptainYellow
 import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
 import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
@@ -84,7 +88,8 @@ data class TeamScreenState(
     val selectedTeam: TeamDetails? = null,
     val isCurrentUserCaptain: Boolean = false,
     val errorMessage: String? = null,
-    val recentMatches: List<MatchResult> = emptyList()
+    val recentMatches: List<MatchResult> = emptyList(),
+    val pointsHistory: List<Float> = emptyList()
 )
 
 sealed class TeamScreenEvent {
@@ -133,6 +138,7 @@ fun TeamScreenContent(
     onNavigateToMatch: (Int) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showGraphInfoDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.club)) }) },
@@ -249,6 +255,32 @@ fun TeamScreenContent(
                             PlayerCardRow(name = member.name, isCaptain = member.isCaptain)
                         }
 
+                        if (state.pointsHistory.isNotEmpty()) {
+                            item {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(stringResource(R.string.team_improvement), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                            IconButton(onClick = { showGraphInfoDialog = true }, modifier = Modifier.size(28.dp)) {
+                                                Icon(Icons.Default.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        PerformanceGraph(data = state.pointsHistory)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(32.dp))
+                            }
+                        }
+
                         // LEGUTÓBBI MECCSEK
                         item {
                             Spacer(modifier = Modifier.height(32.dp))
@@ -268,6 +300,15 @@ fun TeamScreenContent(
                 }
             }
         }
+    }
+
+    // teljesítmény gráf info dialog
+    if (showGraphInfoDialog) {
+        hu.bme.aut.android.demo.ui.common.InfoDialog(
+            title = stringResource(R.string.team_improvement),
+            text = stringResource(R.string.team_improvement_dialog_text),
+            onDismiss = { showGraphInfoDialog = false }
+        )
     }
 }
 
