@@ -35,7 +35,6 @@ import hu.bme.aut.android.demo.ui.common.LiveIndicator
 import hu.bme.aut.android.demo.ui.theme.ProgressPink
 import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
-import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
@@ -205,51 +204,52 @@ fun LineupSetupContent(
                 .reorderable(reorderState)
         ) {
             items(state.lineupList, key = { it.id }) { player ->
-                ReorderableItem(reorderState, key = player.id) { isDragging ->
-                    val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
-                    val index = state.lineupList.indexOf(player)
-                    val isStarter = index < 4
 
-                    var cardModifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .shadow(elevation, MaterialTheme.shapes.medium)
+                val isDragging = reorderState.draggingItemKey == player.id
+                val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "elevation")
+                val index = state.lineupList.indexOf(player)
+                val isStarter = index < 4
 
-                    if (!state.isSpectator) {
-                        cardModifier = cardModifier.detectReorderAfterLongPress(reorderState)
-                    }
+                var cardModifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .shadow(elevation, MaterialTheme.shapes.medium)
+                    .animateItem()
 
-                    Card(
-                        modifier = cardModifier,
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isStarter) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                        )
+                if (!state.isSpectator) {
+                    cardModifier = cardModifier.detectReorderAfterLongPress(reorderState)
+                }
+
+                Card(
+                    modifier = cardModifier,
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isStarter) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (!state.isSpectator) {
-                                Icon(Icons.Default.DragHandle, contentDescription = "Fogd és vidd")
-                                Spacer(modifier = Modifier.width(16.dp))
-                            }
+                        if (!state.isSpectator) {
+                            Icon(Icons.Default.DragHandle, contentDescription = "Fogd és vidd")
+                            Spacer(modifier = Modifier.width(16.dp))
+                        }
 
-                            Column {
-                                Text(
-                                    text = if (isStarter) stringResource(R.string.player, index + 1) else stringResource(
-                                        R.string.bench_player
-                                    ),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (isStarter) MaterialTheme.colorScheme.primary else Color.Gray
-                                )
-                                Text(
-                                    text = player.playerName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = if (isStarter) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
+                        Column {
+                            Text(
+                                text = if (isStarter) stringResource(R.string.player, index + 1) else stringResource(
+                                    R.string.bench_player
+                                ),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isStarter) MaterialTheme.colorScheme.primary else Color.Gray
+                            )
+                            Text(
+                                text = player.playerName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isStarter) FontWeight.Bold else FontWeight.Normal
+                            )
                         }
                     }
                 }
@@ -287,7 +287,7 @@ fun WaitingForOpponentContent(
         verticalArrangement = Arrangement.Center
     ) {
         CircularProgressIndicator()
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp)) // TODO fix to refresh
         Text(stringResource(R.string.order_placed), style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
