@@ -63,7 +63,7 @@ class TeamMatchViewModel @Inject constructor(
         emit(Resource.loading())
     }.catch { e ->
         emit(Resource.error(e))
-    } // <-- Itt volt a felesleges zárójel a korábbi kódban!
+    }
 
     // 3. UI Állapot összerakása (combine)
     val uiState: StateFlow<TeamMatchUiState> = combine(

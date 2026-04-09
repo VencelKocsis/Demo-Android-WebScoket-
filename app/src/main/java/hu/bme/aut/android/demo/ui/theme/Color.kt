@@ -54,3 +54,8 @@ val RacketYellow = Color(0xFFFBC02D)
 // --- Semleges / Szürke statisztika színek ---
 val NeutralGraySolid = Color(0xFF757575)
 val NeutralGrayLight = Color(0xFFE0E0E0)
+
+// Dobogó színek
+val Gold = Color(0xFFFFD700)
+val Silver = Color(0xFFC0C0C0)
+val Bronze = Color(0xFFCD7F32)

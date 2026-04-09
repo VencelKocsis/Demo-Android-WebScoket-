@@ -96,7 +96,7 @@
     <string name="tx_fill_sets">Please fill in both scores in the started sets!</string>
     <string name="tx_match_authenticated">The team match has been verified, the results are final.</string>
     <string name="match_over">The match is over.</string>
-    <string name="championship">Championship</string>
+    <string name="championship">Champion\nship</string>
     <string name="no_available_matches">No available matches.</string>
     <string name="retry">Retry</string>
     <string name="f_round">Round %1$d</string>
@@ -131,4 +131,5 @@
     <string name="profile">Profile</string>
     <string name="team_improvement">Team Improvement</string>
     <string name="team_improvement_dialog_text">This graph shows the change in the team\'s overall league score over time, from round to round.</string>
+    <string name="leaderboard">Leaderboard</string>
 </resources>

@@ -131,4 +131,5 @@
     <string name="profile">Profil</string>
     <string name="team_improvement">Csapat Fejlődése</string>
     <string name="team_improvement_dialog_text">Ez a grafikon a csapat összesített bajnoki pontszámának változását mutatja az idő előrehaladtával, fordulóról fordulóra haladva.</string>
+    <string name="leaderboard">Ranglista</string>
 </resources>

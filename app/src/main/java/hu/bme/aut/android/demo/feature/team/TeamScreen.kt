@@ -90,12 +90,20 @@ data class TeamScreenState(
     val isCurrentUserCaptain: Boolean = false,
     val errorMessage: String? = null,
     val recentMatches: List<MatchResult> = emptyList(),
-    val pointsHistory: List<Float> = emptyList()
+    val pointsHistory: List<Float> = emptyList(),
+
+    // Szűrő adatok
+    val availableClubs: List<String> = emptyList(),
+    val availableDivisions: List<String> = emptyList(),
+    val selectedClub: String? = null,
+    val selectedDivision: String? = null
 )
 
 sealed class TeamScreenEvent {
     object LoadInitialData : TeamScreenEvent()
     data class OnTeamSelected(val teamId: Int) : TeamScreenEvent()
+    data class OnClubSelected(val club: String?) : TeamScreenEvent()
+    data class OnDivisionSelected(val division: String?) : TeamScreenEvent()
 }
 
 // --- 1. Állapotfüggő (Stateful) Composable ---
@@ -106,14 +114,11 @@ fun TeamScreen(
     onNavigateToMatch: (Int) -> Unit = {},
     onNavigateToPlayerProfile: (String) -> Unit = {}
 ) {
-    // Állapot kinyerése a ViewModel-ből
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            // Ha a képernyő újra fókuszba kerül (ON_RESUME), frissítjük az adatokat!
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.onEvent(TeamScreenEvent.LoadInitialData)
             }
@@ -122,7 +127,6 @@ fun TeamScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Továbbítjuk az állapotfüggetlen UI-nak
     TeamScreenContent(
         state = uiState,
         onEvent = viewModel::onEvent,
@@ -141,7 +145,9 @@ fun TeamScreenContent(
     onNavigateToMatch: (Int) -> Unit,
     onNavigateToPlayerProfile: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var clubExpanded by remember { mutableStateOf(false) }
+    var divisionExpanded by remember { mutableStateOf(false) }
+    var teamExpanded by remember { mutableStateOf(false) }
     var showGraphInfoDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -174,45 +180,99 @@ fun TeamScreenContent(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
                 ) {
-                    // --- 1. CSAPATVÁLASZTÓ (DROPDOWN) ---
+                    // --- 1. SZŰRŐ ÉS VÁLASZTÓ KÁRTYA ---
                     item {
-                        if (state.teamList.isNotEmpty()) {
-                            ExposedDropdownMenuBox(
-                                expanded = expanded,
-                                onExpandedChange = { expanded = !expanded }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 24.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                OutlinedTextField(
-                                    value = state.selectedTeam?.name ?: stringResource(R.string.select_team),
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text(stringResource(R.string.selected_team)) },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .menuAnchor()
-                                )
-
-                                ExposedDropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
-                                ) {
-                                    state.teamList.forEach { team ->
-                                        DropdownMenuItem(
-                                            text = { Text(team.name, fontWeight = FontWeight.Medium) },
-                                            onClick = {
-                                                onEvent(TeamScreenEvent.OnTeamSelected(team.id))
-                                                expanded = false
-                                            }
+                                // Felső sor: Klub és Divízió szűrő
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    // KLUB SZŰRŐ
+                                    ExposedDropdownMenuBox(
+                                        expanded = clubExpanded, onExpandedChange = { clubExpanded = !clubExpanded },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = state.selectedClub ?: "Összes Klub",
+                                            onValueChange = {}, readOnly = true, label = { Text("Klub") },
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = clubExpanded) },
+                                            modifier = Modifier.fillMaxWidth().menuAnchor(), colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
                                         )
+                                        ExposedDropdownMenu(expanded = clubExpanded, onDismissRequest = { clubExpanded = false }) {
+                                            DropdownMenuItem(text = { Text("Összes Klub", fontWeight = FontWeight.Bold) }, onClick = { onEvent(TeamScreenEvent.OnClubSelected(null)); clubExpanded = false })
+                                            state.availableClubs.forEach { clubName ->
+                                                DropdownMenuItem(text = { Text(clubName) }, onClick = { onEvent(TeamScreenEvent.OnClubSelected(clubName)); clubExpanded = false })
+                                            }
+                                        }
+                                    }
+
+                                    // DIVÍZIÓ SZŰRŐ
+                                    ExposedDropdownMenuBox(
+                                        expanded = divisionExpanded, onExpandedChange = { divisionExpanded = !divisionExpanded },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = state.selectedDivision ?: "Összes",
+                                            onValueChange = {}, readOnly = true, label = { Text("Divízió") },
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = divisionExpanded) },
+                                            modifier = Modifier.fillMaxWidth().menuAnchor(), colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                                        )
+                                        ExposedDropdownMenu(expanded = divisionExpanded, onDismissRequest = { divisionExpanded = false }) {
+                                            DropdownMenuItem(text = { Text("Összes", fontWeight = FontWeight.Bold) }, onClick = { onEvent(TeamScreenEvent.OnDivisionSelected(null)); divisionExpanded = false })
+                                            state.availableDivisions.forEach { div ->
+                                                DropdownMenuItem(text = { Text(div) }, onClick = { onEvent(TeamScreenEvent.OnDivisionSelected(div)); divisionExpanded = false })
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Alsó sor: A tényleges Csapat választó (Csak a szűrt elemeket mutatja)
+                                ExposedDropdownMenuBox(
+                                    expanded = teamExpanded,
+                                    onExpandedChange = { teamExpanded = !teamExpanded }
+                                ) {
+                                    OutlinedTextField(
+                                        value = state.selectedTeam?.name ?: stringResource(R.string.select_team),
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text(stringResource(R.string.selected_team)) },
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teamExpanded) },
+                                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                        )
+                                    )
+
+                                    ExposedDropdownMenu(
+                                        expanded = teamExpanded,
+                                        onDismissRequest = { teamExpanded = false }
+                                    ) {
+                                        if (state.teamList.isEmpty()) {
+                                            DropdownMenuItem(text = { Text("Nincs találat", color = Color.Gray) }, onClick = { teamExpanded = false })
+                                        } else {
+                                            state.teamList.forEach { team ->
+                                                DropdownMenuItem(
+                                                    text = { Text(team.name, fontWeight = FontWeight.Medium) },
+                                                    onClick = {
+                                                        onEvent(TeamScreenEvent.OnTeamSelected(team.id))
+                                                        teamExpanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
 
                     // --- 2. KIVÁLASZTOTT CSAPAT ADATAI ---
@@ -321,7 +381,7 @@ fun TeamScreenContent(
 }
 
 @Composable
-fun StatItem(label: String, value: String, type: String) {
+fun StatItem(label: String, value: String, type: String) { // TODO extract
     val isDark = isSystemInDarkTheme()
 
     val (bgColor, textColor) = when (type) {

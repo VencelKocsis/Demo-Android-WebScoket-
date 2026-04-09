@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.navigation.compose.rememberNavController
@@ -38,6 +39,8 @@ class MainActivity : AppCompatActivity() {
 
         createNotificationChannel()
         requestNotificationPermission()
+
+        enableEdgeToEdge()
 
         setContent {
             // A saját témánkat használjuk (DemoTheme), ami a ui/theme mappában van

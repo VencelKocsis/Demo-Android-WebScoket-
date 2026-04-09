@@ -37,3 +37,6 @@ data class MatchScorer(val matchId: Int, val individualMatchId: Int)
 
 @Serializable
 data class PlayerProfile(val playerId: String)
+
+@Serializable
+data object Leaderboard

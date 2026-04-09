@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
@@ -31,11 +32,12 @@ import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.feature.auth.AuthState
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.history.HistoryScreen
-import hu.bme.aut.android.demo.feature.history.demoData
+import hu.bme.aut.android.demo.feature.leaderboard.LeaderboardScreen
 import hu.bme.aut.android.demo.feature.profile.ProfileScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
 import hu.bme.aut.android.demo.feature.tournament.teamMatch.TeamMatchScreen
 import hu.bme.aut.android.demo.navigation.History
+import hu.bme.aut.android.demo.navigation.Leaderboard
 import hu.bme.aut.android.demo.navigation.Profile
 import hu.bme.aut.android.demo.navigation.Team
 import hu.bme.aut.android.demo.navigation.Tournament
@@ -106,6 +108,7 @@ fun MainScreen(
         BottomNavItem(Tournament, R.string.championship, Icons.Default.EmojiEvents),
         BottomNavItem(Team, R.string.club, Icons.Default.Group),
         BottomNavItem(History, R.string.history, Icons.Default.History),
+        BottomNavItem(Leaderboard, R.string.leaderboard, Icons.Default.FormatListNumbered),
         BottomNavItem(Profile, R.string.profile, Icons.Default.Person)
     )
 
@@ -153,10 +156,16 @@ fun MainScreen(
                     )
                 }
                 composable<History> {
-                    HistoryScreen(results = demoData)
+                    HistoryScreen(
+                        onNavigateToMatchDetails = onNavigateToMatchDetails
+                    )
                 }
                 composable<Profile> {
                     ProfileScreen(authViewModel = authViewModel, onLogoutClick = onLogout)
+                }
+
+                composable<Leaderboard> {
+                    LeaderboardScreen()
                 }
             }
         }

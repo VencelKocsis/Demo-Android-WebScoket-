@@ -30,7 +30,10 @@ class TeamViewModel @Inject constructor(
     private val _refreshTrigger = MutableStateFlow(0)
     private val _selectedTeamId = MutableStateFlow<Int?>(null)
 
-    // A mapLatest-ben lekérjük a Csapatokat ÉS a Meccseket is egyszerre
+    // Szűrő állapotok
+    private val _selectedClub = MutableStateFlow<String?>(null)
+    private val _selectedDivision = MutableStateFlow<String?>(null)
+
     private val dataFlow = _refreshTrigger.mapLatest {
         val teams = getTeamsUseCase()
         val matches = getTeamMatchesUseCase()
@@ -43,30 +46,45 @@ class TeamViewModel @Inject constructor(
 
     val uiState: StateFlow<TeamScreenState> = combine(
         dataFlow,
-        _selectedTeamId
-    ) { dataResource, selectedId ->
+        _selectedTeamId,
+        _selectedClub,
+        _selectedDivision
+    ) { dataResource, selectedId, selectedClub, selectedDivision ->
 
         val dataPair = dataResource.getOrNull()
-        val teams = dataPair?.first ?: emptyList()
+        val allTeams = dataPair?.first ?: emptyList()
         val allMatches = dataPair?.second ?: emptyList()
         val currentUserUid = getCurrentUserUseCase()?.uid
 
-        val currentTeam = teams.find { it.id == selectedId }
-            ?: teams.find { team -> team.members.any { it.uid == currentUserUid } }
-            ?: teams.firstOrNull()
+        // 1. Elérhető Klubok és Divíziók kinyerése
+        val availableClubs = allTeams.map { it.clubName }.distinct().sorted()
+        val availableDivisions = allTeams.mapNotNull { it.division }.filter { it.isNotBlank() }.distinct().sorted()
+
+        // 2. Csapatok szűrése a kiválasztott Klub / Divízió alapján
+        var filteredTeams = allTeams
+        if (selectedClub != null) {
+            filteredTeams = filteredTeams.filter { it.clubName == selectedClub }
+        }
+        if (selectedDivision != null) {
+            filteredTeams = filteredTeams.filter { it.division == selectedDivision }
+        }
+
+        // 3. Aktuális csapat kiválasztása a SZŰRT listából
+        val currentTeam = filteredTeams.find { it.id == selectedId }
+            ?: filteredTeams.find { team -> team.members.any { it.uid == currentUserUid } }
+            ?: filteredTeams.firstOrNull()
 
         val isCaptain = currentTeam?.members?.any { it.uid == currentUserUid && it.isCaptain } == true
 
         // --- A legutóbbi 3 befejezett meccs kiszámítása ---
-        val selectedTeamId = currentTeam?.id
-        val recentMatches = if (selectedTeamId != null) {
+        val currentTeamId = currentTeam?.id
+        val recentMatches = if (currentTeamId != null) {
             allMatches
-                .filter { it.status == "finished" && (it.homeTeamId == selectedTeamId || it.guestTeamId == selectedTeamId) }
-                .sortedByDescending { it.matchDate } // Rendezzük dátum szerint csökkenőbe (legújabb elöl)
-                .take(3) // Csak a legutóbbi 3-at tartjuk meg
+                .filter { it.status == "finished" && (it.homeTeamId == currentTeamId || it.guestTeamId == currentTeamId) }
+                .sortedByDescending { it.matchDate }
+                .take(3)
                 .map { match ->
-                    val isHome = match.homeTeamId == selectedTeamId
-
+                    val isHome = match.homeTeamId == currentTeamId
                     val opponentName = if (isHome) match.guestTeamName else match.homeTeamName
                     val myScore = if (isHome) match.homeTeamScore else match.guestTeamScore
                     val oppScore = if (isHome) match.guestTeamScore else match.homeTeamScore
@@ -74,31 +92,27 @@ class TeamViewModel @Inject constructor(
                     MatchResult(
                         matchId = match.id,
                         opponent = opponentName,
-                        date = match.matchDate?.substringBefore("T") ?: "", // Dátum formázása
+                        date = match.matchDate?.substringBefore("T") ?: "",
                         homeScore = myScore,
                         awayScore = oppScore,
                         isWin = myScore > oppScore
                     )
                 }
-        } else {
-            emptyList()
-        }
-        // -------------------------------------------------------------
+        } else emptyList()
 
         // --- Pontszámok története a grafikonhoz ---
-        val pointsHistory = mutableListOf<Float>(0f) // 0 pontról indul a csapat
+        val pointsHistory = mutableListOf<Float>(0f)
         var currentPoints = 0f
 
-        if (selectedTeamId != null) {
+        if (currentTeamId != null) {
             allMatches
-                .filter { it.status == "finished" && (it.homeTeamId == selectedTeamId || it.guestTeamId == selectedTeamId) }
-                .sortedBy { it.matchDate } // NÖVEKVŐ sorrend az idővonal miatt!
+                .filter { it.status == "finished" && (it.homeTeamId == currentTeamId || it.guestTeamId == currentTeamId) }
+                .sortedBy { it.matchDate }
                 .forEach { match ->
-                    val isHome = match.homeTeamId == selectedTeamId
+                    val isHome = match.homeTeamId == currentTeamId
                     val myScore = if (isHome) match.homeTeamScore else match.guestTeamScore
                     val oppScore = if (isHome) match.guestTeamScore else match.homeTeamScore
 
-                    // Egyszerű pontszámítás: Győzelem = 3 pont, Döntetlen = 1 pont
                     if (myScore > oppScore) currentPoints += 3f
                     else if (myScore == oppScore) currentPoints += 1f
 
@@ -107,16 +121,22 @@ class TeamViewModel @Inject constructor(
         }
 
         val errorMessage = dataResource.exceptionOrNull()?.message
-            ?: if (teams.isEmpty() && !dataResource.isLoading) "Nincsenek csapatok" else null
+            ?: if (allTeams.isEmpty() && !dataResource.isLoading) "Nincsenek csapatok" else null
 
         TeamScreenState(
             isLoading = dataResource.isLoading,
-            teamList = teams.map { it.toSimpleTeam() },
+            teamList = filteredTeams.map { it.toSimpleTeam() }, // Csak a szűrt csapatokat adjuk át a UI-nak!
             selectedTeam = currentTeam,
             isCurrentUserCaptain = isCaptain,
             errorMessage = errorMessage,
             recentMatches = recentMatches,
-            pointsHistory = pointsHistory
+            pointsHistory = pointsHistory,
+
+            // Szűrő adatok
+            availableClubs = availableClubs,
+            availableDivisions = availableDivisions,
+            selectedClub = selectedClub,
+            selectedDivision = selectedDivision
         )
     }.stateIn(
         scope = viewModelScope,
@@ -128,6 +148,14 @@ class TeamViewModel @Inject constructor(
         when (event) {
             is TeamScreenEvent.LoadInitialData -> _refreshTrigger.value += 1
             is TeamScreenEvent.OnTeamSelected -> _selectedTeamId.value = event.teamId
+            is TeamScreenEvent.OnClubSelected -> {
+                _selectedClub.value = event.club
+                _selectedTeamId.value = null // Szűréskor reseteljük a csapatot
+            }
+            is TeamScreenEvent.OnDivisionSelected -> {
+                _selectedDivision.value = event.division
+                _selectedTeamId.value = null // Szűréskor reseteljük a csapatot
+            }
         }
     }
 }
