@@ -6,6 +6,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,21 +27,19 @@ import com.google.firebase.auth.FirebaseUser
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 
-// A navigációs események kezelésére szolgáló lambda (pl. navigálás a főképernyőre)
 typealias OnAuthSuccess = (FirebaseUser) -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    // A Hilt automatikusan biztosítja a ViewModel-t
     viewModel: AuthViewModel = hiltViewModel(),
     onAuthSuccess: OnAuthSuccess
 ) {
-    // Figyeli a ViewModel állapotát
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
-    // Ha a felhasználó hitelesítése sikeres, navigáljunk
+    var passwordVisible by remember { mutableStateOf(false) }
+
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated && state.currentUser != null) {
             onAuthSuccess(state.currentUser!!)
@@ -78,21 +79,30 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Jelszó beviteli mező
+                // --- MÓDOSÍTOTT: Jelszó beviteli mező ---
                 OutlinedTextField(
                     value = state.passwordInput,
                     onValueChange = viewModel::updatePassword,
                     label = { Text(stringResource(R.string.password)) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Jelszó") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    // 1. A láthatóság kapcsolása a gomb megnyomásával
+                    trailingIcon = {
+                        val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                        val description = if (passwordVisible) "Jelszó elrejtése" else "Jelszó megjelenítése"
+
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(imageVector = image, contentDescription = description)
+                        }
+                    },
+                    // 2. A transzformáció cseréje
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
                     keyboardActions = KeyboardActions(onDone = {
                         focusManager.clearFocus()
-                    }
-                        ),
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -107,12 +117,12 @@ fun LoginScreen(
                     )
                 }
 
-                // Sikerüzenet (pl. elküldött e-mail után)
+                // Sikerüzenet
                 state.successMessage?.let {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = it,
-                        color = SuccessGreen, // Zöld szín
+                        color = SuccessGreen,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth()
@@ -127,7 +137,6 @@ fun LoginScreen(
                     TextButton(
                         onClick = viewModel::forgotPassword,
                         enabled = !state.isLoading && state.emailInput.isNotBlank()
-                        // Csak akkor kattintható, ha beírt egy e-mail címet!
                     ) {
                         Text(stringResource(R.string.forgot_password))
                     }

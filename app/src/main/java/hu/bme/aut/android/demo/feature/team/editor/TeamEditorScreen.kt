@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -384,7 +385,7 @@ fun EditorPlayerCardRow(
             // Csak akkor mutatunk kuka ikont, ha NEM ő a kapitány
             if (!isCaptain) {
                 IconButton(onClick = onRemoveClick, modifier = Modifier.testTag("kick_$name")) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eltávolítás", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Default.Login, contentDescription = "Eltávolítás", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
