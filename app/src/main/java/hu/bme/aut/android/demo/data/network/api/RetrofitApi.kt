@@ -87,4 +87,12 @@ interface RetrofitApi {
 
     @DELETE("teams/{id}/members/{userId}")
     suspend fun removeTeamMember(@Path("id") teamId: Int, @Path("userId") userId: Int)
+
+    /**
+     * Lekér egy adott felhasználót az egyedi azonosítója (UID) alapján.
+     */
+    @GET("users/{uid}") // A valós backend végpontodtól függően ez lehet pl. "api/users/{uid}" is!
+    suspend fun getUserById(
+        @Path("uid") uid: String
+    ): UserDTO
 }

@@ -33,6 +33,7 @@ data class ProfileUiState(
     // 2. Szett Mutatók (Best of 5 alapján)
     val sweeps: Int = 0, // 3-0-ás győzelmek
     val decidingSetWins: Int = 0, // 3-2-es győzelmek (Clutch)
+    val flawlessDays: Int = 0, // 4/4 győzelmek egy napon belül (Flawless Victory)
 
     // 3. Egymás elleni (H2H)
     val favoriteOpponent: Pair<String, Int>? = null, // Név és Győzelmek száma
@@ -52,6 +53,25 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadUserTeams()
+    }
+
+    fun loadPublicProfile(uid: String) {
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val userDTO = apiService.getUserById(uid)
+
+                _uiState.update { it.copy(user = userDTO, isLoading = false) }
+
+                if (userDTO != null) {
+                    loadUserStats(userDTO as UserDTO)
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, error = e.message ?: "Hiba a profil letöltésekor")
+                }
+            }
+        }
     }
 
     private fun loadUserTeams() {
@@ -80,12 +100,11 @@ class ProfileViewModel @Inject constructor(
                 val allMatches = getTeamMatchesUseCase()
                 val fullName = "${user.lastName} ${user.firstName}"
 
-                // Összegyűjtjük az egyéni meccseit dátummal együtt, majd időrendbe (növekvő) rakjuk
                 val userMatches = allMatches.flatMap { teamMatch ->
                     teamMatch.individualMatches
                         .filter { it.status == "finished" && (it.homePlayerName == fullName || it.guestPlayerName == fullName) }
-                        .map { it to (teamMatch.matchDate ?: "") }
-                }.sortedBy { it.second } // Növekvő sorrend a grafikon miatt!
+                        .map { Triple(it, teamMatch.matchDate ?: "", teamMatch.id) }
+                }.sortedBy { it.second }
 
                 var played = 0
                 var won = 0
@@ -95,10 +114,13 @@ class ProfileViewModel @Inject constructor(
                 val oppStats = mutableMapOf<String, Pair<Int, Int>>() // Név -> (Győzelem, Vereség)
                 val formList = mutableListOf<Boolean>()
 
+                val winsPerTeamMatch = mutableMapOf<Int, Int>() // teamMatchId -> Győzelmek száma az adott napon
+
                 var currentRating = 1000f // Kezdő Élő-pont
                 val historyList = mutableListOf<Float>(currentRating)
 
-                for ((im, _) in userMatches) {
+                // Figyeld a dekonstrukciót: bejött a teamMatchId a végére
+                for ((im, _, teamMatchId) in userMatches) {
                     val isHome = im.homePlayerName == fullName
                     val oppName = if (isHome) im.guestPlayerName else im.homePlayerName
                     val myScore = if (isHome) im.homeScore else im.guestScore
@@ -106,7 +128,11 @@ class ProfileViewModel @Inject constructor(
                     val isWin = myScore > oppScore
 
                     played++
-                    if (isWin) won++
+                    if (isWin) {
+                        won++
+                        // Számoljuk a győzelmeket az adott csapatmeccsen belül
+                        winsPerTeamMatch[teamMatchId] = winsPerTeamMatch.getOrDefault(teamMatchId, 0) + 1
+                    }
 
                     // Szett mutatók
                     if (isWin && oppScore == 0) sweepsCount++
@@ -119,17 +145,19 @@ class ProfileViewModel @Inject constructor(
                     // Forma
                     formList.add(isWin)
 
-                    // Rating változás (+10 győzelemért, -10 vereségért egyszerűsítve)
+                    // Rating változás
                     currentRating += if (isWin) 10f else -10f
                     historyList.add(currentRating)
                 }
 
                 val rate = if (played > 0) (won * 100) / played else 0
-                val recentForm = formList.takeLast(5) // Csak az utolsó 5
+                val recentForm = formList.takeLast(5)
 
-                // Legtöbbször legyőzött és akitől a legtöbbször kikapott
                 val favOpponent = oppStats.filter { it.value.first > 0 }.maxByOrNull { it.value.first }
                 val nemesisOpponent = oppStats.filter { it.value.second > 0 }.maxByOrNull { it.value.second }
+
+                // 3. MÓDOSÍTÁS: Megszámoljuk, hány olyan nap volt, ahol 4 (vagy több) meccset nyert
+                val flawlessDaysCount = winsPerTeamMatch.values.count { it >= 4 }
 
                 _uiState.update { it.copy(
                     matchesPlayed = played,
@@ -139,6 +167,7 @@ class ProfileViewModel @Inject constructor(
                     ratingHistory = historyList,
                     sweeps = sweepsCount,
                     decidingSetWins = decidingWinsCount,
+                    flawlessDays = flawlessDaysCount, // <-- Új adat átadása a UI-nak
                     favoriteOpponent = favOpponent?.let { Pair(it.key, it.value.first) },
                     nemesis = nemesisOpponent?.let { Pair(it.key, it.value.second) }
                 )}

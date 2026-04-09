@@ -22,4 +22,5 @@ interface ApiService {
     // Auth
     suspend fun syncUser(user: UserDTO): UserDTO
     suspend fun updateUser(user: UserDTO): UserDTO
+    suspend fun getUserById(uid: String): UserDTO
 }

@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.feature.team
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -102,7 +103,8 @@ sealed class TeamScreenEvent {
 fun TeamScreen(
     viewModel: TeamViewModel = hiltViewModel(),
     onNavigateToEditor: (Int) -> Unit = {},
-    onNavigateToMatch: (Int) -> Unit = {}
+    onNavigateToMatch: (Int) -> Unit = {},
+    onNavigateToPlayerProfile: (String) -> Unit = {}
 ) {
     // Állapot kinyerése a ViewModel-ből
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -125,7 +127,8 @@ fun TeamScreen(
         state = uiState,
         onEvent = viewModel::onEvent,
         onNavigateToEditor = onNavigateToEditor,
-        onNavigateToMatch = onNavigateToMatch
+        onNavigateToMatch = onNavigateToMatch,
+        onNavigateToPlayerProfile = onNavigateToPlayerProfile
     )
 }
 
@@ -135,7 +138,8 @@ fun TeamScreenContent(
     state: TeamScreenState,
     onEvent: (TeamScreenEvent) -> Unit,
     onNavigateToEditor: (Int) -> Unit,
-    onNavigateToMatch: (Int) -> Unit
+    onNavigateToMatch: (Int) -> Unit,
+    onNavigateToPlayerProfile: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showGraphInfoDialog by remember { mutableStateOf(false) }
@@ -252,7 +256,11 @@ fun TeamScreenContent(
 
                         // JÁTÉKOSOK LISTÁJA
                         items(team.members) { member ->
-                            PlayerCardRow(name = member.name, isCaptain = member.isCaptain)
+                            PlayerCardRow(
+                                name = member.name,
+                                isCaptain = member.isCaptain,
+                                onClick = { onNavigateToPlayerProfile(member.uid)}
+                            )
                         }
 
                         if (state.pointsHistory.isNotEmpty()) {
@@ -402,11 +410,16 @@ fun MatchResultRow(
 }
 
 @Composable
-fun PlayerCardRow(name: String, isCaptain: Boolean) {
+fun PlayerCardRow(
+    name: String,
+    isCaptain: Boolean,
+    onClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = CardDefaults.outlinedCardBorder()
     ) {

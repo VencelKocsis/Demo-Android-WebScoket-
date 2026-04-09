@@ -2,7 +2,7 @@ package hu.bme.aut.android.demo.navigation
 
 import kotlinx.serialization.Serializable
 
-// --- FŐ KÉPERNYŐK ---
+// --- FŐ KÉPERNYŐK --- // TODO nav3
 @Serializable
 data object Login
 
@@ -34,3 +34,6 @@ data class LiveMatch(val matchId: Int)
 
 @Serializable
 data class MatchScorer(val matchId: Int, val individualMatchId: Int)
+
+@Serializable
+data class PlayerProfile(val playerId: String)

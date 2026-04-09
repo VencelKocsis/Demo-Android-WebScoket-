@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,6 +15,8 @@ import hu.bme.aut.android.demo.feature.auth.AuthState
 import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.main.MainScreen
+import hu.bme.aut.android.demo.feature.profile.PlayerProfileScreen
+import hu.bme.aut.android.demo.feature.team.TeamScreen
 import hu.bme.aut.android.demo.feature.team.editor.TeamEditorScreen
 import hu.bme.aut.android.demo.feature.tournament.match.MatchDetailsScreen
 import hu.bme.aut.android.demo.feature.tournament.liveMatch.LiveMatchScreen
@@ -28,7 +31,7 @@ fun AppNavHost(
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
     // Itt a Típus (Osztály/Objektum) az indító útvonal
-    val startDestination: Any = when (authState) {
+    val startDestination: Any = when (authState) { // TODO nav3
         AuthState.UNKNOWN -> Login
         AuthState.AUTHENTICATED -> Main
         AuthState.UNAUTHENTICATED -> Login
@@ -62,7 +65,18 @@ fun AppNavHost(
                         }
                     },
                     onNavigateToTeamEditor = { teamId -> navController.navigate(TeamEditor(teamId)) },
-                    onNavigateToMatchDetails = { matchId -> navController.navigate(MatchDetails(matchId)) }
+                    onNavigateToMatchDetails = { matchId ->
+                        navController.navigate(
+                            MatchDetails(
+                                matchId
+                            )
+                        )
+                    },
+                    onNavigateToPlayerProfile = { playerId ->
+                        navController.navigate(
+                            PlayerProfile(playerId)
+                        )
+                    }
                 )
             }
 
@@ -104,6 +118,15 @@ fun AppNavHost(
                 MatchScorerScreen(
                     matchId = args.matchId,
                     individualMatchId = args.individualMatchId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            // --- 8. Játékos Profil ---
+            composable<PlayerProfile> { backStackEntry ->
+                val args = backStackEntry.toRoute<PlayerProfile>()
+                PlayerProfileScreen(
+                    playerId = args.playerId,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

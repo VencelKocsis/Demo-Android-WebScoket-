@@ -55,7 +55,8 @@ fun MainScreen(
     onLogout: () -> Unit,
     authViewModel: AuthViewModel,
     onNavigateToTeamEditor: (Int) -> Unit = {},
-    onNavigateToMatchDetails: (Int) -> Unit = {}
+    onNavigateToMatchDetails: (Int) -> Unit = {},
+    onNavigateToPlayerProfile: (String) -> Unit = {}
 ) {
     val bottomNavController = rememberNavController()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
@@ -147,7 +148,8 @@ fun MainScreen(
                 composable<Team> {
                     TeamScreen(
                         onNavigateToEditor = onNavigateToTeamEditor,
-                        onNavigateToMatch = onNavigateToMatchDetails
+                        onNavigateToMatch = onNavigateToMatchDetails,
+                        onNavigateToPlayerProfile = onNavigateToPlayerProfile
                     )
                 }
                 composable<History> {

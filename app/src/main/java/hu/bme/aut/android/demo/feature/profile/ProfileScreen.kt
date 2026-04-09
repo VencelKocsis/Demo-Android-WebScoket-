@@ -1,7 +1,6 @@
 package hu.bme.aut.android.demo.feature.profile
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -16,13 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,9 +37,8 @@ import hu.bme.aut.android.demo.ui.theme.RacketBlack
 import hu.bme.aut.android.demo.ui.theme.RacketBlue
 import hu.bme.aut.android.demo.ui.theme.RacketYellow
 import hu.bme.aut.android.demo.ui.theme.SuccessGreen
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeSolid
 import hu.bme.aut.android.demo.util.LanguageSelector
 
 // --- SEGÉDFÜGGVÉNYEK ÉS GRAFIKON ---
@@ -238,51 +230,76 @@ fun ProfileScreen(
                 }
             }
 
-            // --- 3. FORMA & SZETT MUTATÓK ---
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Aktuális Forma
+            // --- 3. FORMA ÉS EXTRA MUTATÓK  ---
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Aktuális Forma Kártya
                 Card(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(stringResource(R.string.from_last_5), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            if (profileState.recentForm.isEmpty()) Text("-", color = Color.Gray)
-                            profileState.recentForm.forEach { isWin ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isWin) SuccessGreen else ErrorRed),
-                                    contentAlignment = Alignment.Center
-                                ) { Text(
-                                    if (isWin) stringResource(R.string.victory_letter)
-                                    else stringResource(R.string.lose_letter),
-                                    color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold
-                                ) }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (profileState.recentForm.isEmpty()) {
+                                Text("-", color = Color.Gray)
+                            } else {
+                                profileState.recentForm.forEach { isWin ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isWin) SuccessGreenSolid else ErrorRedSolid),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            if (isWin) stringResource(R.string.victory_letter) else stringResource(R.string.lose_letter),
+                                            color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                // Clutch / Söprések
+                // Extra Mutatók (Clutch / Söprések / Flawless) Kártya
                 Card(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(), // Teljes szélesség!
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(R.string.set_of_indicators), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Extra Mutatók", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // 1. Söprés (3-0)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${profileState.sweeps}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = SuccessGreen)
-                                Text(stringResource(R.string.clutch), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Text("${profileState.sweeps}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = SuccessGreenSolid)
+                                Text("3-0", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             }
+
+                            // 2. Döntő szett (3-2)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${profileState.decidingSetWins}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                                Text(stringResource(R.string.final_set), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Text("${profileState.decidingSetWins}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                Text("3-2", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            }
+
+                            // 3. Hibátlan bajnoki (4/4)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${profileState.flawlessDays}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = WarningOrangeSolid)
+                                Text("4/4", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             }
                         }
                     }

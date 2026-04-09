@@ -23,4 +23,5 @@ class ApiServiceImpl @Inject constructor(
 
     override suspend fun syncUser(user: UserDTO): UserDTO = retrofitApi.syncUser(user)
     override suspend fun updateUser(user: UserDTO): UserDTO = retrofitApi.updateUser(user)
+    override suspend fun getUserById(uid: String): UserDTO = retrofitApi.getUserById(uid)
 }
