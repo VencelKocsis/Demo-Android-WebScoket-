@@ -138,4 +138,8 @@
     <string name="no_teams_in_division">Nincsenek csapatok ebben a divízióban.</string>
     <string name="team">Csapat</string>
     <string name="v_d_l">Gy-D-V</string>
+    <string name="season">Szezon</string>
+    <string name="all_teams">Összes csapat</string>
+    <string name="no_completed_matches_based_on_filter">Még nincsenek befejezett mérkőzések a szűrés alapján.</string>
+    <string name="all_clubs">Összes Klub</string>
 </resources>

@@ -138,4 +138,8 @@
     <string name="no_teams_in_division">There are no teams in this division.</string>
     <string name="team">Team</string>
     <string name="v_d_l">V-D-L</string>
+    <string name="season">Season</string>
+    <string name="all_teams">All teams</string>
+    <string name="no_completed_matches_based_on_filter">There are no completed matches based on the filter yet.</string>
+    <string name="all_clubs">All Clubs</string>
 </resources>

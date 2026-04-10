@@ -41,6 +41,7 @@ import hu.bme.aut.android.demo.ui.theme.ProgressPinkDark
 import hu.bme.aut.android.demo.ui.theme.ProgressPinkSolid
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 
 @Composable
 fun MatchLocationButton(
@@ -201,5 +202,24 @@ fun MatchStatusChip(status: String?, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+// --- Pontszám háttér és szövegszín meghatározása ---
+@Composable
+fun getScoreColors(isWin: Boolean? = null): Pair<Color, Color> {
+    val isDark = isSystemInDarkTheme()
+
+    // Ha nem tudjuk, nyert-e (pl. History vagy Tournament nézet), használjuk az alap primary színt
+    if (isWin == null) {
+        return if(isDark) MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        else MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+    }
+
+    // Ha nyert a "fókuszban lévő" csapat (Team nézet)
+    return if (isWin) {
+        if(isDark) SuccessGreenDark.copy(0.25f) to SuccessGreenLight else SuccessGreenSolid to Color.White
+    } else { // Ha vesztett
+        if(isDark) ErrorRedSolid.copy(0.25f) to ErrorRedLight else ErrorRedSolid to Color.White
     }
 }

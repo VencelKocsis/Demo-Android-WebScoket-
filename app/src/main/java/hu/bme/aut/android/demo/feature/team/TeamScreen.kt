@@ -1,12 +1,12 @@
 package hu.bme.aut.android.demo.feature.team
 
-import androidx.compose.foundation.BorderStroke
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,19 +22,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -60,8 +54,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.team.model.Team
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
-import hu.bme.aut.android.demo.ui.common.PerformanceGraph
+import hu.bme.aut.android.demo.ui.common.FilterCard
+import hu.bme.aut.android.demo.ui.common.GenericFilterDropdown
+import hu.bme.aut.android.demo.ui.common.InfoDialog
+import hu.bme.aut.android.demo.ui.common.RatingGraphCard
 import hu.bme.aut.android.demo.ui.common.StatItem
+import hu.bme.aut.android.demo.ui.common.UniversalMatchCard
 import hu.bme.aut.android.demo.ui.theme.CaptainYellow
 import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
 import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
@@ -104,7 +102,7 @@ sealed class TeamScreenEvent {
     data class OnDivisionSelected(val division: String?) : TeamScreenEvent()
 }
 
-// --- 1. Állapotfüggő (Stateful) Composable ---
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TeamScreen(
     viewModel: TeamViewModel = hiltViewModel(),
@@ -117,9 +115,7 @@ fun TeamScreen(
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.onEvent(TeamScreenEvent.LoadInitialData)
-            }
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.onEvent(TeamScreenEvent.LoadInitialData)
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -134,6 +130,7 @@ fun TeamScreen(
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamScreenContent(
@@ -143,25 +140,18 @@ fun TeamScreenContent(
     onNavigateToMatch: (Int) -> Unit,
     onNavigateToPlayerProfile: (String) -> Unit
 ) {
-    var clubExpanded by remember { mutableStateOf(false) }
-    var divisionExpanded by remember { mutableStateOf(false) }
-    var teamExpanded by remember { mutableStateOf(false) }
     var showGraphInfoDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.club)) }) },
         floatingActionButton = {
             if (state.isCurrentUserCaptain && state.selectedTeam != null) {
-                FloatingActionButton(
-                    onClick = { onNavigateToEditor(state.selectedTeam.id) },
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Csapat szerkesztése")
+                FloatingActionButton(onClick = { onNavigateToEditor(state.selectedTeam.id) }, containerColor = MaterialTheme.colorScheme.primary) {
+                    Icon(Icons.Default.Edit, contentDescription = "Szerkesztés")
                 }
             }
         }
     ) { paddingValues ->
-
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { onEvent(TeamScreenEvent.LoadInitialData) },
@@ -174,131 +164,52 @@ fun TeamScreenContent(
                     Text(state.errorMessage, color = MaterialTheme.colorScheme.error)
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp)
-                ) {
-                    // --- 1. SZŰRŐ ÉS VÁLASZTÓ KÁRTYA ---
+                LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+
+                    // 1. GENERIKUS SZŰRŐDOBOZ HASZNÁLATA
                     item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 24.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                // Felső sor: Klub és Divízió szűrő
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    // KLUB SZŰRŐ
-                                    ExposedDropdownMenuBox(
-                                        expanded = clubExpanded, onExpandedChange = { clubExpanded = !clubExpanded },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        OutlinedTextField(
-                                            value = state.selectedClub ?: "Összes Klub",
-                                            onValueChange = {}, readOnly = true, label = { Text("Klub") },
-                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = clubExpanded) },
-                                            modifier = Modifier.fillMaxWidth().menuAnchor(), colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                                        )
-                                        ExposedDropdownMenu(expanded = clubExpanded, onDismissRequest = { clubExpanded = false }) {
-                                            DropdownMenuItem(text = { Text("Összes Klub", fontWeight = FontWeight.Bold) }, onClick = { onEvent(TeamScreenEvent.OnClubSelected(null)); clubExpanded = false })
-                                            state.availableClubs.forEach { clubName ->
-                                                DropdownMenuItem(text = { Text(clubName) }, onClick = { onEvent(TeamScreenEvent.OnClubSelected(clubName)); clubExpanded = false })
-                                            }
-                                        }
-                                    }
-
-                                    // DIVÍZIÓ SZŰRŐ
-                                    ExposedDropdownMenuBox(
-                                        expanded = divisionExpanded, onExpandedChange = { divisionExpanded = !divisionExpanded },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        OutlinedTextField(
-                                            value = state.selectedDivision ?: "Összes",
-                                            onValueChange = {}, readOnly = true, label = { Text("Divízió") },
-                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = divisionExpanded) },
-                                            modifier = Modifier.fillMaxWidth().menuAnchor(), colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                                        )
-                                        ExposedDropdownMenu(expanded = divisionExpanded, onDismissRequest = { divisionExpanded = false }) {
-                                            DropdownMenuItem(text = { Text("Összes", fontWeight = FontWeight.Bold) }, onClick = { onEvent(TeamScreenEvent.OnDivisionSelected(null)); divisionExpanded = false })
-                                            state.availableDivisions.forEach { div ->
-                                                DropdownMenuItem(text = { Text(div) }, onClick = { onEvent(TeamScreenEvent.OnDivisionSelected(div)); divisionExpanded = false })
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Alsó sor: A tényleges Csapat választó (Csak a szűrt elemeket mutatja)
-                                ExposedDropdownMenuBox(
-                                    expanded = teamExpanded,
-                                    onExpandedChange = { teamExpanded = !teamExpanded }
-                                ) {
-                                    OutlinedTextField(
-                                        value = state.selectedTeam?.name ?: stringResource(R.string.select_team),
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text(stringResource(R.string.selected_team)) },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teamExpanded) },
-                                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                        )
-                                    )
-
-                                    ExposedDropdownMenu(
-                                        expanded = teamExpanded,
-                                        onDismissRequest = { teamExpanded = false }
-                                    ) {
-                                        if (state.teamList.isEmpty()) {
-                                            DropdownMenuItem(text = { Text("Nincs találat", color = Color.Gray) }, onClick = { teamExpanded = false })
-                                        } else {
-                                            state.teamList.forEach { team ->
-                                                DropdownMenuItem(
-                                                    text = { Text(team.name, fontWeight = FontWeight.Medium) },
-                                                    onClick = {
-                                                        onEvent(TeamScreenEvent.OnTeamSelected(team.id))
-                                                        teamExpanded = false
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                        FilterCard(
+                            modifier = Modifier.padding(bottom = 24.dp),
+                            topRowContent = {
+                                GenericFilterDropdown(
+                                    label = stringResource(R.string.club), defaultOptionText = stringResource(
+                                        R.string.all_clubs
+                                    ),
+                                    options = state.availableClubs, selectedOption = state.selectedClub,
+                                    optionLabeler = { it }, onOptionSelected = { onEvent(TeamScreenEvent.OnClubSelected(it)) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                GenericFilterDropdown(
+                                    label = stringResource(R.string.division_1), defaultOptionText = stringResource(R.string.all),
+                                    options = state.availableDivisions, selectedOption = state.selectedDivision,
+                                    optionLabeler = { it }, onOptionSelected = { onEvent(TeamScreenEvent.OnDivisionSelected(it)) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            },
+                            bottomRowContent = {
+                                val currentTeam = state.teamList.find { it.id == state.selectedTeam?.id }
+                                GenericFilterDropdown(
+                                    label = stringResource(R.string.selected_team), defaultOptionText = stringResource(R.string.select_team),
+                                    options = state.teamList, selectedOption = currentTeam,
+                                    optionLabeler = { it.name }, onOptionSelected = { if (it != null) onEvent(TeamScreenEvent.OnTeamSelected(it.id)) }
+                                )
                             }
-                        }
+                        )
                     }
 
-                    // --- 2. KIVÁLASZTOTT CSAPAT ADATAI ---
+                    // 2. KIVÁLASZTOTT CSAPAT ADATAI
                     state.selectedTeam?.let { team ->
                         item {
                             Text(team.clubName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                             if (!team.division.isNullOrEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.division, team.division),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text(stringResource(R.string.division, team.division), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // SZÍNES STATISZTIKAI KÁRTYA
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
+                            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                                Row(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                     StatItem(label = stringResource(R.string.match), value = team.matchesPlayed.toString(), type = "neutral")
                                     StatItem(label = stringResource(R.string.victory), value = team.wins.toString(), type = "success")
                                     StatItem(label = stringResource(R.string.draw), value = team.draws.toString(), type = "warning")
@@ -312,55 +223,38 @@ fun TeamScreenContent(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        // JÁTÉKOSOK LISTÁJA
+                        // Játékosok (A PlayerCardRow továbbra is a képernyő sajátja maradhat, vagy ez is mehet a common-ba)
                         items(team.members) { member ->
-                            PlayerCardRow(
-                                name = member.name,
-                                isCaptain = member.isCaptain,
-                                onClick = { onNavigateToPlayerProfile(member.uid)}
-                            )
+                            PlayerCardRow(name = member.name, isCaptain = member.isCaptain, onClick = { onNavigateToPlayerProfile(member.uid) })
                         }
 
+                        // Grafikon
                         if (state.pointsHistory.isNotEmpty()) {
-                            item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(stringResource(R.string.team_improvement), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                            IconButton(onClick = { showGraphInfoDialog = true }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Default.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        PerformanceGraph(data = state.pointsHistory)
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(32.dp))
-                            }
+                            item { RatingGraphCard(ratingHistory = state.pointsHistory, onInfoClick = { showGraphInfoDialog = true }) }
                         }
 
-                        // LEGUTÓBBI MECCSEK
                         item {
                             Spacer(modifier = Modifier.height(32.dp))
                             Text(stringResource(R.string.previous_matches), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
-
-                            // Ha nincs egyetlen lejátszott meccsük sem
-                            if (state.recentMatches.isEmpty()) {
-                                Text("Ennek a csapatnak még nincsenek befejezett mérkőzései.", color = Color.Gray)
-                            }
+                            if (state.recentMatches.isEmpty()) Text("Ennek a csapatnak még nincsenek befejezett mérkőzései.", color = Color.Gray)
                         }
 
+                        // 3. GENERIKUS MECCSKÁRTYA HASZNÁLATA
                         items(state.recentMatches) { match ->
-                            MatchResultRow(match = match, onClick = { onNavigateToMatch(match.matchId) })
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            UniversalMatchCard(
+                                date = match.date,
+                                homeTeam = match.opponent,
+                                guestTeam = null,
+                                homeScore = match.homeScore,
+                                guestScore = match.awayScore,
+                                isWin = match.isWin,
+                                status = "finished",
+                                onClick = { onNavigateToMatch(match.matchId) }
+                            )
                         }
                     }
                 }
@@ -368,65 +262,8 @@ fun TeamScreenContent(
         }
     }
 
-    // teljesítmény gráf info dialog
     if (showGraphInfoDialog) {
-        hu.bme.aut.android.demo.ui.common.InfoDialog(
-            title = stringResource(R.string.team_improvement),
-            text = stringResource(R.string.team_improvement_dialog_text),
-            onDismiss = { showGraphInfoDialog = false }
-        )
-    }
-}
-
-@Composable
-fun MatchResultRow(
-    match: MatchResult,
-    onClick: () -> Unit = {}
-) {
-    val isDark = isSystemInDarkTheme()
-
-    val (bgColor, textColor) = if (match.isWin) {
-        if(isDark) SuccessGreenDark.copy(0.25f) to SuccessGreenLight else SuccessGreenSolid to Color.White
-    } else {
-        if(isDark) ErrorRedSolid.copy(0.25f) to ErrorRedLight else ErrorRedSolid to Color.White
-    }
-
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = CardDefaults.outlinedCardBorder()
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = match.opponent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = match.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(bgColor)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "${match.homeScore} - ${match.awayScore}",
-                    color = textColor,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Black
-                )
-            }
-        }
+        InfoDialog(title = stringResource(R.string.team_improvement), text = stringResource(R.string.team_improvement_dialog_text), onDismiss = { showGraphInfoDialog = false })
     }
 }
 

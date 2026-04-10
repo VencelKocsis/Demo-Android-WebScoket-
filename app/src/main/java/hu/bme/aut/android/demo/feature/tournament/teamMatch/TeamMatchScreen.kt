@@ -50,6 +50,7 @@ import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.ui.common.MatchDateRow
 import hu.bme.aut.android.demo.ui.common.MatchLocationButton
 import hu.bme.aut.android.demo.ui.common.MatchStatusChip
+import hu.bme.aut.android.demo.ui.common.UniversalMatchCard
 import hu.bme.aut.android.demo.ui.theme.ErrorRedBg
 import hu.bme.aut.android.demo.ui.theme.ErrorRedBorder
 import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
@@ -139,8 +140,15 @@ fun TeamMatchScreenContent(
                             stickyHeader { RoundHeader(roundNumber) }
 
                             items(teamMatches) { teamMatch ->
-                                TeamMatchSimpleCard(
-                                    teamMatch = teamMatch,
+                                UniversalMatchCard(
+                                    date = teamMatch.matchDate,
+                                    homeTeam = teamMatch.homeTeamName,
+                                    guestTeam = teamMatch.guestTeamName,
+                                    homeScore = teamMatch.homeTeamScore,
+                                    guestScore = teamMatch.guestTeamScore,
+                                    isWin = null,
+                                    status = teamMatch.status,
+                                    location = teamMatch.location,
                                     onClick = { onMatchClick(teamMatch.id) }
                                 )
                             }
@@ -192,72 +200,5 @@ fun RoundHeader(roundNumber: Int) {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
-    }
-}
-
-@SuppressLint("RememberReturnType")
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun TeamMatchSimpleCard(
-    teamMatch: TeamMatch,
-    onClick: () -> Unit
-) {
-    val isDark = isSystemInDarkTheme()
-
-    val statusColor = when (teamMatch.status) {
-        "scheduled" -> if (isDark) SuccessGreenDark.copy(alpha = 0.15f) else SuccessGreenBg
-        "in_progress" -> if (isDark) ProgressPinkDark.copy(alpha = 0.15f) else ProgressPinkBg
-        "finished" -> if (isDark) FinishedGrayDark.copy(alpha = 0.15f) else FinishedGrayBg
-        "cancelled" -> if (isDark) ErrorRedSolid.copy(alpha = 0.15f) else ErrorRedBg
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-
-    val borderColor = when (teamMatch.status) {
-        "scheduled" -> if (isDark) SuccessGreenLight.copy(alpha = 0.5f) else SuccessGreenBorder
-        "in_progress" -> if (isDark) ProgressPink.copy(alpha = 0.5f) else ProgressPinkBorder
-        "finished" -> if (isDark) FinishedGrayLight.copy(alpha = 0.5f) else FinishedGrayLight
-        "cancelled" -> if (isDark) ErrorRedLight.copy(alpha = 0.5f) else ErrorRedBorder
-        else -> MaterialTheme.colorScheme.outlineVariant
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .testTag("match_${teamMatch.id}"),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = statusColor),
-        border = BorderStroke(1.dp, borderColor)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "${teamMatch.homeTeamName} vs ${teamMatch.guestTeamName}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            MatchStatusChip(status = teamMatch.status)
-
-            if (teamMatch.status == "finished") {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.final_result, teamMatch.homeTeamScore, teamMatch.guestTeamScore),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MatchLocationButton(
-                location = teamMatch.location,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            MatchDateRow(date = teamMatch.matchDate)
-        }
     }
 }
