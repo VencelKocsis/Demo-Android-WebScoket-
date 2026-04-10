@@ -7,6 +7,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -63,7 +66,6 @@ fun MainScreen(
     val bottomNavController = rememberNavController()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-    // BIZTONSÁGI ŐR
     LaunchedEffect(authState) {
         if (authState == AuthState.UNAUTHENTICATED || authViewModel.getCurrentUser() == null) {
             onLogout()
@@ -76,7 +78,6 @@ fun MainScreen(
         onResult = { isGranted ->
             if (isGranted) {
                 Log.d("MainScreen", "Push Notification engedély megadva az operációs rendszertől!")
-                // Itt akár egy Snackbar is lehet hogy "Értesítések bekapcsolva"
             } else {
                 Log.w("MainScreen", "Push Notification engedély MEGTAGADVA!")
             }
@@ -119,7 +120,6 @@ fun MainScreen(
                 val currentDestination = navBackStackEntry?.destination
 
                 bottomNavItems.forEach { item ->
-                    // Az új módszerrel megvizsgáljuk, hogy az adott objektum osztálya szerepel-e a hierarchiában
                     val isSelected = currentDestination?.hierarchy?.any { it.hasRoute(item.route::class) } == true
 
                     NavigationBarItem(
@@ -138,9 +138,16 @@ fun MainScreen(
                     )
                 }
             }
-        }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
+        ) {
             NavHost(
                 navController = bottomNavController,
                 startDestination = Tournament
@@ -163,7 +170,6 @@ fun MainScreen(
                 composable<Profile> {
                     ProfileScreen(authViewModel = authViewModel, onLogoutClick = onLogout)
                 }
-
                 composable<Leaderboard> {
                     LeaderboardScreen()
                 }

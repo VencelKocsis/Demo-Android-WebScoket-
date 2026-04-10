@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import hu.bme.aut.android.demo.ui.common.StatItem
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +24,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.PerformanceGraph
-import hu.bme.aut.android.demo.ui.common.ProfileStatItem
 import hu.bme.aut.android.demo.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +31,6 @@ import hu.bme.aut.android.demo.ui.theme.*
 fun PlayerProfileScreen(
     playerId: String,
     onNavigateBack: () -> Unit,
-    // Bekötjük a Hilt ViewModelt!
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     // Állapot kinyerése
@@ -50,7 +49,7 @@ fun PlayerProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.user_profile)) },
+                title = { Text(stringResource(R.string.profile_statistics)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Vissza")
@@ -143,9 +142,9 @@ fun PlayerProfileScreen(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        ProfileStatItem(label = stringResource(R.string.match), value = uiState.matchesPlayed.toString(), type = "neutral")
-                        ProfileStatItem(label = stringResource(R.string.victory), value = uiState.matchesWon.toString(), type = "success")
-                        ProfileStatItem(label = stringResource(R.string.ratio), value = "${uiState.winRate}%", type = "primary")
+                        StatItem(label = stringResource(R.string.match), value = uiState.matchesPlayed.toString(), type = "neutral", circleSize = 56.dp, isLargeText = true)
+                        StatItem(label = stringResource(R.string.victory), value = uiState.matchesWon.toString(), type = "success", circleSize = 56.dp, isLargeText = true)
+                        StatItem(label = stringResource(R.string.ratio), value = "${uiState.winRate}%", type = "primary", circleSize = 56.dp, isLargeText = true)
                     }
                 }
             }

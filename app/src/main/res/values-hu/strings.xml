@@ -96,7 +96,7 @@
     <string name="tx_fill_sets">Kérlek, töltsd ki mindkét pontszámot a megkezdett szettekben!</string>
     <string name="tx_match_authenticated">A csapatmérkőzés hitelesítve lett, az eredmények véglegesek.</string>
     <string name="match_over">A mérkőzés lezárult.</string>
-    <string name="championship">Bajnokság</string>
+    <string name="championship">Meccsek</string>
     <string name="no_available_matches">Nincsenek elérhető mérkőzések a bajnokságban.</string>
     <string name="retry">Újrapóbálkozás</string>
     <string name="f_round">Forduló %1$d</string>
@@ -132,4 +132,5 @@
     <string name="team_improvement">Csapat Fejlődése</string>
     <string name="team_improvement_dialog_text">Ez a grafikon a csapat összesített bajnoki pontszámának változását mutatja az idő előrehaladtával, fordulóról fordulóra haladva.</string>
     <string name="leaderboard">Ranglista</string>
+    <string name="profile_statistics">Profil Statisztika</string>
 </resources>

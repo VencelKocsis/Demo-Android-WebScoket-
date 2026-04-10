@@ -16,19 +16,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
+import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
 import hu.bme.aut.android.demo.ui.theme.NeutralGraySolid
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeDark
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeLight
+import hu.bme.aut.android.demo.ui.theme.WarningOrangeSolid
 
-// KÖZÖS KOMPONENS A PROFIL STATISZTIKÁHOZ
+/**
+ * Univerzális statisztika megjelenítő kör (pl. Meccsek száma, Győzelmek, Pontok).
+ *
+ * @param label A statisztika neve (alatta jelenik meg)
+ * @param value A statisztika értéke (a kör közepén)
+ * @param type A szín típusa ("success", "error", "warning", "primary", vagy default semleges)
+ * @param circleSize A kör átmérője (alapértelmezetten 48.dp, profiloknál érdemes 56.dp-t használni)
+ * @param isLargeText Igaz esetén nagyobb betűméretet használ az értékhez (profilokhoz)
+ */
 @Composable
-fun ProfileStatItem(label: String, value: String, type: String) {
+fun StatItem(
+    label: String,
+    value: String,
+    type: String,
+    circleSize: Dp = 48.dp, // Paraméterezhető méret
+    isLargeText: Boolean = false // Paraméterezhető betűméret
+) {
     val isDark = isSystemInDarkTheme()
 
     val (bgColor, textColor) = when (type) {
         "success" -> if(isDark) SuccessGreenDark.copy(0.25f) to SuccessGreenLight else SuccessGreenSolid to Color.White
+        "error" -> if(isDark) ErrorRedSolid.copy(0.25f) to ErrorRedLight else ErrorRedSolid to Color.White
+        "warning" -> if(isDark) WarningOrangeDark.copy(0.25f) to WarningOrangeLight else WarningOrangeSolid to Color.White
         "primary" -> if(isDark) MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
         else -> if(isDark) Color.Gray.copy(0.2f) to Color.LightGray else NeutralGraySolid to Color.White
     }
@@ -36,19 +58,19 @@ fun ProfileStatItem(label: String, value: String, type: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(56.dp)
+                .size(circleSize)
                 .clip(CircleShape)
                 .background(bgColor),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleLarge,
+                style = if (isLargeText) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Black,
                 color = textColor
             )
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(if (isLargeText) 8.dp else 6.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,

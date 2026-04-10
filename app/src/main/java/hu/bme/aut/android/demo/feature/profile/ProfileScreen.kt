@@ -28,7 +28,7 @@ import hu.bme.aut.android.demo.feature.racketEditor.Racket
 import hu.bme.aut.android.demo.feature.racketEditor.Rubber
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.PerformanceGraph
-import hu.bme.aut.android.demo.ui.common.ProfileStatItem
+import hu.bme.aut.android.demo.ui.common.StatItem
 import hu.bme.aut.android.demo.ui.theme.ErrorRed
 import hu.bme.aut.android.demo.ui.theme.ErrorRedBg
 import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
@@ -223,9 +223,9 @@ fun ProfileScreen(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        ProfileStatItem(label = stringResource(R.string.match), value = profileState.matchesPlayed.toString(), type = "neutral")
-                        ProfileStatItem(label = stringResource(R.string.victory), value = profileState.matchesWon.toString(), type = "success")
-                        ProfileStatItem(label = stringResource(R.string.ratio), value = "${profileState.winRate}%", type = "primary")
+                        StatItem(label = stringResource(R.string.match), value = profileState.matchesPlayed.toString(), type = "neutral", circleSize = 56.dp, isLargeText = true)
+                        StatItem(label = stringResource(R.string.victory), value = profileState.matchesWon.toString(), type = "success", circleSize = 56.dp, isLargeText = true)
+                        StatItem(label = stringResource(R.string.ratio), value = "${profileState.winRate}%", type = "primary", circleSize = 56.dp, isLargeText = true)
                     }
                 }
             }
