@@ -142,4 +142,6 @@
     <string name="all_teams">Összes csapat</string>
     <string name="no_completed_matches_based_on_filter">Még nincsenek befejezett mérkőzések a szűrés alapján.</string>
     <string name="all_clubs">Összes Klub</string>
+    <string name="done">Kész</string>
+    <string name="filter">Szűrés</string>
 </resources>

@@ -1,13 +1,9 @@
 package hu.bme.aut.android.demo.feature.tournament.teamMatch
 
-import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,26 +42,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
-import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
-import hu.bme.aut.android.demo.ui.common.MatchDateRow
-import hu.bme.aut.android.demo.ui.common.MatchLocationButton
-import hu.bme.aut.android.demo.ui.common.MatchStatusChip
 import hu.bme.aut.android.demo.ui.common.UniversalMatchCard
-import hu.bme.aut.android.demo.ui.theme.ErrorRedBg
-import hu.bme.aut.android.demo.ui.theme.ErrorRedBorder
-import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
-import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
-import hu.bme.aut.android.demo.ui.theme.FinishedGrayBg
-import hu.bme.aut.android.demo.ui.theme.FinishedGrayDark
-import hu.bme.aut.android.demo.ui.theme.FinishedGrayLight
-import hu.bme.aut.android.demo.ui.theme.ProgressPink
-import hu.bme.aut.android.demo.ui.theme.ProgressPinkBg
-import hu.bme.aut.android.demo.ui.theme.ProgressPinkBorder
-import hu.bme.aut.android.demo.ui.theme.ProgressPinkDark
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenBg
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenBorder
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

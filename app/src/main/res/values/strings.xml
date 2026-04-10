@@ -142,4 +142,6 @@
     <string name="all_teams">All teams</string>
     <string name="no_completed_matches_based_on_filter">There are no completed matches based on the filter yet.</string>
     <string name="all_clubs">All Clubs</string>
+    <string name="done">Done</string>
+    <string name="filter">Filter</string>
 </resources>

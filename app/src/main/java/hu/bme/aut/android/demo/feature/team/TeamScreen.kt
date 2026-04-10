@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,12 +21,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -54,18 +55,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.team.model.Team
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
-import hu.bme.aut.android.demo.ui.common.FilterCard
+import hu.bme.aut.android.demo.ui.common.CommonFilterDialog
 import hu.bme.aut.android.demo.ui.common.GenericFilterDropdown
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.RatingGraphCard
 import hu.bme.aut.android.demo.ui.common.StatItem
 import hu.bme.aut.android.demo.ui.common.UniversalMatchCard
 import hu.bme.aut.android.demo.ui.theme.CaptainYellow
-import hu.bme.aut.android.demo.ui.theme.ErrorRedLight
-import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenDark
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenLight
-import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 import hu.bme.aut.android.demo.ui.theme.WarningOrangeDark
 import kotlin.collections.isNotEmpty
 
@@ -141,9 +137,19 @@ fun TeamScreenContent(
     onNavigateToPlayerProfile: (String) -> Unit
 ) {
     var showGraphInfoDialog by remember { mutableStateOf(false) }
+    var showFilterDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.club)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.club)) },
+                actions = {
+                    IconButton(onClick = { showFilterDialog = true }) {
+                        Icon(Icons.Default.FilterList, contentDescription = "Szűrés")
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             if (state.isCurrentUserCaptain && state.selectedTeam != null) {
                 FloatingActionButton(onClick = { onNavigateToEditor(state.selectedTeam.id) }, containerColor = MaterialTheme.colorScheme.primary) {
@@ -152,6 +158,45 @@ fun TeamScreenContent(
             }
         }
     ) { paddingValues ->
+
+        // --- KÖZÖS SZŰRŐ DIALÓGUS ---
+        if (showFilterDialog) {
+            CommonFilterDialog(
+                title = stringResource(R.string.select_team),
+                onDismiss = { showFilterDialog = false }
+            ) {
+                GenericFilterDropdown(
+                    label = stringResource(R.string.club),
+                    defaultOptionText = stringResource(R.string.all_clubs),
+                    options = state.availableClubs,
+                    selectedOption = state.selectedClub,
+                    optionLabeler = { it },
+                    onOptionSelected = { onEvent(TeamScreenEvent.OnClubSelected(it)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GenericFilterDropdown(
+                    label = stringResource(R.string.division_1),
+                    defaultOptionText = stringResource(R.string.all),
+                    options = state.availableDivisions,
+                    selectedOption = state.selectedDivision,
+                    optionLabeler = { it },
+                    onOptionSelected = { onEvent(TeamScreenEvent.OnDivisionSelected(it)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                val currentTeam = state.teamList.find { it.id == state.selectedTeam?.id }
+                GenericFilterDropdown(
+                    label = stringResource(R.string.selected_team),
+                    defaultOptionText = stringResource(R.string.select_team),
+                    options = state.teamList,
+                    selectedOption = currentTeam,
+                    optionLabeler = { it.name },
+                    onOptionSelected = { if (it != null) onEvent(TeamScreenEvent.OnTeamSelected(it.id)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { onEvent(TeamScreenEvent.LoadInitialData) },
@@ -166,38 +211,7 @@ fun TeamScreenContent(
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
 
-                    // 1. GENERIKUS SZŰRŐDOBOZ HASZNÁLATA
-                    item {
-                        FilterCard(
-                            modifier = Modifier.padding(bottom = 24.dp),
-                            topRowContent = {
-                                GenericFilterDropdown(
-                                    label = stringResource(R.string.club), defaultOptionText = stringResource(
-                                        R.string.all_clubs
-                                    ),
-                                    options = state.availableClubs, selectedOption = state.selectedClub,
-                                    optionLabeler = { it }, onOptionSelected = { onEvent(TeamScreenEvent.OnClubSelected(it)) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                GenericFilterDropdown(
-                                    label = stringResource(R.string.division_1), defaultOptionText = stringResource(R.string.all),
-                                    options = state.availableDivisions, selectedOption = state.selectedDivision,
-                                    optionLabeler = { it }, onOptionSelected = { onEvent(TeamScreenEvent.OnDivisionSelected(it)) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            },
-                            bottomRowContent = {
-                                val currentTeam = state.teamList.find { it.id == state.selectedTeam?.id }
-                                GenericFilterDropdown(
-                                    label = stringResource(R.string.selected_team), defaultOptionText = stringResource(R.string.select_team),
-                                    options = state.teamList, selectedOption = currentTeam,
-                                    optionLabeler = { it.name }, onOptionSelected = { if (it != null) onEvent(TeamScreenEvent.OnTeamSelected(it.id)) }
-                                )
-                            }
-                        )
-                    }
-
-                    // 2. KIVÁLASZTOTT CSAPAT ADATAI
+                    // 1. KIVÁLASZTOTT CSAPAT ADATAI
                     state.selectedTeam?.let { team ->
                         item {
                             Text(team.clubName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -223,7 +237,7 @@ fun TeamScreenContent(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        // Játékosok (A PlayerCardRow továbbra is a képernyő sajátja maradhat, vagy ez is mehet a common-ba)
+                        // Játékosok
                         items(team.members) { member ->
                             PlayerCardRow(name = member.name, isCaptain = member.isCaptain, onClick = { onNavigateToPlayerProfile(member.uid) })
                         }
@@ -233,18 +247,19 @@ fun TeamScreenContent(
                             item { RatingGraphCard(ratingHistory = state.pointsHistory, onInfoClick = { showGraphInfoDialog = true }) }
                         }
 
+                        // Legutóbbi meccsek
                         item {
                             Spacer(modifier = Modifier.height(32.dp))
                             Text(stringResource(R.string.previous_matches), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
-                            if (state.recentMatches.isEmpty()) Text("Ennek a csapatnak még nincsenek befejezett mérkőzései.", color = Color.Gray)
+                            if (state.recentMatches.isEmpty()) {
+                                Text("Ennek a csapatnak még nincsenek befejezett mérkőzései.", color = Color.Gray)
+                            }
                         }
 
-                        // 3. GENERIKUS MECCSKÁRTYA HASZNÁLATA
+                        // GENERIKUS MECCSKÁRTYA HASZNÁLATA
                         items(state.recentMatches) { match ->
-
                             Spacer(modifier = Modifier.height(8.dp))
-
                             UniversalMatchCard(
                                 date = match.date,
                                 homeTeam = match.opponent,
