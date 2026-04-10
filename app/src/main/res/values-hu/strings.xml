@@ -133,4 +133,9 @@
     <string name="team_improvement_dialog_text">Ez a grafikon a csapat összesített bajnoki pontszámának változását mutatja az idő előrehaladtával, fordulóról fordulóra haladva.</string>
     <string name="leaderboard">Ranglista</string>
     <string name="profile_statistics">Profil Statisztika</string>
+    <string name="division_1">Divízió</string>
+    <string name="all">Összes</string>
+    <string name="no_teams_in_division">Nincsenek csapatok ebben a divízióban.</string>
+    <string name="team">Csapat</string>
+    <string name="v_d_l">Gy-D-V</string>
 </resources>

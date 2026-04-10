@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.theme.Bronze
 import hu.bme.aut.android.demo.ui.theme.Gold
 import hu.bme.aut.android.demo.ui.theme.Silver
@@ -34,24 +36,30 @@ fun LeaderboardScreen(
     var divisionExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Ranglista") }) }
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.leaderboard)) }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)) {
 
             // --- SZŰRŐ ---
             if (uiState.availableDivisions.isNotEmpty()) {
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)) {
                     ExposedDropdownMenuBox(
                         expanded = divisionExpanded, onExpandedChange = { divisionExpanded = !divisionExpanded }
                     ) {
                         OutlinedTextField(
-                            value = uiState.selectedDivision ?: "Összes",
-                            onValueChange = {}, readOnly = true, label = { Text("Divízió") },
+                            value = uiState.selectedDivision ?: stringResource(R.string.all),
+                            onValueChange = {}, readOnly = true, label = { Text(stringResource(R.string.division_1)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = divisionExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(), colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(), colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
                         )
                         ExposedDropdownMenu(expanded = divisionExpanded, onDismissRequest = { divisionExpanded = false }) {
-                            DropdownMenuItem(text = { Text("Összes") }, onClick = { viewModel.selectDivision(null); divisionExpanded = false })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.all)) }, onClick = { viewModel.selectDivision(null); divisionExpanded = false })
                             uiState.availableDivisions.forEach { div ->
                                 DropdownMenuItem(text = { Text(div) }, onClick = { viewModel.selectDivision(div); divisionExpanded = false })
                             }
@@ -64,7 +72,7 @@ fun LeaderboardScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (uiState.filteredTeams.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Nincsenek csapatok ebben a divízióban.", color = Color.Gray)
+                    Text(stringResource(R.string.no_teams_in_division), color = Color.Gray)
                 }
             } else {
                 // Szétválasztjuk az első hármat és a többit
@@ -93,10 +101,10 @@ fun LeaderboardScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text("#", modifier = Modifier.width(30.dp), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Csapat", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.team), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("M", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Gy-D-V", modifier = Modifier.width(60.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Pont", modifier = Modifier.width(45.dp), textAlign = TextAlign.End, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.v_d_l), modifier = Modifier.width(60.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.point), modifier = Modifier.width(45.dp), textAlign = TextAlign.End, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             }
                             HorizontalDivider()
                         }
@@ -109,7 +117,11 @@ fun LeaderboardScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(if (isEven) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                                    .background(
+                                        if (isEven) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface.copy(
+                                            alpha = 0.5f
+                                        )
+                                    )
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

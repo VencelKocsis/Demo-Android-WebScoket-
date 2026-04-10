@@ -31,7 +31,7 @@
     <string name="division">Division: %1$s</string>
     <string name="lose">Loss</string>
     <string name="draw">Draw</string>
-    <string name="point">Point</string>
+    <string name="point">Points</string>
     <string name="team_frame">Team frame</string>
     <string name="previous_matches">Previous matches</string>
     <string name="captain">CAPTAIN</string>
@@ -133,4 +133,9 @@
     <string name="team_improvement_dialog_text">This graph shows the change in the team\'s overall league score over time, from round to round.</string>
     <string name="leaderboard">Leaderboard</string>
     <string name="profile_statistics">Profile Statistics</string>
+    <string name="division_1">Division</string>
+    <string name="all">All</string>
+    <string name="no_teams_in_division">There are no teams in this division.</string>
+    <string name="team">Team</string>
+    <string name="v_d_l">V-D-L</string>
 </resources>
