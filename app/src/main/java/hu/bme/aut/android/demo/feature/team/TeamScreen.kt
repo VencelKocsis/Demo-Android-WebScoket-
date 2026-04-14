@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -142,7 +144,29 @@ fun TeamScreenContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.club)) },
+                title = {
+                    Column {
+                        Text(
+                            text = stringResource(R.string.club),
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // --- DINAMIKUS SZŰRŐ ALCÍM ---
+                        val activeFilters = listOfNotNull(
+                            state.selectedClub,
+                            state.selectedDivision,
+                            state.selectedTeam?.name
+                        )
+
+                        Text(
+                            text = if (activeFilters.isNotEmpty()) activeFilters.joinToString(" • ") else "Összes csapat",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1, // Ha hosszú, ne lógjon ki
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showFilterDialog = true }) {
                         Icon(Icons.Default.FilterList, contentDescription = "Szűrés")
@@ -214,13 +238,17 @@ fun TeamScreenContent(
                     // 1. KIVÁLASZTOTT CSAPAT ADATAI
                     state.selectedTeam?.let { team ->
                         item {
-                            Text(team.clubName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                            if (!team.division.isNullOrEmpty()) {
-                                Text(stringResource(R.string.division, team.division), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(
+                                text = team.name,
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Black
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
                                 Row(modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
