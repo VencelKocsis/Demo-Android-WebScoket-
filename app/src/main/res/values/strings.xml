@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Demo App</string>
+    <string name="app_name">BudapesTT</string>
     <string name="login">Login</string>
     <string name="register">Register</string>
     <string name="login_registration">Login / Registration</string>
@@ -81,8 +81,8 @@
     <string name="starting_team_and_statistics">Starting team and statistics</string>
     <string name="x_home">%1$s (Home)</string>
     <string name="x_guest">%1$s (Guest)</string>
-    <string name="detailed_results">DETAILED RESULTS 🏓</string>
-    <string name="to_live_match">TO LIVE MATCH 🏓</string>
+    <string name="detailed_results">DETAILED RESULTS</string>
+    <string name="to_live_match">TO LIVE MATCH</string>
     <string name="apply_for_match">Apply for match</string>
     <string name="captain_selected_you">The captain has been selected for the squad! Get ready!</string>
     <string name="wait_for_captain_selection">Your application is recorded. Wait for the captain\'s decision.</string>

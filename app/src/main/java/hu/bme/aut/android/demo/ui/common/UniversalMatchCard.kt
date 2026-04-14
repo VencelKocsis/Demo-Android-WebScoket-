@@ -59,10 +59,10 @@ fun UniversalMatchCard(
 ) {
     val isDark = isSystemInDarkTheme()
 
-    // 1. Dátum tisztítása: levágjuk a 'T' betűt és a másodperceket (Csapatképernyős formátum)
+    // 1. Dátum tisztítása: Csak a "YYYY-MM-DD" részt mutatjuk, az időt elhagyva
     val displayDate = date?.substringBefore("T") ?: ""
 
-    // 2. Színek meghatározása (ha status = null, az alapértelmezett kártyaszíneket kapjuk)
+    // 2. Kártya háttér és keret (Bajnokság nézethez)
     val cardBgColor = when (status) {
         "scheduled" -> if (isDark) SuccessGreenDark.copy(alpha = 0.15f) else SuccessGreenBg
         "in_progress" -> if (isDark) ProgressPinkDark.copy(alpha = 0.15f) else ProgressPinkBg
@@ -79,6 +79,7 @@ fun UniversalMatchCard(
         else -> MaterialTheme.colorScheme.outlineVariant
     }
 
+    // 3. Pontszám doboz színei
     val (scoreBgColor, scoreTextColor) = getScoreColors(isWin)
 
     Card(
@@ -90,7 +91,7 @@ fun UniversalMatchCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            // --- FEJLÉC (Forduló és Dátum) ---
+            // --- FEJLÉC (Okos elrendezéssel) ---
             if (topLabel != null || guestTeam != null) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -98,25 +99,23 @@ fun UniversalMatchCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (topLabel != null) {
+                        // HISTORY NÉZET: Forduló balra, Dátum jobbra
                         Text(
                             text = topLabel,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
                         )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-
-                    // A dátum mindig itt jelenik meg jobb felül (kivéve a sima Team nézetet)
-                    if (guestTeam != null) {
                         Text(text = displayDate, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    } else {
+                        // BAJNOKSÁG (TeamMatch) NÉZET: Nincs forduló a kártyán, így a Dátum kerül BALRA
+                        Text(text = displayDate, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // --- FŐ TARTALOM (Csapatok és Eredmény) ---
+            // --- FŐ TARTALOM (Csapatok és Eredmény/VS) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -130,20 +129,21 @@ fun UniversalMatchCard(
                     )
 
                     if (guestTeam != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        // History / Bajnokság elrendezés (Egymás alatt)
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = guestTeam,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = if (homeScore != null && guestScore != null && guestScore > homeScore) FontWeight.Black else FontWeight.Normal
                         )
                     } else {
-                        // TeamScreen elrendezés (Dátum a név alatt)
+                        // Sima TeamScreen elrendezés (Dátum a név alatt)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(text = displayDate, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     }
                 }
 
-                // EREDMÉNY DOBOZ
+                // --- EREDMÉNY DOBOZ VAGY "VS" JELZÉS ---
                 if (homeScore != null && guestScore != null && status != "scheduled" && status != "cancelled") {
                     Box(
                         modifier = Modifier
@@ -159,6 +159,15 @@ fun UniversalMatchCard(
                             fontWeight = FontWeight.Black
                         )
                     }
+                } else if (guestTeam != null) {
+                    // Ha még nincs pontszám (pl. jövőbeli meccs), írjunk ki egy VS-t, hogy kitöltse a teret
+                    Text(
+                        text = "VS",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
                 }
             }
 

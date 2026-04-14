@@ -22,20 +22,32 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// --- STATE & EVENTS (Ideálisan egy TeamMatchContract.kt fájlban) ---
+// --- STATE & EVENTS ---
 data class TeamMatchUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val teamMatchesByRound: Map<Int, List<TeamMatch>> = emptyMap(),
     val currentUserName: String = "",
     val userTeamIds: List<Int> = emptyList(),
-    val userCaptainTeamIds: List<Int> = emptyList()
+    val userCaptainTeamIds: List<Int> = emptyList(),
+
+    // SZŰRŐ ADATOK
+    val availableDivisions: List<String> = emptyList(),
+    val availableTeams: List<Pair<Int, String>> = emptyList(),
+    val teamDivisions: Map<Int, String> = emptyMap(),
+
+    val selectedDivision: String? = null,
+    val selectedTeamId: Int? = null
 )
 
 sealed class TeamMatchScreenEvent {
     object LoadTeamMatches : TeamMatchScreenEvent()
     data class OnApplyForMatch(val matchId: Int) : TeamMatchScreenEvent()
     data class OnToggleParticipantStatus(val participantId: Int, val currentStatus: String) : TeamMatchScreenEvent()
+
+    // Szűrő események
+    data class OnDivisionSelected(val division: String?) : TeamMatchScreenEvent()
+    data class OnTeamSelected(val teamId: Int?) : TeamMatchScreenEvent()
 }
 
 // --- VIEWMODEL ---
@@ -49,12 +61,14 @@ class TeamMatchViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
-    // 1. Triggerek a reaktív adatfolyamhoz (Unit helyett 0-s számláló!)
     private val _refreshTrigger = MutableStateFlow(0)
-    private val _isMutating = MutableStateFlow(false) // Írási műveletek töltésjelzője
-    private val _actionError = MutableStateFlow<String?>(null) // Hibák a gombnyomásoknál
+    private val _isMutating = MutableStateFlow(false)
+    private val _actionError = MutableStateFlow<String?>(null)
 
-    // 2. Tiszta adat-Flow, ami betölti a csapatokat és a meccseket (mapLatest + onStart)
+    private val _selectedDivision = MutableStateFlow<String?>(null)
+    private val _selectedTeamId = MutableStateFlow<Int?>(null)
+    private val _isFirstLoad = MutableStateFlow(true)
+
     private val matchDataFlow = _refreshTrigger.mapLatest {
         val allTeams = getTeamsUseCase()
         val teamMatches = getTeamMatchesUseCase()
@@ -65,22 +79,24 @@ class TeamMatchViewModel @Inject constructor(
         emit(Resource.error(e))
     }
 
-    // 3. UI Állapot összerakása (combine)
     val uiState: StateFlow<TeamMatchUiState> = combine(
         matchDataFlow,
         _isMutating,
-        _actionError
-    ) { dataResource, isMutating, actionError ->
+        _actionError,
+        _selectedDivision,
+        _selectedTeamId
+    ) { dataResource, isMutating, actionError, selDivision, selTeamId ->
 
         val dataPair = dataResource.getOrNull()
         val allTeams = dataPair?.first ?: emptyList()
-        val teamMatches = dataPair?.second ?: emptyList()
+        val allMatches = dataPair?.second ?: emptyList()
 
-        // Adatfeldolgozás
         val currentUserUid = getCurrentUserUseCase()?.uid
         var currentName = ""
         val memberOf = mutableListOf<Int>()
         val captainOf = mutableListOf<Int>()
+        var userPrimaryTeamId: Int? = null
+        var userPrimaryDivision: String? = null
 
         if (currentUserUid != null) {
             allTeams.forEach { team ->
@@ -88,16 +104,44 @@ class TeamMatchViewModel @Inject constructor(
                 if (userInTeam != null) {
                     currentName = userInTeam.name
                     memberOf.add(team.id)
-                    if (userInTeam.isCaptain) {
-                        captainOf.add(team.id)
+                    if (userInTeam.isCaptain) captainOf.add(team.id)
+
+                    if (userPrimaryTeamId == null) {
+                        userPrimaryTeamId = team.id
+                        userPrimaryDivision = team.division
                     }
                 }
             }
         }
 
-        val groupedTeamMatches = teamMatches.groupBy { it.roundNumber }.toSortedMap()
+        // Alapértelmezett szűrők beállítása (csak ha van adat és ez az első betöltés)
+        if (_isFirstLoad.value && allTeams.isNotEmpty()) {
+            _selectedDivision.value = userPrimaryDivision
+            _selectedTeamId.value = userPrimaryTeamId
+            _isFirstLoad.value = false
+        }
 
-        // Hibaüzenet priorizálása: Előbb a gombnyomás hibája, utána a hálózati betöltés hibája
+        val divisions = allTeams.mapNotNull { it.division }.filter { it.isNotBlank() }.distinct().sorted()
+        val teamDivMap = allTeams.associate { it.id to (it.division ?: "Egyéb") }
+        val teamsList = allTeams.map { Pair(it.id, it.name) }.sortedBy { it.second }
+
+        // --- Szűrés ---
+        var filteredMatches = allMatches
+
+        if (selDivision != null) {
+            filteredMatches = filteredMatches.filter { match ->
+                teamDivMap[match.homeTeamId] == selDivision
+            }
+        }
+
+        if (selTeamId != null) {
+            filteredMatches = filteredMatches.filter { match ->
+                match.homeTeamId == selTeamId || match.guestTeamId == selTeamId
+            }
+        }
+
+        val groupedTeamMatches = filteredMatches.groupBy { it.roundNumber }.toSortedMap(compareByDescending { it })
+
         val displayError = actionError ?: dataResource.exceptionOrNull()?.message
 
         TeamMatchUiState(
@@ -106,7 +150,12 @@ class TeamMatchViewModel @Inject constructor(
             teamMatchesByRound = groupedTeamMatches,
             currentUserName = currentName,
             userTeamIds = memberOf,
-            userCaptainTeamIds = captainOf
+            userCaptainTeamIds = captainOf,
+            availableDivisions = divisions,
+            availableTeams = teamsList,
+            teamDivisions = teamDivMap,
+            selectedDivision = selDivision ?: userPrimaryDivision,
+            selectedTeamId = selTeamId ?: userPrimaryTeamId
         )
     }.stateIn(
         scope = viewModelScope,
@@ -118,16 +167,22 @@ class TeamMatchViewModel @Inject constructor(
         when (event) {
             is TeamMatchScreenEvent.LoadTeamMatches -> {
                 _actionError.value = null
-                _refreshTrigger.value += 1 // Növeljük a számlálót
+                _refreshTrigger.value += 1
             }
-
+            is TeamMatchScreenEvent.OnDivisionSelected -> {
+                _selectedDivision.value = event.division
+                _selectedTeamId.value = null // Divízió váltásnál reseteljük a csapatot
+            }
+            is TeamMatchScreenEvent.OnTeamSelected -> {
+                _selectedTeamId.value = event.teamId
+            }
             is TeamMatchScreenEvent.OnApplyForMatch -> {
                 viewModelScope.launch {
                     _isMutating.value = true
                     _actionError.value = null
                     try {
                         applyForMatchUseCase(event.matchId)
-                        _refreshTrigger.value += 1 // Siker -> Újratöltjük az adatokat!
+                        _refreshTrigger.value += 1
                     } catch (e: Exception) {
                         e.printStackTrace()
                         _actionError.value = "Sikertelen jelentkezés: ${e.message}"
@@ -136,7 +191,6 @@ class TeamMatchViewModel @Inject constructor(
                     }
                 }
             }
-
             is TeamMatchScreenEvent.OnToggleParticipantStatus -> {
                 viewModelScope.launch {
                     _isMutating.value = true
@@ -144,7 +198,7 @@ class TeamMatchViewModel @Inject constructor(
                     try {
                         val newStatus = if (event.currentStatus == "SELECTED") "APPLIED" else "SELECTED"
                         updateParticipantStatusUseCase(event.participantId, newStatus)
-                        _refreshTrigger.value += 1 // Siker -> Újratöltjük az adatokat!
+                        _refreshTrigger.value += 1
                     } catch (e: Exception) {
                         e.printStackTrace()
                         _actionError.value = "Sikertelen státusz frissítés: ${e.message}"
