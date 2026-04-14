@@ -1,18 +1,22 @@
 package hu.bme.aut.android.demo.data.fcm.service
 
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
+import hu.bme.aut.android.demo.MainActivity
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.fcm.usecases.RegisterFcmTokenUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.jvm.java
 
 @AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
@@ -41,8 +45,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         remoteMessage.notification?.let { notification ->
             val title = notification.title ?: "Új értesítés"
             val body = notification.body ?: "Nincs üzenet"
-            // FIGYELEM: Ehhez kell a futásidejű engedélykérés a MainActivity-ben!
-            showNotification(title, body)
+            val matchId = remoteMessage.data["matchId"]
+            showNotification(title, body, matchId)
         }
 
         if (remoteMessage.data.isNotEmpty()) {
@@ -50,16 +54,34 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    private fun showNotification(title: String, message: String) {
-            val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+    private fun showNotification(title: String, message: String, matchId: String?) {
+        // 1. Intent elkészítése, ami megnyitja a MainActivity-t
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            // Ha a backend küldött matchId-t, átadjuk az indításnak!
+            if (matchId != null) {
+                putExtra("NAVIGATE_TO_MATCH", matchId)
+            }
+        }
+
+        // 2. PendingIntent: Ez csomagolja be az Intentet az értesítés számára
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // 3. Értesítés építése a setContentIntent-tel
+        val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(SMALL_ICON_RES_ID)
             .setContentTitle(title)
             .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // Magas prioritás, hogy felülről leugorjon!
+            .setAutoCancel(true) // Kattintásra eltűnik az értesítés
+            .setContentIntent(pendingIntent) // <--- EZ NYITJA MEG AZ APPOT!
 
-        val notificationManager =
-            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
     }
 

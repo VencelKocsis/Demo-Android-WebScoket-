@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import hu.bme.aut.android.demo.navigation.AppNavHost
@@ -26,11 +27,8 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        if (isGranted) {
-            Log.d("FCM", "✅ Értesítési engedély megadva.")
-        } else {
-            Log.w("FCM", "❌ Értesítési engedély megtagadva.")
-        }
+        if (isGranted) Log.d("FCM", "✅ Értesítési engedély megadva.")
+        else Log.w("FCM", "❌ Értesítési engedély megtagadva.")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -39,16 +37,24 @@ class MainActivity : AppCompatActivity() {
 
         createNotificationChannel()
         requestNotificationPermission()
-
         enableEdgeToEdge()
 
+        val targetMatchId = intent.extras?.getString("NAVIGATE_TO_MATCH")
+
         setContent {
-            // A saját témánkat használjuk (DemoTheme), ami a ui/theme mappában van
             DemoTheme {
-                // 1. Létrehozzuk a NavController-t, ami kezeli a navigációt
                 val navController = rememberNavController()
 
-                // 2. Meghívjuk a KÜLÖN fájlban lévő AppNavHost-ot (navigation package)
+                // DEEP LINK KEZELÉSE (Ha értesítésből nyitották meg)
+                LaunchedEffect(targetMatchId) {
+                    if (targetMatchId != null) {
+                        Log.d("MainActivity", "Navigálás a meccs részleteire: $targetMatchId")
+                        navController.navigate("match_details/$targetMatchId") {
+                            launchSingleTop = true
+                        }
+                    }
+                }
+
                 AppNavHost(navController = navController)
             }
         }

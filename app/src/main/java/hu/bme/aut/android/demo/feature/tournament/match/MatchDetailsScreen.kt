@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.feature.tournament.match
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
@@ -38,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -54,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +80,7 @@ import hu.bme.aut.android.demo.ui.theme.ProgressPink
 import hu.bme.aut.android.demo.ui.theme.ProgressPinkDark
 import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
+import hu.bme.aut.android.demo.util.addMatchToCalendar
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,6 +93,7 @@ fun MatchDetailsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     DisposableEffect(lifecycleOwner) {
@@ -296,6 +302,21 @@ fun MatchDetailsScreen(
                                 item {
                                     Spacer(modifier = Modifier.height(32.dp))
 
+                                    if (match.status == "in_progress" || match.status == "scheduled") {
+                                        OutlinedButton(
+                                            onClick = { addMatchToCalendar(context, match) },
+                                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.primary
+                                            ),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                                        ) {
+                                            Icon(Icons.Default.Event, contentDescription = "Naptár")
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Hozzáadás a Naptárhoz", fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+
                                     if (match.status == "in_progress" || match.status == "finished") {
                                         Button(
                                             onClick = onNavigateToLiveMatch,
@@ -368,6 +389,7 @@ fun MatchDetailsScreen(
                                                 Button(
                                                     onClick = {
                                                         viewModel.onEvent(MatchDetailsEvent.OnFinalizeRoster)
+                                                        addMatchToCalendar(context, match)
                                                         onNavigateToLiveMatch()
                                                     },
                                                     modifier = Modifier

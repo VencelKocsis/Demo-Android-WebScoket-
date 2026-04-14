@@ -40,7 +40,7 @@ class FillMatchResultsTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun fillMatchResultsAndSignWorkflow() {
-        val match = TestData.teamMatches.last()
+        val match = TestData.teamMatches[35]
         val homeTeam = match.homeTeam
         val guestTeam = match.guestTeam
 
@@ -53,6 +53,11 @@ class FillMatchResultsTest {
         navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
         waitForMatchList(composeTestRule)
         openMatch(composeTestRule, match.id)
+
+        // Várjuk meg, amíg az új emulátor betölti a meccs részleteit
+        composeTestRule.waitUntilAtLeastOneExists(hasText("Mérkőzés Információk", substring = true, ignoreCase = true), 15000)
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
 
         scrollAndClickText(composeTestRule, "elindítása", "Nem találtam meg a Meccs Indítása gombot!")
 
@@ -76,6 +81,11 @@ class FillMatchResultsTest {
         navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
         waitForMatchList(composeTestRule)
         openMatch(composeTestRule, match.id)
+
+        // Itt is a fixen látható elemre várunk a hálózat betöltésekor
+        composeTestRule.waitUntilAtLeastOneExists(hasText("Mérkőzés Információk", substring = true, ignoreCase = true), 15000)
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
 
         scrollAndClickText(composeTestRule, "élő mérkőzés", "Nem találtam meg a Tovább az Élő Mérkőzésre gombot!")
 
@@ -103,32 +113,43 @@ class FillMatchResultsTest {
 
                 composeTestRule.waitUntilAtLeastOneExists(hasTestTag("input_home_$setIndex"), 10000)
 
-                Thread.sleep(500)
+                Thread.sleep(800) // Nagyobb szünet mielőtt bármit is csinálunk a szettel
 
+                // 🔥 HAZAI PONT BEÍRÁSA LASSÍTVA ÉS BIZTOSÍTVA
                 val homeNode = composeTestRule.onNode(hasTestTag("input_home_$setIndex"), useUnmergedTree = true)
                 homeNode.performClick()
                 composeTestRule.waitForIdle()
-                Thread.sleep(300)
+                Thread.sleep(800) // Bőséges idő a billentyűzet megnyílásának
+
                 homeNode.performTextClearance()
-                homeNode.performTextInput(homePoints.toString())
-
                 composeTestRule.waitForIdle()
-                Thread.sleep(400)
+                Thread.sleep(200) // Idő a törlés regisztrálására
 
+                homeNode.performTextInput(homePoints.toString())
+                composeTestRule.waitForIdle()
+                Thread.sleep(800) // Idő a bevitel regisztrálására
+
+                // 🔥 VENDÉG PONT BEÍRÁSA LASSÍTVA ÉS BIZTOSÍTVA
                 val guestNode = composeTestRule.onNode(hasTestTag("input_guest_$setIndex"), useUnmergedTree = true)
                 guestNode.performClick()
                 composeTestRule.waitForIdle()
-                Thread.sleep(300)
-                guestNode.performTextClearance()
-                guestNode.performTextInput(guestPoints.toString())
+                Thread.sleep(800) // Bőséges idő a fókuszváltásnak
 
+                guestNode.performTextClearance()
                 composeTestRule.waitForIdle()
-                Thread.sleep(1000)
+                Thread.sleep(200) // Idő a törlés regisztrálására
+
+                guestNode.performTextInput(guestPoints.toString())
+                composeTestRule.waitForIdle()
+                Thread.sleep(1500) // Extrém várakozás, hogy mindkét mező értéke biztosan beálljon
 
                 if (setIndex < generatedSets.size - 1) {
-                    composeTestRule.onNode(hasText("Mentés", substring = true, ignoreCase = true)).performClick()
+                    val mentesGomb = composeTestRule.onNode(hasText("Mentés", substring = true, ignoreCase = true))
+                    mentesGomb.assertIsEnabled() // Ha itt elszáll, tudjuk, hogy az emulátor megint megette a számot!
+                    mentesGomb.performClick()
+
                     composeTestRule.waitForIdle()
-                    Thread.sleep(2500)
+                    Thread.sleep(3000) // Még több idő a hálózati kérésnek és a Compose újrarenderelésnek
                 }
             }
 
@@ -165,6 +186,11 @@ class FillMatchResultsTest {
         navigate(composeTestRule, "Bajnokság", Navigation.OnNodeWith.TEXT)
         waitForMatchList(composeTestRule)
         openMatch(composeTestRule, match.id)
+
+        // És itt is a fixen látható elemre várunk!
+        composeTestRule.waitUntilAtLeastOneExists(hasText("Mérkőzés Információk", substring = true, ignoreCase = true), 15000)
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
 
         scrollAndClickText(composeTestRule, "élő mérkőzés", "Nem találtam meg a Tovább az Élő Mérkőzésre gombot a vendég kapitánynál!")
 
