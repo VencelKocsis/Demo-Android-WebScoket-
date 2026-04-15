@@ -16,7 +16,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import hu.bme.aut.android.demo.navigation.AppNavHost
+import hu.bme.aut.android.demo.navigation.MatchDetails
 import hu.bme.aut.android.demo.ui.theme.DemoTheme
+import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -27,8 +29,11 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        if (isGranted) Log.d("FCM", "✅ Értesítési engedély megadva.")
-        else Log.w("FCM", "❌ Értesítési engedély megtagadva.")
+        if (isGranted) {
+            Log.d("FCM", "✅ Értesítési engedély megadva.")
+        } else {
+            Log.w("FCM", "❌ Értesítési engedély megtagadva.")
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -37,20 +42,30 @@ class MainActivity : AppCompatActivity() {
 
         createNotificationChannel()
         requestNotificationPermission()
+
         enableEdgeToEdge()
 
-        val targetMatchId = intent.extras?.getString("NAVIGATE_TO_MATCH")
+        // Kiolvassuk a PendingIntent-ből a meccs ID-t
+        val targetMatchId = intent.extras?.getString("NAVIGATE_TO_MATCH")?.toIntOrNull()
 
         setContent {
             DemoTheme {
                 val navController = rememberNavController()
 
-                // DEEP LINK KEZELÉSE (Ha értesítésből nyitották meg)
                 LaunchedEffect(targetMatchId) {
                     if (targetMatchId != null) {
                         Log.d("MainActivity", "Navigálás a meccs részleteire: $targetMatchId")
-                        navController.navigate("match_details/$targetMatchId") {
-                            launchSingleTop = true
+
+                        delay(150)
+
+                        try {
+                            navController.navigate(MatchDetails(matchId = targetMatchId)) {
+                                launchSingleTop = true
+                            }
+
+                            intent.removeExtra("NAVIGATE_TO_MATCH")
+                        } catch (e: Exception) {
+                            Log.e("MainActivity", "Hiba a navigációnál: ${e.message}")
                         }
                     }
                 }
@@ -60,9 +75,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Létrehozza az értesítési csatornát.
-     */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -78,9 +90,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Engedélyt kér a push értesítések megjelenítésére (Android 13+).
-     */
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!getSystemService(NotificationManager::class.java).areNotificationsEnabled()) {
