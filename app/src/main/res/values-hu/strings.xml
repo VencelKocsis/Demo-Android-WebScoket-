@@ -81,8 +81,8 @@
     <string name="starting_team_and_statistics">Kezdőcsapat és Statisztika</string>
     <string name="x_home">%1$s (Hazai)</string>
     <string name="x_guest">%1$s (Vendég)</string>
-    <string name="detailed_results">RÉSZLETES EREDMÉNYEK 🏓</string>
-    <string name="to_live_match">TOVÁBB AZ ÉLŐ MÉRKŐZÉSRE 🏓</string>
+    <string name="detailed_results">RÉSZLETES EREDMÉNYEK</string>
+    <string name="to_live_match">TOVÁBB AZ ÉLŐ MÉRKŐZÉSRE</string>
     <string name="apply_for_match">Jelentkezem a mérkőzésre</string>
     <string name="captain_selected_you">A kapitány beválogatott a keretbe! Készülj!</string>
     <string name="wait_for_captain_selection">Jelentkezésed rögzítve. Várj a kapitány döntésére.</string>
