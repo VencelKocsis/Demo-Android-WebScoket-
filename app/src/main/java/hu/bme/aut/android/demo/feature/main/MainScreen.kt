@@ -30,7 +30,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.messaging.FirebaseMessaging
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.feature.auth.AuthState
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
@@ -44,8 +43,6 @@ import hu.bme.aut.android.demo.navigation.Leaderboard
 import hu.bme.aut.android.demo.navigation.Profile
 import hu.bme.aut.android.demo.navigation.Team
 import hu.bme.aut.android.demo.navigation.Tournament
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.delay
 
 // Segéd osztály az alsó menüpontoknak
 private data class BottomNavItem(
@@ -83,27 +80,6 @@ fun MainScreen(
             }
         }
     )
-
-    // FCM TOKEN
-    LaunchedEffect(Unit) {
-        var tokenRetrieved = false
-        var retryCount = 0
-        while (!tokenRetrieved && retryCount < 3) {
-            try {
-                val token = FirebaseMessaging.getInstance().token.await()
-                val currentUserEmail = authViewModel.getCurrentUser()?.email
-                if (currentUserEmail != null) {
-                    authViewModel.registerFcmToken(currentUserEmail, token)
-                    tokenRetrieved = true
-                } else {
-                    delay(2000)
-                }
-            } catch (e: Exception) {
-                retryCount++
-                delay(5000)
-            }
-        }
-    }
 
     val bottomNavItems = listOf(
         BottomNavItem(Tournament, R.string.championship, Icons.Default.EmojiEvents),
