@@ -1,6 +1,5 @@
 package hu.bme.aut.android.demo.feature.auth
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
@@ -12,6 +11,7 @@ import hu.bme.aut.android.demo.domain.auth.usecase.SignInUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecase.SignOutUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecases.ForgotPasswordUseCase
 import hu.bme.aut.android.demo.domain.auth.usecases.RegisterUserUseCase
+import hu.bme.aut.android.demo.data.fcm.service.FcmTokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Adatmodell a bejelentkezési képernyő állapotához
 data class AuthUiState(
     val emailInput: String = "",
     val passwordInput: String = "",
@@ -35,38 +34,32 @@ data class AuthUiState(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    // Megtartjuk az AuthRepository-t a getCurrentUser() hívása miatt (ami a ViewModel inicializálása)
     private val authRepository: AuthRepository,
-    // Use Case-ek injektálása
     private val registerUserUseCase: RegisterUserUseCase,
     private val signInUserUseCase: SignInUserUseCase,
     private val signOutUserUseCase: SignOutUserUseCase,
     private val apiService: ApiService,
-    private val registerFcmTokenUseCase: RegisterUserUseCase,
-    private val forgotPasswordUseCase: ForgotPasswordUseCase
+    private val forgotPasswordUseCase: ForgotPasswordUseCase,
+    private val fcmTokenManager: FcmTokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    /**
-     * Ezt a StateFlow-t használja a navigációs host (AppNavHost) a kezdőképernyő eldöntéséhez.
-     */
     val authState: StateFlow<AuthState> = _uiState.map { uiState ->
         when {
             uiState.isAuthenticated -> AuthState.AUTHENTICATED
-            uiState.isLoading -> AuthState.UNKNOWN // Ha tölt, még nem tudjuk a végső állapotot
+            uiState.isLoading -> AuthState.UNKNOWN
             else -> AuthState.UNAUTHENTICATED
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000), // Megtartja az állapotot, amíg az UI látható
-        initialValue = AuthState.UNKNOWN // Kezdeti állapot, amíg az ellenőrzés le nem fut
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = AuthState.UNKNOWN
     )
 
-
     init {
-        // 1. Kezdeti állapot ellenőrzése: Be van már jelentkezve a felhasználó?
+        // App indulásakor, ha be van jelentkezve, szinkronizáljuk a Usert és a Tokent is!
         val currentUser = authRepository.getCurrentUser()
         if (currentUser != null) {
             _uiState.update { it.copy(isAuthenticated = true, currentUser = currentUser) }
@@ -76,8 +69,13 @@ class AuthViewModel @Inject constructor(
                     val dto = UserDTO(id = 0, email = currentUser.email ?: "", firstName = "", lastName = "")
                     val backendUser = apiService.syncUser(dto)
                     _uiState.update { it.copy(backendUser = backendUser) }
+
+                    // Token szinkronizáció minden induláskor!
+                    currentUser.email?.let { email ->
+                        fcmTokenManager.syncTokenWithServer(email)
+                    }
                 } catch (e: Exception) {
-                    e.printStackTrace() // Kisebb hiba esetén nem léptetjük ki, de logolhatjuk
+                    e.printStackTrace()
                 }
             }
         }
@@ -85,95 +83,48 @@ class AuthViewModel @Inject constructor(
 
     fun getCurrentUser() = authRepository.getCurrentUser()
 
-    fun registerFcmToken(email: String, token: String) {
-        viewModelScope.launch {
-            try {
-                registerFcmTokenUseCase(email, token)
-                Log.d("AuthViewModel", "✅ FCM Token sikeresen szinkronizálva a Ktor szerverrel!")
-            } catch (e: Exception) {
-                Log.e("AuthViewModel", "❌ FCM Token szinkronizálás SIKERTELEN: ${e.message}")
-            }
-        }
-    }
-
-    // Frissíti az e-mail beviteli mezőt
     fun updateEmail(email: String) {
         _uiState.update { it.copy(emailInput = email, error = null, successMessage = null) }
     }
 
-    // Frissíti a jelszó beviteli mezőt
     fun updatePassword(password: String) {
         _uiState.update { it.copy(passwordInput = password, error = null, successMessage = null) }
     }
 
-    /**
-     * Törli az aktuális hibaüzenetet az UI állapotból.
-     * Hasznos módváltáskor.
-     */
     fun clearError() {
         _uiState.update { it.copy(error = null, successMessage = null) }
     }
 
-    /**
-     * ÚJ: Jelszó visszaállító e-mail küldése.
-     */
     fun forgotPassword() {
         _uiState.update { it.copy(isLoading = true, error = null, successMessage = null) }
 
         viewModelScope.launch {
             val result = forgotPasswordUseCase(uiState.value.emailInput)
-
             result.onSuccess {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        successMessage = "Jelszó-visszaállító e-mail elküldve! Kérjük, ellenőrizd a fiókodat."
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false, successMessage = "Jelszó-visszaállító e-mail elküldve! Kérjük, ellenőrizd a fiókodat.") }
             }.onFailure { exception ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = exception.message ?: "Ismeretlen hiba történt a küldéskor."
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false, error = exception.message ?: "Ismeretlen hiba történt a küldéskor.") }
             }
         }
     }
 
-    /**
-     * Regisztráció kezelése.
-     * Csak meghívja a RegisterUserUseCase-t és kezeli a Result-ot.
-     */
     fun register() {
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
-            // A Use Case hívása
-            val result = registerUserUseCase(
-                email = uiState.value.emailInput,
-                password = uiState.value.passwordInput
-            )
+            val result = registerUserUseCase(email = uiState.value.emailInput, password = uiState.value.passwordInput)
 
             result.onSuccess { firebaseUser ->
-                // 1. Firebase sikeres! Szinkronizáljunk a Ktorral!
                 try {
-                    val dto = UserDTO(
-                        id = 0,
-                        email = firebaseUser.email ?: "",
-                        firstName = "Új",
-                        lastName = "Játékos"
-                    )
-
-                    // 2. Ktor hívás (Az Interceptor itt már hozzáteszi a friss tokent!)
+                    val dto = UserDTO(id = 0, email = firebaseUser.email ?: "", firstName = "Új", lastName = "Játékos")
                     val backendUser = apiService.syncUser(dto)
 
-                    // 3. Mentjük a teljes sikert
                     _uiState.update {
-                        it.copy(
-                            isLoading = false, isAuthenticated = true,
-                            currentUser = firebaseUser, backendUser = backendUser
-                        )
+                        it.copy(isLoading = false, isAuthenticated = true, currentUser = firebaseUser, backendUser = backendUser)
+                    }
+
+                    firebaseUser.email?.let { email ->
+                        fcmTokenManager.syncTokenWithServer(email)
                     }
 
                 } catch (e: Exception) {
@@ -185,39 +136,23 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Bejelentkezés kezelése.
-     * Csak meghívja a SignInUserUseCase-t és kezeli a Result-ot.
-     */
     fun signIn() {
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
-            // A Use Case hívása
-            val result = signInUserUseCase(
-                email = uiState.value.emailInput,
-                password = uiState.value.passwordInput
-            )
+            val result = signInUserUseCase(email = uiState.value.emailInput, password = uiState.value.passwordInput)
 
             result.onSuccess { firebaseUser ->
-                // 1. Firebase sikeres! Szinkronizáljunk a Ktorral!
                 try {
-                    val dto = UserDTO(
-                        id = 0,
-                        email = firebaseUser.email ?: "",
-                        firstName = "",
-                        lastName = ""
-                    )
-
-                    // 2. Ktor hívás (Az Interceptor itt már hozzáteszi a friss tokent!)
+                    val dto = UserDTO(id = 0, email = firebaseUser.email ?: "", firstName = "", lastName = "")
                     val backendUser = apiService.syncUser(dto)
 
-                    // 3. Mentjük a teljes sikert
                     _uiState.update {
-                        it.copy(
-                            isLoading = false, isAuthenticated = true,
-                            currentUser = firebaseUser, backendUser = backendUser
-                        )
+                        it.copy(isLoading = false, isAuthenticated = true, currentUser = firebaseUser, backendUser = backendUser)
+                    }
+
+                    firebaseUser.email?.let { email ->
+                        fcmTokenManager.syncTokenWithServer(email)
                     }
 
                 } catch (e: Exception) {
@@ -230,22 +165,10 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Kijelentkezés.
-     * Csak meghívja a SignOutUserUseCase-t és frissíti az UI állapotot.
-     */
     fun signOut() {
-        // A Use Case hívása
         signOutUserUseCase()
-
         _uiState.update {
-            it.copy(
-                isAuthenticated = false,
-                currentUser = null,
-                backendUser = null,
-                emailInput = "",
-                passwordInput = ""
-            )
+            it.copy(isAuthenticated = false, currentUser = null, backendUser = null, emailInput = "", passwordInput = "")
         }
     }
 }

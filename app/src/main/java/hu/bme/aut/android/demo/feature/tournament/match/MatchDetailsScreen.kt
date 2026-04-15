@@ -313,7 +313,7 @@ fun MatchDetailsScreen(
                                         ) {
                                             Icon(Icons.Default.Event, contentDescription = "Naptár")
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Hozzáadás a Naptárhoz", fontWeight = FontWeight.Bold)
+                                            Text("Hozzáadás a Naptárhoz", fontWeight = FontWeight.Bold) // TODO extarct string resource
                                         }
                                     }
 
