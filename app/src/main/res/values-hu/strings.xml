@@ -101,11 +101,10 @@
     <string name="retry">Újrapóbálkozás</string>
     <string name="f_round">Forduló %1$d</string>
     <string name="status_scheduled">Tervezve</string>
-    <string name="status_in_progress">FOLYAMATBAN</string>
+    <string name="status_in_progress">ÉLŐ</string>
     <string name="status_finished">Befejezve</string>
     <string name="status_cancelled">Törölve</string>
     <string name="status_unknown">Ismeretlen</string>
-    <string name="map">Térkép: %1$s</string>
     <string name="no_data_for_graph">Nincs elég adat a grafikonhoz</string>
     <string name="aggregate_balance_sheet">Összesített Mérleg</string>
     <string name="from_last_5">Forma (Utolsó 5)</string>
@@ -144,4 +143,13 @@
     <string name="all_clubs">Összes Klub</string>
     <string name="done">Kész</string>
     <string name="filter">Szűrés</string>
+    <string name="add_to_calendar">Hozzáadás a Naptárhoz</string>
+    <string name="match_started_title">A mérkőzés elindult! 🏁</string>
+    <string name="match_started_body">A %1$s vs %2$s meccs hivatalosan megkezdődött.</string>
+    <string name="player_selected_title">Bekerültél a keretbe! 🏓</string>
+    <string name="player_selected_body">A kapitány kiválasztott a %1$s mérkőzésre! Készülj!</string>
+    <string name="match_finished_title">Mérkőzés lezárva! 🏓</string>
+    <string name="match_win">Gratulálunk! Megnyertétek a %1$s vs %2$s meccset (%3$s:%4$s)!</string>
+    <string name="match_loss">Sajnos a %1$s vs %2$s meccset elvesztettétek (%3$s:%4$s).</string>
+    <string name="match_draw">Döntetlen lett a %1$s vs %2$s meccs (%3$s:%4$s).</string>
 </resources>

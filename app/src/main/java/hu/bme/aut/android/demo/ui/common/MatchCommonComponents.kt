@@ -73,7 +73,7 @@ fun MatchLocationButton(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = stringResource(R.string.map, location),
+            text = location,
             style = MaterialTheme.typography.labelMedium
         )
     }
@@ -169,13 +169,6 @@ fun LiveIndicator(color: Color) {
             color = color.copy(alpha = alpha), // A kapott színt pulzáltatjuk
             modifier = Modifier.size(8.dp)
         ) {}
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = "LIVE",
-            color = color, // A szöveg is az átadott színű lesz
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Black
-        )
     }
 }
 

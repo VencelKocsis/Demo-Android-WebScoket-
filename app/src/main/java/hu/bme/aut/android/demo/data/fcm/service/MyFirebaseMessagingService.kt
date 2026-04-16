@@ -41,16 +41,59 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d(TAG, "Üzenet érkezett: ${remoteMessage.from}")
 
-        // Megjelenítjük a notifikációt, ha van benne adat (Notification payload)
-        remoteMessage.notification?.let { notification ->
-            val title = notification.title ?: "Új értesítés"
-            val body = notification.body ?: "Nincs üzenet"
-            val matchId = remoteMessage.data["matchId"]
-            showNotification(title, body, matchId)
-        }
+        val data = remoteMessage.data
 
-        if (remoteMessage.data.isNotEmpty()) {
-            Log.d(TAG, "Adat payload: ${remoteMessage.data}")
+        if (data.isNotEmpty()) {
+            val type = data["type"]
+            val matchId = data["matchId"]
+
+            when (type) {
+                "PLAYER_SELECTED" -> {
+                    val matchName = data["matchName"] ?: ""
+
+                    val title = getString(R.string.player_selected_title)
+                    val body = getString(R.string.player_selected_body, matchName)
+
+                    showNotification(title, body, matchId)
+                }
+
+                "MATCH_STARTED" -> {
+                    val homeTeam = data["homeTeam"] ?: ""
+                    val guestTeam = data["guestTeam"] ?: ""
+
+                    val title = getString(R.string.match_started_title)
+                    val body = getString(R.string.match_started_body, homeTeam, guestTeam)
+
+                    showNotification(title, body, matchId)
+                }
+
+                "MATCH_FINISHED" -> {
+                    val result = data["result"] // "WIN", "LOSS", "DRAW"
+                    val homeTeam = data["homeTeam"] ?: ""
+                    val guestTeam = data["guestTeam"] ?: ""
+                    val homeScore = data["homeScore"] ?: "0"
+                    val guestScore = data["guestScore"] ?: "0"
+
+                    val title = getString(R.string.match_finished_title)
+                    val body = when (result) {
+                        "WIN" -> getString(R.string.match_win, homeTeam, guestTeam, homeScore, guestScore)
+                        "LOSS" -> getString(R.string.match_loss, homeTeam, guestTeam, homeScore, guestScore)
+                        else -> getString(R.string.match_draw, homeTeam, guestTeam, homeScore, guestScore)
+                    }
+
+                    showNotification(title, body, matchId)
+                }
+
+                "MANUAL_TEST" -> {
+                    val testTitle = data["title"] ?: "Teszt Értesítés"
+                    val testBody = data["body"] ?: "Ez egy manuális teszt üzenet."
+                    showNotification(testTitle, testBody, null)
+                }
+
+                else -> {
+                    showNotification(getString(R.string.app_name), "Új értesítés érkezett", matchId)
+                }
+            }
         }
     }
 

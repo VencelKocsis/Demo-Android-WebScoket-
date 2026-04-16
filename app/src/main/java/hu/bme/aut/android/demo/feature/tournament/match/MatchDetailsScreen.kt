@@ -305,7 +305,9 @@ fun MatchDetailsScreen(
                                     if (match.status == "in_progress" || match.status == "scheduled") {
                                         OutlinedButton(
                                             onClick = { addMatchToCalendar(context, match) },
-                                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 16.dp),
                                             colors = ButtonDefaults.outlinedButtonColors(
                                                 contentColor = MaterialTheme.colorScheme.primary
                                             ),
@@ -313,7 +315,7 @@ fun MatchDetailsScreen(
                                         ) {
                                             Icon(Icons.Default.Event, contentDescription = "Naptár")
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Hozzáadás a Naptárhoz", fontWeight = FontWeight.Bold) // TODO extarct string resource
+                                            Text(stringResource(R.string.add_to_calendar), fontWeight = FontWeight.Bold)
                                         }
                                     }
 
@@ -503,7 +505,11 @@ fun ParticipantRow(name: String, status: String, showAction: Boolean, isLoading:
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) SuccessGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = rowAlpha)),
+                    .background(
+                        if (isSelected) SuccessGreen else MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = rowAlpha
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))

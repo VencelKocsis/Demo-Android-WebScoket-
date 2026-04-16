@@ -105,7 +105,6 @@
     <string name="status_finished">Finished</string>
     <string name="status_cancelled">Cancelled</string>
     <string name="status_unknown">Unknown</string>
-    <string name="map">Map: %1$s</string>
     <string name="no_data_for_graph">Not enough data for graph</string>
     <string name="aggregate_balance_sheet">Aggregate Balance Sheet</string>
     <string name="from_last_5">Form (Last 5)</string>
@@ -144,4 +143,13 @@
     <string name="all_clubs">All Clubs</string>
     <string name="done">Done</string>
     <string name="filter">Filter</string>
+    <string name="add_to_calendar">Add to Calendar</string>
+    <string name="match_started_title">Match Started! 🏁</string>
+    <string name="match_started_body">The match %1$s vs %2$s has officially started.</string>
+    <string name="player_selected_title">Selected for the squad! 🏓</string>
+    <string name="player_selected_body">The captain selected you for the %1$s match! Get ready!</string>
+    <string name="match_finished_title">Match Finished! 🏓</string>
+    <string name="match_win">Congratulations! You won the match %1$s vs %2$s (%3$s:%4$s)!</string>
+    <string name="match_loss">Unfortunately, you lost the match %1$s vs %2$s (%3$s:%4$s).</string>
+    <string name="match_draw">The match %1$s vs %2$s ended in a draw (%3$s:%4$s).</string>
 </resources>
