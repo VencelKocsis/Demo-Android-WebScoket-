@@ -27,11 +27,13 @@ data class TeamMatchUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val teamMatchesByRound: Map<Int, List<TeamMatch>> = emptyMap(),
+
+    val liveMatches: List<TeamMatch> = emptyList(),
+
     val currentUserName: String = "",
     val userTeamIds: List<Int> = emptyList(),
     val userCaptainTeamIds: List<Int> = emptyList(),
 
-    // SZŰRŐ ADATOK
     val availableDivisions: List<String> = emptyList(),
     val availableTeams: List<Pair<Int, String>> = emptyList(),
     val teamDivisions: Map<Int, String> = emptyMap(),
@@ -44,8 +46,6 @@ sealed class TeamMatchScreenEvent {
     object LoadTeamMatches : TeamMatchScreenEvent()
     data class OnApplyForMatch(val matchId: Int) : TeamMatchScreenEvent()
     data class OnToggleParticipantStatus(val participantId: Int, val currentStatus: String) : TeamMatchScreenEvent()
-
-    // Szűrő események
     data class OnDivisionSelected(val division: String?) : TeamMatchScreenEvent()
     data class OnTeamSelected(val teamId: Int?) : TeamMatchScreenEvent()
 }
@@ -114,7 +114,6 @@ class TeamMatchViewModel @Inject constructor(
             }
         }
 
-        // Alapértelmezett szűrők beállítása (csak ha van adat és ez az első betöltés)
         if (_isFirstLoad.value && allTeams.isNotEmpty()) {
             _selectedDivision.value = userPrimaryDivision
             _selectedTeamId.value = userPrimaryTeamId
@@ -125,7 +124,10 @@ class TeamMatchViewModel @Inject constructor(
         val teamDivMap = allTeams.associate { it.id to (it.division ?: "Egyéb") }
         val teamsList = allTeams.map { Pair(it.id, it.name) }.sortedBy { it.second }
 
-        // --- Szűrés ---
+        // --- Élő meccsek kigyűjtése a teljes ligából (szűrés előtt!) ---
+        val liveMatchesList = allMatches.filter { it.status == "in_progress" }
+
+        // --- Normál lista szűrése ---
         var filteredMatches = allMatches
 
         if (selDivision != null) {
@@ -148,6 +150,7 @@ class TeamMatchViewModel @Inject constructor(
             isLoading = dataResource.isLoading || isMutating,
             errorMessage = displayError,
             teamMatchesByRound = groupedTeamMatches,
+            liveMatches = liveMatchesList,
             currentUserName = currentName,
             userTeamIds = memberOf,
             userCaptainTeamIds = captainOf,
@@ -171,7 +174,7 @@ class TeamMatchViewModel @Inject constructor(
             }
             is TeamMatchScreenEvent.OnDivisionSelected -> {
                 _selectedDivision.value = event.division
-                _selectedTeamId.value = null // Divízió váltásnál reseteljük a csapatot
+                _selectedTeamId.value = null
             }
             is TeamMatchScreenEvent.OnTeamSelected -> {
                 _selectedTeamId.value = event.teamId

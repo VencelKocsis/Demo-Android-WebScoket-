@@ -152,4 +152,5 @@
     <string name="match_win">Congratulations! You won the match %1$s vs %2$s (%3$s:%4$s)!</string>
     <string name="match_loss">Unfortunately, you lost the match %1$s vs %2$s (%3$s:%4$s).</string>
     <string name="match_draw">The match %1$s vs %2$s ended in a draw (%3$s:%4$s).</string>
+    <string name="live_matches">LIVE MATCHES</string>
 </resources>
