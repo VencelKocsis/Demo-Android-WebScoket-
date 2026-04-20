@@ -153,4 +153,8 @@
     <string name="match_loss">Unfortunately, you lost the match %1$s vs %2$s (%3$s:%4$s).</string>
     <string name="match_draw">The match %1$s vs %2$s ended in a draw (%3$s:%4$s).</string>
     <string name="live_matches">LIVE MATCHES</string>
+    <string name="season_spring">Spring</string>
+    <string name="season_autumn">Autumn</string>
+    <string name="season_summer">Summer</string>
+    <string name="season_winter">Winter</string>
 </resources>

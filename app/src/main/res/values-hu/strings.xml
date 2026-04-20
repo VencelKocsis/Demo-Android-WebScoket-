@@ -153,4 +153,8 @@
     <string name="match_loss">Sajnos a %1$s vs %2$s meccset elvesztettétek (%3$s:%4$s).</string>
     <string name="match_draw">Döntetlen lett a %1$s vs %2$s meccs (%3$s:%4$s).</string>
     <string name="live_matches">ÉLŐ MÉRKŐZÉSEK</string>
+    <string name="season_spring">Tavasz</string>
+    <string name="season_autumn">Ősz</string>
+    <string name="season_summer">Nyár</string>
+    <string name="season_winter">Tél</string>
 </resources>

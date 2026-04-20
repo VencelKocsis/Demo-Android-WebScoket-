@@ -59,7 +59,7 @@ fun HistoryScreen(
                         defaultOptionText = stringResource(R.string.all),
                         options = uiState.availableSeasons,
                         selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
-                        optionLabeler = { it.second },
+                        optionLabeler = { translateSeasonName(it.second) },
                         onOptionSelected = { viewModel.onEvent(HistoryScreenEvent.OnSeasonSelected(it?.first)) },
                         modifier = Modifier.fillMaxWidth()
                     )

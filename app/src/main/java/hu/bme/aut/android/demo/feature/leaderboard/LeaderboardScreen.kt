@@ -22,7 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
+import hu.bme.aut.android.demo.domain.team.model.TeamStats
 import hu.bme.aut.android.demo.R
+import hu.bme.aut.android.demo.ui.common.GenericFilterDropdown
+import hu.bme.aut.android.demo.ui.common.translateSeasonName
 import hu.bme.aut.android.demo.ui.theme.Bronze
 import hu.bme.aut.android.demo.ui.theme.Gold
 import hu.bme.aut.android.demo.ui.theme.Silver
@@ -33,7 +36,6 @@ fun LeaderboardScreen(
     viewModel: LeaderboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var divisionExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.leaderboard)) }) }
@@ -42,32 +44,41 @@ fun LeaderboardScreen(
             .fillMaxSize()
             .padding(padding)) {
 
-            // --- SZŰRŐ ---
-            if (uiState.availableDivisions.isNotEmpty()) {
-                Box(modifier = Modifier
+            // --- SZŰRŐK (Szezon és Divízió egymás mellett) ---
+            Row(
+                modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    ExposedDropdownMenuBox(
-                        expanded = divisionExpanded, onExpandedChange = { divisionExpanded = !divisionExpanded }
-                    ) {
-                        OutlinedTextField(
-                            value = uiState.selectedDivision ?: stringResource(R.string.all),
-                            onValueChange = {}, readOnly = true, label = { Text(stringResource(R.string.division_1)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = divisionExpanded) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(), colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                        )
-                        ExposedDropdownMenu(expanded = divisionExpanded, onDismissRequest = { divisionExpanded = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.all)) }, onClick = { viewModel.selectDivision(null); divisionExpanded = false })
-                            uiState.availableDivisions.forEach { div ->
-                                DropdownMenuItem(text = { Text(div) }, onClick = { viewModel.selectDivision(div); divisionExpanded = false })
-                            }
-                        }
-                    }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 1. Szezon választó
+                if (uiState.availableSeasons.isNotEmpty()) {
+                    GenericFilterDropdown(
+                        label = stringResource(R.string.season),
+                        defaultOptionText = stringResource(R.string.all),
+                        options = uiState.availableSeasons,
+                        selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
+                        optionLabeler = { translateSeasonName(it.second) },
+                        onOptionSelected = { viewModel.selectSeason(it?.first) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // 2. Divízió választó
+                if (uiState.availableDivisions.isNotEmpty()) {
+                    GenericFilterDropdown(
+                        label = stringResource(R.string.division_1),
+                        defaultOptionText = stringResource(R.string.all),
+                        options = uiState.availableDivisions,
+                        selectedOption = uiState.selectedDivision,
+                        optionLabeler = { it },
+                        onOptionSelected = { viewModel.selectDivision(it) },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
+            // --- TARTALOM ---
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (uiState.filteredTeams.isEmpty()) {
@@ -75,17 +86,15 @@ fun LeaderboardScreen(
                     Text(stringResource(R.string.no_teams_in_division), color = Color.Gray)
                 }
             } else {
-                // Szétválasztjuk az első hármat és a többit
                 val top3 = uiState.filteredTeams.take(3)
                 val remainingTeams = uiState.filteredTeams.drop(3)
 
-                // Csak akkor kell görgethető LazyColumn, ha lejjebb a táblázatnak is görgethetőnek kell lennie
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
 
                     // --- DOBOGÓ SZEKCIÓ ---
                     item {
                         if (top3.isNotEmpty()) {
-                            Podium(topTeams = top3)
+                            Podium(topTeams = top3, selectedSeasonId = uiState.selectedSeasonId)
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
@@ -111,17 +120,14 @@ fun LeaderboardScreen(
 
                         // --- TÁBLÁZAT TESTE (4. Helytől) ---
                         itemsIndexed(remainingTeams) { index, team ->
-                            val actualRank = index + 4 // Mivel a 4. helytől kezdődik
+                            val actualRank = index + 4
                             val isEven = index % 2 == 0
+                            val stats = team.getStats(uiState.selectedSeasonId)
 
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(
-                                        if (isEven) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface.copy(
-                                            alpha = 0.5f
-                                        )
-                                    )
+                                    .background(if (isEven) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -132,9 +138,9 @@ fun LeaderboardScreen(
                                     Text(team.clubName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                 }
 
-                                Text("${team.matchesPlayed}", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center)
-                                Text("${team.wins}-${team.draws}-${team.losses}", modifier = Modifier.width(60.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
-                                Text("${team.points}", modifier = Modifier.width(45.dp), textAlign = TextAlign.End, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                Text("${stats.matchesPlayed}", modifier = Modifier.width(30.dp), textAlign = TextAlign.Center)
+                                Text("${stats.wins}-${stats.draws}-${stats.losses}", modifier = Modifier.width(60.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
+                                Text("${stats.points}", modifier = Modifier.width(45.dp), textAlign = TextAlign.End, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             }
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         }
@@ -148,7 +154,7 @@ fun LeaderboardScreen(
 // --- DOBOGÓ KOMPONENSEK ---
 
 @Composable
-fun Podium(topTeams: List<TeamDetails>) {
+fun Podium(topTeams: List<TeamDetails>, selectedSeasonId: Int?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -159,6 +165,7 @@ fun Podium(topTeams: List<TeamDetails>) {
         // 2. Helyezett (Bal oldalon)
         PodiumItem(
             team = topTeams.getOrNull(1),
+            stats = topTeams.getOrNull(1)?.getStats(selectedSeasonId),
             rank = 2,
             color = Silver,
             pillarHeight = 110.dp,
@@ -168,6 +175,7 @@ fun Podium(topTeams: List<TeamDetails>) {
         // 1. Helyezett (Középen, a legmagasabb)
         PodiumItem(
             team = topTeams.getOrNull(0),
+            stats = topTeams.getOrNull(0)?.getStats(selectedSeasonId),
             rank = 1,
             color = Gold,
             pillarHeight = 150.dp,
@@ -177,6 +185,7 @@ fun Podium(topTeams: List<TeamDetails>) {
         // 3. Helyezett (Jobb oldalon)
         PodiumItem(
             team = topTeams.getOrNull(2),
+            stats = topTeams.getOrNull(2)?.getStats(selectedSeasonId),
             rank = 3,
             color = Bronze,
             pillarHeight = 85.dp,
@@ -188,6 +197,7 @@ fun Podium(topTeams: List<TeamDetails>) {
 @Composable
 fun PodiumItem(
     team: TeamDetails?,
+    stats: TeamStats?,
     rank: Int,
     color: Color,
     pillarHeight: Dp,
@@ -198,7 +208,7 @@ fun PodiumItem(
         verticalArrangement = Arrangement.Bottom,
         modifier = modifier.padding(horizontal = 4.dp)
     ) {
-        if (team != null) {
+        if (team != null && stats != null) {
             Text(
                 text = team.name,
                 fontWeight = FontWeight.Bold,
@@ -207,8 +217,9 @@ fun PodiumItem(
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium
             )
+
             Text(
-                text = "${team.points} pont",
+                text = "${stats.points} pont",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Black

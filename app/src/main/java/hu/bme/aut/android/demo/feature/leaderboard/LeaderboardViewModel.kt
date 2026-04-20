@@ -3,8 +3,11 @@ package hu.bme.aut.android.demo.feature.leaderboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.team.model.TeamDetails
+import hu.bme.aut.android.demo.domain.team.model.TeamStats
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
+import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,15 +18,22 @@ import javax.inject.Inject
 data class LeaderboardUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
+
     val allTeams: List<TeamDetails> = emptyList(),
     val filteredTeams: List<TeamDetails> = emptyList(),
+
+    val availableSeasons: List<Pair<Int, String>> = emptyList(),
     val availableDivisions: List<String> = emptyList(),
+
+    val selectedSeasonId: Int? = null,
     val selectedDivision: String? = null
 )
 
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
-    private val getTeamsUseCase: GetTeamsUseCase
+    private val getTeamsUseCase: GetTeamsUseCase,
+    private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LeaderboardUiState())
@@ -35,16 +45,62 @@ class LeaderboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val teams = getTeamsUseCase()
+                val baseTeams = getTeamsUseCase()
+                val allMatches = getTeamMatchesUseCase()
+                val finishedMatches = allMatches.filter { it.status == "finished" }
 
-                val divisions = teams.mapNotNull { it.division }.filter { it.isNotBlank() }.distinct().sorted()
-                val defaultDiv = divisions.firstOrNull()
+                // --- 1. SZEZON STATISZTIKÁK KISZÁMÍTÁSA A TELEFONON ---
+                val enhancedTeams = baseTeams.map { team ->
+                    val teamMatches = finishedMatches.filter { it.homeTeamId == team.id || it.guestTeamId == team.id }
+                    val matchesBySeason = teamMatches.groupBy { it.seasonId }
+
+                    val calculatedSeasonStats = matchesBySeason.mapValues { (_, matches) ->
+                        var w = 0; var l = 0; var d = 0
+                        matches.forEach { m ->
+                            val isHome = m.homeTeamId == team.id
+                            val myScore = if (isHome) m.homeTeamScore else m.guestTeamScore
+                            val oppScore = if (isHome) m.guestTeamScore else m.homeTeamScore
+
+                            when {
+                                myScore > oppScore -> w++
+                                myScore < oppScore -> l++
+                                else -> d++
+                            }
+                        }
+                        // PONTSZÁMÍTÁS SZABÁLY: (pl. 2 pont a győzelem, 1 pont döntetlen, 0 pont vereség)
+                        val p = (w * 2) + (d * 1)
+                        TeamStats(matches.size, w, l, d, p)
+                    }
+
+                    // Frissítjük a csapat modellt az új map-pel
+                    team.copy(seasonStats = calculatedSeasonStats)
+                }
+
+                // --- 2. FELHASZNÁLÓ DIVÍZIÓJÁNAK KIKERESÉSE ---
+                val currentUserUid = getCurrentUserUseCase()?.uid
+                var userPrimaryDivision: String? = null
+                if (currentUserUid != null) {
+                    val userTeam = enhancedTeams.find { team -> team.members.any { it.uid == currentUserUid } }
+                    if (userTeam != null) { userPrimaryDivision = userTeam.division }
+                }
+
+                // --- 3. SZEZONOK KINYERÉSE ---
+                val seasonPairs = finishedMatches
+                    .map { Pair(it.seasonId, it.seasonName ?: "Ismeretlen szezon") }
+                    .distinctBy { it.first }
+                    .sortedByDescending { it.first }
+
+                val latestSeasonId = seasonPairs.firstOrNull()?.first
+                val divisions = enhancedTeams.mapNotNull { it.division }.filter { it.isNotBlank() }.distinct().sorted()
+                val defaultDiv = userPrimaryDivision ?: divisions.firstOrNull()
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        allTeams = teams,
+                        allTeams = enhancedTeams, // A felokosított csapatokat adjuk át
+                        availableSeasons = seasonPairs,
                         availableDivisions = divisions,
+                        selectedSeasonId = latestSeasonId,
                         selectedDivision = defaultDiv
                     )
                 }
@@ -55,11 +111,6 @@ class LeaderboardViewModel @Inject constructor(
         }
     }
 
-    fun selectDivision(division: String?) {
-        _uiState.update { it.copy(selectedDivision = division) }
-        applyFilterAndSort()
-    }
-
     private fun applyFilterAndSort() {
         val state = _uiState.value
         var currentTeams = state.allTeams
@@ -68,9 +119,21 @@ class LeaderboardViewModel @Inject constructor(
             currentTeams = currentTeams.filter { it.division == state.selectedDivision }
         }
 
-        // 1. Pontszám alapján csökkenő, 2. Győzelmek száma alapján csökkenő
-        val sorted = currentTeams.sortedWith(compareByDescending<TeamDetails> { it.points }.thenByDescending { it.wins })
+        val sorted = currentTeams.sortedWith(
+            compareByDescending<TeamDetails> { it.getStats(state.selectedSeasonId).points }
+                .thenByDescending { it.getStats(state.selectedSeasonId).wins }
+        )
 
         _uiState.update { it.copy(filteredTeams = sorted) }
+    }
+
+    fun selectDivision(division: String?) {
+        _uiState.update { it.copy(selectedDivision = division) }
+        applyFilterAndSort()
+    }
+
+    fun selectSeason(seasonId: Int?) {
+        _uiState.update { it.copy(selectedSeasonId = seasonId) }
+        applyFilterAndSort()
     }
 }

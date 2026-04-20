@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import hu.bme.aut.android.demo.R
 
 /**
  * Univerzális kártya a szűrőknek.
@@ -53,7 +55,7 @@ fun <T> GenericFilterDropdown(
     defaultOptionText: String,
     options: List<T>,
     selectedOption: T?,
-    optionLabeler: (T) -> String,
+    optionLabeler: @Composable (T) -> String,
     onOptionSelected: (T?) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -106,4 +108,18 @@ fun <T> GenericFilterDropdown(
             }
         }
     }
+}
+
+@Composable
+fun translateSeasonName(rawName: String): String {
+    val spring = stringResource(R.string.season_spring)
+    val autumn = stringResource(R.string.season_autumn)
+    val summer = stringResource(R.string.season_summer)
+    val winter = stringResource(R.string.season_winter)
+
+    return rawName
+        .replace("Tavasz", spring, ignoreCase = true)
+        .replace("Ősz", autumn, ignoreCase = true)
+        .replace("Nyár", summer, ignoreCase = true)
+        .replace("Tél", winter, ignoreCase = true)
 }

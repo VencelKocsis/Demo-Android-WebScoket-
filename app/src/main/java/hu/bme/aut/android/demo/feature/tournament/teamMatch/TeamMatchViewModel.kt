@@ -127,8 +127,14 @@ class TeamMatchViewModel @Inject constructor(
         // --- Élő meccsek kigyűjtése a teljes ligából (szűrés előtt!) ---
         val liveMatchesList = allMatches.filter { it.status == "in_progress" }
 
+        val activeSeasonId = allMatches.maxOfOrNull { it.seasonId }
+
         // --- Normál lista szűrése ---
         var filteredMatches = allMatches
+
+        if (activeSeasonId != null) {
+            filteredMatches = filteredMatches.filter { it.seasonId == activeSeasonId }
+        }
 
         if (selDivision != null) {
             filteredMatches = filteredMatches.filter { match ->
