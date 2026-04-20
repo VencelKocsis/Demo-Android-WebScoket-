@@ -110,7 +110,7 @@ fun HistoryScreen(
                             homeScore = match.homeTeamScore,
                             guestScore = match.guestTeamScore,
                             isWin = null,
-                            topLabel = "${match.roundNumber}. Forduló",
+                            topLabel = stringResource(R.string.round, match.roundNumber),
                             status = null,
                             onClick = { onNavigateToMatchDetails(match.id) }
                         )

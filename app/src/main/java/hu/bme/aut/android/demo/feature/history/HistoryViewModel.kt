@@ -20,7 +20,6 @@ data class HistoryUiState(
     val allMatches: List<TeamMatch> = emptyList(),
     val filteredMatches: List<TeamMatch> = emptyList(),
 
-    // JAVÍTVA: Csak ID helyett (ID, Szezon Név) párosokat tárolunk!
     val availableSeasons: List<Pair<Int, String>> = emptyList(),
     val availableDivisions: List<String> = emptyList(),
     val availableTeams: List<Pair<Int, String>> = emptyList(),
@@ -32,7 +31,6 @@ data class HistoryUiState(
     val selectedTeamId: Int? = null
 )
 
-// ... (Az Eventek és az init blokk marad a régi) ...
 sealed class HistoryScreenEvent {
     object LoadHistory : HistoryScreenEvent()
     data class OnSeasonSelected(val seasonId: Int?) : HistoryScreenEvent()
@@ -52,7 +50,6 @@ class HistoryViewModel @Inject constructor(
     init { onEvent(HistoryScreenEvent.LoadHistory) }
 
     fun onEvent(event: HistoryScreenEvent) {
-        // ... (Marad ugyanaz) ...
         when (event) {
             is HistoryScreenEvent.LoadHistory -> loadHistory()
             is HistoryScreenEvent.OnSeasonSelected -> {
@@ -70,17 +67,6 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    // --- SEGÉDFÜGGVÉNY A SZEZON NEVEKHEZ ---
-    private fun getSeasonName(seasonId: Int): String {
-        // TODO: Ha majd be lesz kötve a /seasons végpont Androidon, ide jöhet az automatikus keresés.
-        // Addig a DB alapján "beégetjük" a fő szezonokat:
-        return when(seasonId) {
-            1 -> "2025 Ősz"
-            2 -> "2026 Tavasz"
-            else -> "Szezon #$seasonId"
-        }
-    }
-
     private fun loadHistory() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
@@ -89,14 +75,18 @@ class HistoryViewModel @Inject constructor(
                 val teamDivMap = allTeams.associate { it.id to (it.division ?: "Egyéb") }
 
                 val allMatches = getTeamMatchesUseCase()
+
+                // CSAK a befejezett meccsekből jön adat (ha a 2026-os még nem indult el, itt kiesik)
                 val finishedMatches = allMatches
                     .filter { it.status == "finished" }
                     .sortedByDescending { it.matchDate ?: "" }
 
-                // JAVÍTVA: A szezon ID-kat átalakítjuk Párokká (ID, Név)
-                val seasonIds = finishedMatches.map { it.seasonId }.distinct().sortedDescending()
-                val seasonPairs = seasonIds.map { id -> Pair(id, getSeasonName(id)) }
-                val latestSeasonId = seasonIds.firstOrNull()
+                val seasonPairs = finishedMatches
+                    .map { Pair(it.seasonId, it.seasonName ?: "Ismeretlen szezon") }
+                    .distinctBy { it.first } // Kiszűrjük a duplikációkat
+                    .sortedByDescending { it.first } // Legújabb szezon van legfelül
+
+                val latestSeasonId = seasonPairs.firstOrNull()?.first
 
                 val divisions = allTeams.mapNotNull { it.division }.filter { it.isNotBlank() }.distinct().sorted()
 
@@ -108,7 +98,7 @@ class HistoryViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         allMatches = finishedMatches,
-                        availableSeasons = seasonPairs, // Az új, szöveges listát adjuk át!
+                        availableSeasons = seasonPairs,
                         availableDivisions = divisions,
                         availableTeams = teams,
                         teamDivisions = teamDivMap,
@@ -125,7 +115,6 @@ class HistoryViewModel @Inject constructor(
     }
 
     private fun applyFilters() {
-        // ... (Marad ugyanaz, ahogy volt) ...
         val state = _uiState.value
         var filtered = state.allMatches
 

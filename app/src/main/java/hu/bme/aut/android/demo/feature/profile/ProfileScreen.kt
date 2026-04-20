@@ -64,7 +64,7 @@ fun ProfileScreen(
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
     val backendUser = authState.backendUser
 
-    // Ideális esetben ezeket a DTO-ból kapod, most mock-oljuk a példa kedvéért TODO
+    // Ideális esetben ezeket a DTO-ból, most mock a példa kedvéért TODO
     val bladeName = "Butterfly Timo Boll ALC"
     val fhName = "DHS Hurricane 3"
     val fhColor = "Black"

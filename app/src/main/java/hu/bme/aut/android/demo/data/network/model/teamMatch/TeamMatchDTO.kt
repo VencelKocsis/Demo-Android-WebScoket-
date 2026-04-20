@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TeamMatchDTO(
     val id: Int,
+    val seasonId: Int,
+    val seasonName: String? = "Ismeretlen szezon",
     val roundNumber: Int,
     val homeTeamName: String = "Hazai csapat",
     val guestTeamName: String = "Vendég csapat",
@@ -13,7 +15,6 @@ data class TeamMatchDTO(
     val date: String?,
     val status: String,
     val location: String? = null,
-    val seasonId: Int = 0,
     val homeTeamId: Int = 0,
     val guestTeamId: Int = 0,
     val individualMatches: List<IndividualMatchDTO>? = emptyList(),

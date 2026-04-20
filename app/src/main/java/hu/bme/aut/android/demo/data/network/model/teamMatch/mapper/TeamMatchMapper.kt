@@ -8,6 +8,8 @@ import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 fun TeamMatchDTO.toDomain(): TeamMatch {
     return TeamMatch(
         id = this.id,
+        seasonId = this.seasonId,
+        seasonName = this.seasonName ?: "Ismeretlen szezon",
         roundNumber = this.roundNumber,
         homeTeamName = this.homeTeamName,
         guestTeamName = this.guestTeamName,
@@ -16,7 +18,6 @@ fun TeamMatchDTO.toDomain(): TeamMatch {
         matchDate = this.date,
         status = this.status,
         location = this.location,
-        seasonId = this.seasonId,
         homeTeamId = this.homeTeamId,
         guestTeamId = this.guestTeamId,
         homeTeamSigned = this.homeTeamSigned,

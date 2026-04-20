@@ -13,4 +13,4 @@ class RegisterFcmTokenUseCase @Inject constructor(
     suspend operator fun invoke(userId: String, token: String) {
         repository.registerFcmToken(userId, token)
     }
-} // TODO refactor fcm token binding
+}
