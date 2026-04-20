@@ -95,7 +95,7 @@ fun TeamMatchScreenContent(
         // --- SZŰRŐ DIALÓGUS ---
         if (showFilterDialog) {
             CommonFilterDialog(
-                title = "Szűrés",
+                title = stringResource(R.string.filter),
                 onDismiss = { showFilterDialog = false }
             ) {
                 GenericFilterDropdown(

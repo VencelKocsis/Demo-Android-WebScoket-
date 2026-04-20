@@ -22,7 +22,6 @@ fun CommonFilterDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = title, fontWeight = FontWeight.Bold) },
         text = {
-            // Itt biztosítjuk, hogy minden elem szépen egymás alatt, térközzel jelenjen meg
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 content()
             }
