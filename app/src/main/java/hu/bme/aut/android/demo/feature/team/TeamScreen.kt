@@ -159,7 +159,7 @@ fun TeamScreenContent(
                         )
 
                         Text(
-                            text = if (activeFilters.isNotEmpty()) activeFilters.joinToString(" • ") else "Összes csapat",
+                            text = if (activeFilters.isNotEmpty()) activeFilters.joinToString(" • ") else "",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1, // Ha hosszú, ne lógjon ki

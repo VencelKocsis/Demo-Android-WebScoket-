@@ -135,7 +135,9 @@ fun RecentFormCard(recentForm: List<Boolean>) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(stringResource(R.string.from_last_5), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -172,10 +174,12 @@ fun ExtraStatsCard(sweeps: Int, decidingSetWins: Int, flawlessDays: Int) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Extra Mutatók", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.extra_stats), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -302,7 +306,9 @@ fun EquipmentCard(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
-                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                Column(modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()) {
                     Text("Ütőfa", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     Text(bladeName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
 

@@ -157,4 +157,5 @@
     <string name="season_autumn">Autumn</string>
     <string name="season_summer">Summer</string>
     <string name="season_winter">Winter</string>
+    <string name="extra_stats">Extra Stats</string>
 </resources>
