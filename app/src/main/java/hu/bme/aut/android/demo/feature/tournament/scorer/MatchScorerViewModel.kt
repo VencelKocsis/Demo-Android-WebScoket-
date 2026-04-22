@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
-import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
+import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchByIdUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.SubmitIndividualScoreUseCase
 import hu.bme.aut.android.demo.domain.websocket.model.MatchWsEvent
 import hu.bme.aut.android.demo.domain.websocket.usecases.ObserveMatchEventUseCase
@@ -31,7 +31,7 @@ data class MatchScorerUiState(
 @HiltViewModel
 class MatchScorerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
+    private val getTeamMatchByIdUseCase: GetTeamMatchByIdUseCase,
     private val submitScoreUseCase: SubmitIndividualScoreUseCase,
     private val observeMatchEventsUseCase: ObserveMatchEventUseCase
 ) : ViewModel() {
@@ -97,8 +97,7 @@ class MatchScorerViewModel @Inject constructor(
     fun loadMatch() {
         viewModelScope.launch {
             try {
-                val matches = getTeamMatchesUseCase()
-                val parentMatch = matches.find { it.id == teamMatchId }
+                val parentMatch = getTeamMatchByIdUseCase(teamMatchId)
                 val indMatch = parentMatch?.individualMatches?.find { it.id == individualMatchId }
 
                 var loadedSets = indMatch?.setScores?.split(", ")?.mapNotNull {

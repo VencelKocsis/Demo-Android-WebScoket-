@@ -11,7 +11,7 @@ import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.ApplyForMatchUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.CaptainAddParticipantUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.FinalizeMatchUseCase
-import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
+import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchByIdUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.UpdateParticipantStatusUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.WithdrawFromMatchUseCase
 import hu.bme.aut.android.demo.util.Resource
@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.emptyList
 
 data class MatchRosterItem(
     val participantId: Int?, // null, ha még nem jelentkezett
@@ -65,7 +66,7 @@ sealed class MatchDetailsEvent {
 @HiltViewModel
 class MatchDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
+    private val getTeamMatchByIdUseCase: GetTeamMatchByIdUseCase,
     private val getTeamsUseCase: GetTeamsUseCase,
     private val applyForMatchUseCase: ApplyForMatchUseCase,
     private val updateParticipantStatusUseCase: UpdateParticipantStatusUseCase,
@@ -87,9 +88,9 @@ class MatchDetailsViewModel @Inject constructor(
         // A mapLatest addig "felfüggeszti" (suspend) magát, amíg a hálózat dolgozik.
         // Ezalatt a StateFlow NEM küld ki új értéket, hanem megtartja az előzőt a képernyőn!
         val allTeams = getTeamsUseCase()
-        val allMatches = getTeamMatchesUseCase()
+        val singleMatch = getTeamMatchByIdUseCase(matchId)
 
-        Resource.success(Pair(allTeams, allMatches))
+        Resource.success(Pair(allTeams, singleMatch))
     }.onStart {
         // A legelső induláskor viszont (amikor még tényleg nincs adatunk)
         // ki kell küldeni a töltőképernyőt.
@@ -107,9 +108,8 @@ class MatchDetailsViewModel @Inject constructor(
 
         val dataPair = dataResource.getOrNull()
         val allTeams = dataPair?.first ?: emptyList()
-        val allMatches = dataPair?.second ?: emptyList()
 
-        val match = allMatches.find { it.id == matchId }
+        val match = dataPair?.second
         val loadError =
             if (dataPair != null && match == null) "A meccs nem található!" else dataResource.exceptionOrNull()?.message
 

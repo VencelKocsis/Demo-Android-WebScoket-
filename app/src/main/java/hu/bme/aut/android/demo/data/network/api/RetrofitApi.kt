@@ -69,6 +69,9 @@ interface RetrofitApi {
     @GET("matches")
     suspend fun getTeamMatches(): List<TeamMatchDTO>
 
+    @GET("matches/{id}")
+    suspend fun getTeamMatchById(@Path("id") matchId: Int): TeamMatchDTO
+
     @POST("/auth/sync")
     suspend fun syncUser(@Body user: UserDTO): UserDTO
 

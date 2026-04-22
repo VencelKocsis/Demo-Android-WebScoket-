@@ -10,7 +10,7 @@ import hu.bme.aut.android.demo.domain.websocket.usecases.ObserveMatchEventUseCas
 import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
 import hu.bme.aut.android.demo.domain.teammatch.model.MatchParticipant
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
-import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
+import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchByIdUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.SubmitLineupUseCase
 import hu.bme.aut.android.demo.domain.websocket.model.MatchWsEvent
 import hu.bme.aut.android.demo.domain.teammatch.usecase.SignMatchUseCase
@@ -52,7 +52,7 @@ sealed class LiveMatchEvent {
 @HiltViewModel
 class LiveMatchViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getTeamMatchesUseCase: GetTeamMatchesUseCase,
+    private val getTeamMatchByIdUseCase: GetTeamMatchByIdUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val submitLineupUseCase: SubmitLineupUseCase,
     private val observeMatchEventUseCase: ObserveMatchEventUseCase,
@@ -112,8 +112,7 @@ class LiveMatchViewModel @Inject constructor(
                 viewModelScope.launch {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                     try {
-                        val matches = getTeamMatchesUseCase()
-                        val match = matches.find { it.id == matchId } ?: throw Exception("Meccs nem található")
+                        val match = getTeamMatchByIdUseCase(matchId)
 
                         val currentUserUid = getCurrentUserUseCase()?.uid
                         var teamSide = "HOME"

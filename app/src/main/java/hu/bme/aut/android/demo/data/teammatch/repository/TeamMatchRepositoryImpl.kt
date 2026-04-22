@@ -19,6 +19,11 @@ class TeamMatchRepositoryImpl @Inject constructor(
         return dtoList.map { it.toDomain() }
     }
 
+    override suspend fun getTeamMatchById(matchId: Int): TeamMatch {
+        val dto = retrofitApi.getTeamMatchById(matchId)
+        return dto.toDomain()
+    }
+
     override suspend fun applyForMatch(matchId: Int) {
         retrofitApi.applyToMatch(matchId)
     }
