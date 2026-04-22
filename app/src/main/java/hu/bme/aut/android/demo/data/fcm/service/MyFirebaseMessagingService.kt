@@ -122,7 +122,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH) // Magas prioritás, hogy felülről leugorjon!
             .setAutoCancel(true) // Kattintásra eltűnik az értesítés
-            .setContentIntent(pendingIntent) // <--- EZ NYITJA MEG AZ APPOT!
+            .setContentIntent(pendingIntent)
 
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())

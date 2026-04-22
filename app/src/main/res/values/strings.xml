@@ -158,4 +158,10 @@
     <string name="season_summer">Summer</string>
     <string name="season_winter">Winter</string>
     <string name="extra_stats">Extra Stats</string>
+    <string name="back_to_match_details">Back to match details</string>
+    <string name="starter_team_select">Select members for match</string>
+    <string name="viewvers_only_watch">Viewers can only watch team frame.</string>
+    <string name="click_on_arrows_to_change_order">Click on the arrows to change the order or make a substitution!</string>
+    <string name="free_place">Free place</string>
+    <string name="changing_table">Changing table</string>
 </resources>

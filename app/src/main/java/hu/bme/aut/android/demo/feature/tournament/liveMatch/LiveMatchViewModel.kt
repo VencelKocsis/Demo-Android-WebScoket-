@@ -30,6 +30,7 @@ enum class LiveMatchPhase {
 data class LiveMatchUiState(
     val isLoading: Boolean = true,
     val isMutating: Boolean = false,
+    val isSubmitSuccessful: Boolean = false,
     val phase: LiveMatchPhase = LiveMatchPhase.LOADING,
     val match: TeamMatch? = null,
     val myTeamSide: String = "HOME",
@@ -42,7 +43,7 @@ data class LiveMatchUiState(
 
 sealed class LiveMatchEvent {
     object LoadMatchData : LiveMatchEvent()
-    data class MovePlayer(val fromIndex: Int, val toIndex: Int) : LiveMatchEvent()
+    data class TogglePlayerSlot(val participant: MatchParticipant, val sendToBench: Boolean = false) : LiveMatchEvent()
     object SubmitLineup : LiveMatchEvent()
     data class OpenIndividualMatchScoring(val individualMatchId: Int) : LiveMatchEvent()
     object SignMatch : LiveMatchEvent()
@@ -65,9 +66,7 @@ class LiveMatchViewModel @Inject constructor(
     val uiState: StateFlow<LiveMatchUiState> = _uiState
 
     init {
-        // 1. HTTP kérés elindítása
         onEvent(LiveMatchEvent.LoadMatchData)
-        // 2. JAVÍTÁS: Valós idejű WebSocket figyelés elindítása!
         observeWs()
     }
 
@@ -90,13 +89,9 @@ class LiveMatchViewModel @Inject constructor(
                         }
                         _uiState.update { it.copy(individualMatches = updatedMatches) }
                     }
-
-                    // --- ALÁÍRÁS ESEMÉNY KEZELÉSE ---
                     is MatchWsEvent.MatchSignatureUpdated -> {
-                        // Csak akkor frissítjük, ha az épp nyitott meccsről van szó
                         if (event.matchId == matchId) {
                             _uiState.update { state ->
-                                // Frissítjük a fő meccs adatait (Aláírások és Státusz)
                                 val updatedMatch = state.match?.copy(
                                     homeTeamSigned = event.homeSigned,
                                     guestTeamSigned = event.guestSigned,
@@ -121,7 +116,6 @@ class LiveMatchViewModel @Inject constructor(
                         val match = matches.find { it.id == matchId } ?: throw Exception("Meccs nem található")
 
                         val currentUserUid = getCurrentUserUseCase()?.uid
-
                         var teamSide = "HOME"
                         var spectatorFlag = false
 
@@ -131,7 +125,7 @@ class LiveMatchViewModel @Inject constructor(
                             teamSide = myParticipant.teamSide
                         } else {
                             try {
-                                val allTeams = retrofitApi.getTeams() // JAVÍTVA: retrofitApi használata
+                                val allTeams = retrofitApi.getTeams()
                                 val homeTeam = allTeams.find { it.teamId == match.homeTeamId }
                                 val guestTeam = allTeams.find { it.teamId == match.guestTeamId }
 
@@ -181,14 +175,31 @@ class LiveMatchViewModel @Inject constructor(
                 }
             }
 
-            is LiveMatchEvent.MovePlayer -> {
+            is LiveMatchEvent.TogglePlayerSlot -> {
                 _uiState.update { state ->
-                    val mutableList = state.lineupList.toMutableList()
-                    if (event.fromIndex in mutableList.indices && event.toIndex in mutableList.indices) {
-                        val item = mutableList.removeAt(event.fromIndex)
-                        mutableList.add(event.toIndex, item)
+                    val list = state.lineupList.toMutableList()
+                    val index = list.indexOf(event.participant)
+
+                    if (index != -1) {
+                        if (event.sendToBench) {
+                            list.removeAt(index)
+                            list.add(event.participant)
+                        } else if (index < 3) {
+                            val current = list[index]
+                            val below = list[index + 1]
+                            list[index] = below
+                            list[index + 1] = current
+                        } else if (index >= 4) {
+                            list.removeAt(index)
+                            list.add(3, event.participant)
+                            val newStarters = list.take(4)
+                            val newBench = list.drop(4)
+                            list.clear()
+                            list.addAll(newStarters.filterNotNull())
+                            list.addAll(newBench.filterNotNull())
+                        }
                     }
-                    state.copy(lineupList = mutableList)
+                    state.copy(lineupList = list)
                 }
             }
 
@@ -209,7 +220,8 @@ class LiveMatchViewModel @Inject constructor(
 
                         submitLineupUseCase(matchId, state.myTeamSide, positionsMap)
 
-                        onEvent(LiveMatchEvent.LoadMatchData)
+                        // SIKERES LEADÁS -> Kigyújtjuk a jelzőt, hogy a UI visszanavigálhasson!
+                        _uiState.update { it.copy(isMutating = false, isSubmitSuccessful = true) }
 
                     } catch (e: Exception) {
                         _uiState.update { it.copy(isMutating = false, errorMessage = "Sikertelen beküldés: ${e.message}") }
@@ -224,8 +236,6 @@ class LiveMatchViewModel @Inject constructor(
                     _uiState.update { it.copy(isMutating = true, errorMessage = null) }
                     try {
                         signMatchUseCase(matchId)
-                        // Nem kell manuálisan újratölteni semmit, mert ha sikeres,
-                        // a Ktor WebSocket úgyis ránk szól, hogy "MatchSignatureUpdated"!
                         _uiState.update { it.copy(isMutating = false) }
                     } catch (e: Exception) {
                         _uiState.update { it.copy(isMutating = false, errorMessage = "Hiba az aláírásnál: ${e.message}") }

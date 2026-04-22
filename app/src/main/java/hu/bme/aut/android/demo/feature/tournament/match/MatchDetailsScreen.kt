@@ -391,7 +391,6 @@ fun MatchDetailsScreen(
                                                 Button(
                                                     onClick = {
                                                         viewModel.onEvent(MatchDetailsEvent.OnFinalizeRoster)
-                                                        addMatchToCalendar(context, match)
                                                         onNavigateToLiveMatch()
                                                     },
                                                     modifier = Modifier

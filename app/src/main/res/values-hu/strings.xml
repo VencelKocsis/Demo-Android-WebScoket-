@@ -158,4 +158,10 @@
     <string name="season_summer">Nyár</string>
     <string name="season_winter">Tél</string>
     <string name="extra_stats">Extra Mutatók</string>
+    <string name="back_to_match_details">Vissza a meccs adatlapjára</string>
+    <string name="starter_team_select">Kezdőcsapat Kijelölése</string>
+    <string name="viewvers_only_watch">Nézőként csak megtekintheted a keretet.</string>
+    <string name="click_on_arrows_to_change_order">Kattints a nyilakra a sorrend változtatásához, vagy tegyél be cserét!</string>
+    <string name="free_place">Üres hely</string>
+    <string name="changing_table">Cserepad</string>
 </resources>

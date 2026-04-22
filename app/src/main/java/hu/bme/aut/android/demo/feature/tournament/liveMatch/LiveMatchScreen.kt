@@ -1,6 +1,5 @@
 package hu.bme.aut.android.demo.feature.tournament.liveMatch
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,9 +7,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -18,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -35,9 +35,6 @@ import hu.bme.aut.android.demo.ui.common.LiveIndicator
 import hu.bme.aut.android.demo.ui.theme.ProgressPink
 import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
-import org.burnoutcrew.reorderable.detectReorderAfterLongPress
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,12 +50,18 @@ fun LiveMatchScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // Biztonsági HTTP frissítés, ha esetleg a WS kapcsolat megszakadt volna a háttérben
                 viewModel.onEvent(LiveMatchEvent.LoadMatchData)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // --- AUTOMATIKUS VISSZANAVIGÁLÁS SIKERES LEADÁS UTÁN ---
+    LaunchedEffect(state.isSubmitSuccessful) {
+        if (state.isSubmitSuccessful) {
+            onNavigateBack()
+        }
     }
 
     Scaffold(
@@ -77,7 +80,6 @@ fun LiveMatchScreen(
         }
     ) { paddingValues ->
 
-        // Csak akkor engedjük a kézi "lehúzós" frissítést, ha Még NEM vagyunk a Match Grid fázisban!
         val isPullToRefreshEnabled = state.phase != LiveMatchPhase.MATCH_GRID
 
         Box(
@@ -85,28 +87,24 @@ fun LiveMatchScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Ha épp a szerverre küldünk adatot, egy finom csíkot mutatunk felül
             if (state.isMutating) {
                 LinearProgressIndicator(modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter))
             }
 
-            // Ha engedélyezett a frissítés, beletesszük a dobozba
             if (isPullToRefreshEnabled) {
                 PullToRefreshBox(
                     isRefreshing = state.isLoading && !state.isMutating,
                     onRefresh = { viewModel.onEvent(LiveMatchEvent.LoadMatchData) },
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    ScreenContent(state, viewModel, onNavigateToScorer)
+                    ScreenContent(state, viewModel, onNavigateToScorer, onNavigateBack)
                 }
             } else {
-                // Ha a Grid-en vagyunk (ahol a WebSocket amúgy is tolja az adatokat), nincs Pull-to-refresh
-                ScreenContent(state, viewModel, onNavigateToScorer)
+                ScreenContent(state, viewModel, onNavigateToScorer, onNavigateBack)
             }
 
-            // Hibaüzenet kezelése
             state.errorMessage?.let { error ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -126,12 +124,12 @@ fun LiveMatchScreen(
     }
 }
 
-// A belső tartalom kiszervezése, hogy ne duplikáljuk a kódot az if-else ágban
 @Composable
 private fun BoxScope.ScreenContent(
     state: LiveMatchUiState,
     viewModel: LiveMatchViewModel,
-    onNavigateToScorer: (Int) -> Unit
+    onNavigateToScorer: (Int) -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     if (state.isLoading && state.phase == LiveMatchPhase.LOADING) {
         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -144,7 +142,7 @@ private fun BoxScope.ScreenContent(
             LiveMatchPhase.WAITING_FOR_OPPONENT -> {
                 WaitingForOpponentContent(
                     state = state,
-                    onRefresh = { viewModel.onEvent(LiveMatchEvent.LoadMatchData) }
+                    onNavigateBack = onNavigateBack
                 )
             }
             LiveMatchPhase.MATCH_GRID -> {
@@ -163,15 +161,53 @@ private fun BoxScope.ScreenContent(
     }
 }
 
+@Composable
+fun WaitingForOpponentContent(
+    state: LiveMatchUiState,
+    onNavigateBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(72.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(stringResource(R.string.order_placed), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(
+                R.string.wait_for_order,
+                if (state.myTeamSide == "HOME") stringResource(R.string.guest) else stringResource(R.string.home)
+            ),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onNavigateBack,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Text(stringResource(R.string.back_to_match_details), fontWeight = FontWeight.Bold)
+        }
+
+    }
+}
 
 @Composable
 fun LineupSetupContent(
     state: LiveMatchUiState,
     onEvent: (LiveMatchEvent) -> Unit
 ) {
-    val reorderState = rememberReorderableLazyListState(onMove = { from, to ->
-        onEvent(LiveMatchEvent.MovePlayer(from.index, to.index))
-    })
+    val starters = state.lineupList.take(4)
+    val bench = state.lineupList.drop(4)
 
     Column(
         modifier = Modifier
@@ -180,76 +216,95 @@ fun LineupSetupContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (state.isSpectator) stringResource(R.string.team_frame) else stringResource(R.string.select_positions),
+            text = if (state.isSpectator) stringResource(R.string.team_frame) else stringResource(R.string.starter_team_select),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = if (state.isSpectator) {
-                stringResource(R.string.tx_viewer_only_can_watch)
-            } else {
-                stringResource(R.string.tx_drag_user)
-            },
+            text = if (state.isSpectator) stringResource(R.string.viewvers_only_watch) else stringResource(
+                R.string.click_on_arrows_to_change_order
+            ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        LazyColumn(
-            state = reorderState.listState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .reorderable(reorderState)
-        ) {
-            items(state.lineupList, key = { it.id }) { player ->
+        LazyColumn(modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()) {
 
-                val isDragging = reorderState.draggingItemKey == player.id
-                val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "elevation")
-                val index = state.lineupList.indexOf(player)
-                val isStarter = index < 4
-
-                var cardModifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .shadow(elevation, MaterialTheme.shapes.medium)
-                    .animateItem()
-
-                if (!state.isSpectator) {
-                    cardModifier = cardModifier.detectReorderAfterLongPress(reorderState)
-                }
+            // --- KEZDŐCSAPAT ---
+            items(4) { index ->
+                val player = starters.getOrNull(index)
 
                 Card(
-                    modifier = cardModifier,
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isStarter) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                    )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (player != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Row(
                         modifier = Modifier
-                            .padding(16.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                             .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        if (!state.isSpectator) {
-                            Icon(Icons.Default.DragHandle, contentDescription = "Fogd és vidd")
-                            Spacer(modifier = Modifier.width(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("${index + 1}.", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(28.dp))
+                            if (player != null) {
+                                Text(player.playerName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                            } else {
+                                Text(stringResource(R.string.free_place), style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+                            }
                         }
 
-                        Column {
-                            Text(
-                                text = if (isStarter) stringResource(R.string.player, index + 1) else stringResource(
-                                    R.string.bench_player
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (isStarter) MaterialTheme.colorScheme.primary else Color.Gray
-                            )
-                            Text(
-                                text = player.playerName,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = if (isStarter) FontWeight.Bold else FontWeight.Normal
-                            )
+                        if (!state.isSpectator && player != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (index < 3) {
+                                    IconButton(onClick = { onEvent(LiveMatchEvent.TogglePlayerSlot(player)) }) {
+                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Lejjebb", tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                IconButton(onClick = { onEvent(LiveMatchEvent.TogglePlayerSlot(player, sendToBench = true)) }) {
+                                    Icon(Icons.Default.Remove, contentDescription = "Padra", tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- CSEREPAD ---
+            if (bench.isNotEmpty()) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(stringResource(R.string.changing_table), fontWeight = FontWeight.Black, color = Color.Gray, modifier = Modifier.padding(bottom = 8.dp))
+                }
+
+                items(bench.size) { index ->
+                    val player = bench[index]
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = CardDefaults.outlinedCardBorder()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(player.playerName, style = MaterialTheme.typography.bodyLarge)
+                            if (!state.isSpectator && starters.size < 4) {
+                                IconButton(onClick = { onEvent(LiveMatchEvent.TogglePlayerSlot(player)) }) {
+                                    Icon(Icons.Default.Add, contentDescription = "Kezdőbe", tint = SuccessGreen)
+                                }
+                            }
                         }
                     }
                 }
@@ -259,7 +314,7 @@ fun LineupSetupContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (!state.isSpectator) {
-            val isReady = state.lineupList.size >= 4
+            val isReady = starters.size == 4
             Button(
                 onClick = { onEvent(LiveMatchEvent.SubmitLineup) },
                 modifier = Modifier
@@ -271,33 +326,6 @@ fun LineupSetupContent(
                 Text(stringResource(R.string.send_order))
             }
         }
-    }
-}
-
-@Composable
-fun WaitingForOpponentContent(
-    state: LiveMatchUiState,
-    onRefresh: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        CircularProgressIndicator()
-        Spacer(modifier = Modifier.height(24.dp)) // TODO fix to refresh
-        Text(stringResource(R.string.order_placed), style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(
-                R.string.wait_for_order,
-                if (state.myTeamSide == "HOME") stringResource(R.string.guest) else stringResource(R.string.home)
-            ),
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
@@ -348,7 +376,6 @@ fun MatchGridContent(
                 val isClickable = game.status != "pending"
                 val cardAlpha = if (game.status == "pending") 0.6f else 1f
 
-                // Kiszámoljuk, ki nyert (ha már vége a meccsnek), a vizuális kiemeléshez
                 val isHomeWinner = game.status == "finished" && game.homeScore > game.guestScore
                 val isGuestWinner = game.status == "finished" && game.guestScore > game.homeScore
 
@@ -361,7 +388,6 @@ fun MatchGridContent(
                         .clickable(enabled = isClickable) {
                             onEvent(LiveMatchEvent.OpenIndividualMatchScoring(game.id))
                         },
-                    // Tiszta háttér, finom körvonal
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = CardDefaults.outlinedCardBorder(),
                     elevation = CardDefaults.cardElevation(defaultElevation = if (isClickable) 2.dp else 0.dp)
@@ -374,11 +400,9 @@ fun MatchGridContent(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // --- BAL OLDAL: Játékosok Nevei ---
                             Column(modifier = Modifier.weight(0.7f)) {
                                 Text(
                                     text = game.homePlayerName,
-                                    // Ha vége a meccsnek és NEM ő nyert, elhalványítjuk!
                                     fontWeight = if (isHomeWinner) FontWeight.Black else FontWeight.Bold,
                                     color = if (game.status == "finished" && !isHomeWinner) Color.Gray else MaterialTheme.colorScheme.onSurface,
                                     style = MaterialTheme.typography.bodyLarge
@@ -397,7 +421,6 @@ fun MatchGridContent(
                                 )
                             }
 
-                            // --- JOBB OLDAL: Szettarány és Státusz ---
                             Column(
                                 modifier = Modifier.weight(0.3f),
                                 horizontalAlignment = Alignment.End
@@ -411,7 +434,6 @@ fun MatchGridContent(
 
                                 Spacer(modifier = Modifier.height(6.dp))
 
-                                // Státusz "Jelvények" (Badges)
                                 when (game.status) {
                                     "in_progress" -> {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -462,7 +484,6 @@ fun MatchGridContent(
             }
         }
 
-        // --- ALÁÍRÁS / LEZÁRÁS KÁRTYA ---
         val allFinished = state.individualMatches.size == 16 && state.individualMatches.all { it.status == "finished" }
 
         if (allFinished && state.match != null) {
@@ -499,7 +520,6 @@ fun MatchGridContent(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            // HAZAI CSAPAT ÁLLAPOTA
                             SignatureStatusColumn(
                                 teamName = stringResource(R.string.home),
                                 isSigned = state.match.homeTeamSigned,
@@ -507,7 +527,6 @@ fun MatchGridContent(
                                 onSignClick = { onEvent(LiveMatchEvent.SignMatch) }
                             )
 
-                            // VENDÉG CSAPAT ÁLLAPOTA
                             SignatureStatusColumn(
                                 teamName = stringResource(R.string.guest),
                                 isSigned = state.match.guestTeamSigned,
