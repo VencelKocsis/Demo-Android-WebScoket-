@@ -523,14 +523,14 @@ fun MatchGridContent(
                             SignatureStatusColumn(
                                 teamName = stringResource(R.string.home),
                                 isSigned = state.match.homeTeamSigned,
-                                isMyTeam = state.myTeamSide == "HOME" && !state.isSpectator,
+                                isMyTeam = state.myTeamSide == "HOME" && state.isStartingPlayer,
                                 onSignClick = { onEvent(LiveMatchEvent.SignMatch) }
                             )
 
                             SignatureStatusColumn(
                                 teamName = stringResource(R.string.guest),
                                 isSigned = state.match.guestTeamSigned,
-                                isMyTeam = state.myTeamSide == "GUEST" && !state.isSpectator,
+                                isMyTeam = state.myTeamSide == "GUEST" && state.isStartingPlayer,
                                 onSignClick = { onEvent(LiveMatchEvent.SignMatch) }
                             )
                         }

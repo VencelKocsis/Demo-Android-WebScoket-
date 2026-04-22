@@ -35,6 +35,7 @@ data class LiveMatchUiState(
     val match: TeamMatch? = null,
     val myTeamSide: String = "HOME",
     val isSpectator: Boolean = false,
+    val isStartingPlayer: Boolean = false,
     val lineupList: List<MatchParticipant> = emptyList(),
     val availablePlayers: List<MatchParticipant> = emptyList(),
     val individualMatches: List<IndividualMatch> = emptyList(),
@@ -140,6 +141,8 @@ class LiveMatchViewModel @Inject constructor(
                             }
                         }
 
+                        val startingPlayerFlag = myParticipant?.status == "LOCKED"
+
                         val myTeamPlayers = match.participants.filter {
                             it.teamSide == teamSide && (it.status == "SELECTED" || it.status == "LOCKED")
                         }
@@ -162,6 +165,7 @@ class LiveMatchViewModel @Inject constructor(
                                 match = match,
                                 myTeamSide = teamSide,
                                 isSpectator = spectatorFlag,
+                                isStartingPlayer = startingPlayerFlag,
                                 availablePlayers = myTeamPlayers,
                                 lineupList = if (state.lineupList.isEmpty()) initialLineupList else state.lineupList,
                                 individualMatches = match.individualMatches
