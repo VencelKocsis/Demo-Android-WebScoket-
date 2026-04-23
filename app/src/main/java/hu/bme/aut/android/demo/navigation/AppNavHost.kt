@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,7 +16,7 @@ import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.leaderboard.LeaderboardScreen
 import hu.bme.aut.android.demo.feature.main.MainScreen
 import hu.bme.aut.android.demo.feature.profile.PlayerProfileScreen
-import hu.bme.aut.android.demo.feature.team.TeamScreen
+import hu.bme.aut.android.demo.feature.racketEditor.RacketEditorScreen
 import hu.bme.aut.android.demo.feature.team.editor.TeamEditorScreen
 import hu.bme.aut.android.demo.feature.tournament.match.MatchDetailsScreen
 import hu.bme.aut.android.demo.feature.tournament.liveMatch.LiveMatchScreen
@@ -77,6 +76,9 @@ fun AppNavHost(
                         navController.navigate(
                             PlayerProfile(playerId)
                         )
+                    },
+                    onNavigateToRacketEditor = {
+                        navController.navigate(RacketEditor)
                     }
                 )
             }
@@ -123,7 +125,7 @@ fun AppNavHost(
                 )
             }
 
-            // --- 8. Játékos Profil ---
+            // --- 7. Játékos Profil ---
             composable<PlayerProfile> { backStackEntry ->
                 val args = backStackEntry.toRoute<PlayerProfile>()
                 PlayerProfileScreen(
@@ -132,9 +134,16 @@ fun AppNavHost(
                 )
             }
 
-            // --- 9. Ranglista ---
+            // --- 8. Ranglista ---
             composable<Leaderboard> {
                 LeaderboardScreen()
+            }
+
+            // --- 9. Felszerelés ---
+            composable<RacketEditor> {
+                RacketEditorScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
         }
     }

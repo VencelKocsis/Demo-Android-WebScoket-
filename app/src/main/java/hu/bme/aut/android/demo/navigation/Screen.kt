@@ -40,3 +40,6 @@ data class PlayerProfile(val playerId: String)
 
 @Serializable
 data object Leaderboard
+
+@Serializable
+data object RacketEditor

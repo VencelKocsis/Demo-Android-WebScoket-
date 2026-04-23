@@ -36,11 +36,13 @@ import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.history.HistoryScreen
 import hu.bme.aut.android.demo.feature.leaderboard.LeaderboardScreen
 import hu.bme.aut.android.demo.feature.profile.ProfileScreen
+import hu.bme.aut.android.demo.feature.racketEditor.RacketEditorScreen
 import hu.bme.aut.android.demo.feature.team.TeamScreen
 import hu.bme.aut.android.demo.feature.tournament.teamMatch.TeamMatchScreen
 import hu.bme.aut.android.demo.navigation.History
 import hu.bme.aut.android.demo.navigation.Leaderboard
 import hu.bme.aut.android.demo.navigation.Profile
+import hu.bme.aut.android.demo.navigation.RacketEditor
 import hu.bme.aut.android.demo.navigation.Team
 import hu.bme.aut.android.demo.navigation.Tournament
 
@@ -58,7 +60,8 @@ fun MainScreen(
     authViewModel: AuthViewModel,
     onNavigateToTeamEditor: (Int) -> Unit = {},
     onNavigateToMatchDetails: (Int) -> Unit = {},
-    onNavigateToPlayerProfile: (String) -> Unit = {}
+    onNavigateToPlayerProfile: (String) -> Unit = {},
+    onNavigateToRacketEditor: () -> Unit = {}
 ) {
     val bottomNavController = rememberNavController()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
@@ -144,7 +147,11 @@ fun MainScreen(
                     )
                 }
                 composable<Profile> {
-                    ProfileScreen(authViewModel = authViewModel, onLogoutClick = onLogout)
+                    ProfileScreen(
+                        authViewModel = authViewModel,
+                        onLogoutClick = onLogout,
+                        onNavigateToRacketEditor = onNavigateToRacketEditor
+                    )
                 }
                 composable<Leaderboard> {
                     LeaderboardScreen()

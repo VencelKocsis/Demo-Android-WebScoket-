@@ -58,7 +58,8 @@ fun stringToColor(colorName: String): Color {
 fun ProfileScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     profileViewModel: ProfileViewModel = hiltViewModel(),
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    onNavigateToRacketEditor: () -> Unit,
 ) {
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
@@ -198,7 +199,7 @@ fun ProfileScreen(
                 bladeName = bladeName,
                 fhName = fhName, fhColorName = fhColor,
                 bhName = bhName, bhColorName = bhColor,
-                onAddEquipmentClick = null // Olvasási mód, nincs gomb! TODO: ha lesz szerkesztési mód, akkor át kell adni a callback-et, és meg kell oldani a gomb megjelenítését!
+                onAddEquipmentClick = onNavigateToRacketEditor
             )
         }
     }
