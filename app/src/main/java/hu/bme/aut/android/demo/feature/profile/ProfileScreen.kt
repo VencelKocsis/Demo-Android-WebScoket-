@@ -184,6 +184,8 @@ fun ProfileScreen(
                 )
             }
 
+            // TODO stats to current season
+
             H2HCard(
                 favoriteOpponent = uiState.favoriteOpponent,
                 nemesis = uiState.nemesis,

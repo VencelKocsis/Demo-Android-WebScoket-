@@ -164,4 +164,27 @@
     <string name="click_on_arrows_to_change_order">Click on the arrows to change the order or make a substitution!</string>
     <string name="free_place">Free place</string>
     <string name="changing_table">Changing table</string>
+    <string name="red">red</string>
+    <string name="black">black</string>
+    <string name="blue">blue</string>
+    <string name="green">green</string>
+    <string name="yellow">yellow</string>
+    <string name="pink">pink</string>
+    <string name="purple">purple</string>
+    <string name="equipment">Equipment</string>
+    <string name="blade">Blade</string>
+    <string name="forehand">Forehand</string>
+    <string name="backhand">Backhand</string>
+    <string name="add_new_racket">ADD NEW RACKET</string>
+    <string name="new_racket_assembly">New racket assembly</string>
+    <string name="save_racket">Save racket</string>
+    <string name="forehand_rubber">Forehand rubber</string>
+    <string name="backhand_rubber">Backhand rubber</string>
+    <string name="racket">Racket</string>
+    <string name="raacket_description">The clubhead is the \'soul\' of your equipment. It determines speed, flexibility and ball feel. Clubhead types generally range from defensive (DEF) to all-around (ALL) to aggressive offensive (OFF+).</string>
+    <string name="racket_details">Racket details</string>
+    <string name="rubber_description">The cover is responsible for the spin and speed of the ball. It is important that in competitions it is mandatory to use a red and a black (or other ITTF approved color) cover!</string>
+    <string name="manufacturer">Manufacturer</string>
+    <string name="model">Model</string>
+    <string name="color">Color</string>
 </resources>

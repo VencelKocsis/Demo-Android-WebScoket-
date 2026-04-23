@@ -1,21 +1,63 @@
 package hu.bme.aut.android.demo.feature.racketEditor
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.common.InfoDialog
+
+// --- IMPORTÁLUK A TÉMA SZÍNEIT ---
+import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
+import hu.bme.aut.android.demo.ui.theme.RacketBlack
+import hu.bme.aut.android.demo.ui.theme.RacketBlue
+import hu.bme.aut.android.demo.ui.theme.RacketYellow
+import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
+import hu.bme.aut.android.demo.ui.theme.ProgressPink
+import hu.bme.aut.android.demo.ui.theme.Purple40
+
+// --- KOMPONENS A SZÍNES PÖTTYHÖZ ---
+@Composable
+fun ColorDot(colorName: String, modifier: Modifier = Modifier) {
+    val color = when (colorName.lowercase()) {
+        stringResource(R.string.red) -> ErrorRedSolid
+        stringResource(R.string.black) -> RacketBlack
+        stringResource(R.string.blue) -> RacketBlue
+        stringResource(R.string.green) -> SuccessGreenSolid
+        stringResource(R.string.yellow) -> RacketYellow
+        stringResource(R.string.pink) -> ProgressPink
+        stringResource(R.string.purple) -> Purple40 // TODO language resource fix
+        else -> Color.Transparent
+    }
+
+    if (color != Color.Transparent) {
+        Box(
+            modifier = modifier
+                .size(16.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +70,7 @@ fun RacketEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Új ütő összeállítása") },
+                title = { Text(stringResource(R.string.new_racket_assembly)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Vissza a profilhoz")
@@ -45,7 +87,7 @@ fun RacketEditorScreen(
                 contentPadding = PaddingValues(vertical = 12.dp),
                 enabled = !state.isLoading
             ) {
-                Text("Ütő mentése")
+                Text(stringResource(R.string.save_racket))
             }
         }
     ) { padding ->
@@ -71,32 +113,36 @@ fun RacketEditorScreen(
                     onModelChange = { viewModel.updateBladeModel(it) }
                 )
 
-                HorizontalDivider()
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // TENYERES
                 RubberConfigurationBlock(
-                    title = "Tenyeres borítás",
+                    title = stringResource(R.string.forehand_rubber),
+                    iconResId = R.drawable.forehand_rubber_icon,
                     rubber = state.currentForehand,
                     manufacturers = state.rubberManufacturers,
                     models = state.availableFhModels,
                     colors = state.rubberColors,
                     onManufacturerChange = { viewModel.updateFhManufacturer(it) },
                     onModelChange = { viewModel.updateFhModel(it) },
-                    onColorChange = { viewModel.updateFhColor(it) }
+                    onColorChange = { viewModel.updateFhColor(it) },
+                    rotationAngle = -45f
                 )
 
-                HorizontalDivider()
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // FONÁK
                 RubberConfigurationBlock(
-                    title = "Fonák borítás",
+                    title = stringResource(R.string.backhand_rubber),
+                    iconResId = R.drawable.backhand_rubber_icon,
                     rubber = state.currentBackhand,
                     manufacturers = state.rubberManufacturers,
                     models = state.availableBhModels,
                     colors = state.rubberColors,
                     onManufacturerChange = { viewModel.updateBhManufacturer(it) },
                     onModelChange = { viewModel.updateBhModel(it) },
-                    onColorChange = { viewModel.updateBhColor(it) }
+                    onColorChange = { viewModel.updateBhColor(it) },
+                    rotationAngle = 45f
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -112,7 +158,8 @@ fun DropdownSelector(
     options: List<String>,
     selectedOption: String,
     onOptionSelected: (String) -> Unit,
-    isEnabled: Boolean = true
+    isEnabled: Boolean = true,
+    isColorSelector: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -126,8 +173,13 @@ fun DropdownSelector(
             value = selectedOption,
             onValueChange = {},
             label = { Text(label) },
+            leadingIcon = if (isColorSelector && selectedOption.isNotEmpty()) {
+                { ColorDot(colorName = selectedOption) }
+            } else null,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && isEnabled) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth(),
             enabled = isEnabled
         )
         ExposedDropdownMenu(
@@ -136,7 +188,16 @@ fun DropdownSelector(
         ) {
             options.forEach { selectionOption ->
                 DropdownMenuItem(
-                    text = { Text(selectionOption) },
+                    text = {
+                        // --- Lista elem ikonja ---
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (isColorSelector) {
+                                ColorDot(colorName = selectionOption)
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Text(selectionOption)
+                        }
+                    },
                     onClick = {
                         onOptionSelected(selectionOption)
                         expanded = false
@@ -160,76 +221,116 @@ fun BladeConfigurationBlock(
 
     if (showInfo) {
         InfoDialog(
-            title = "Ütőfa (Blade)",
-            text = "Az ütőfa a felszerelésed 'lelke'. Ez határozza meg a sebességet, a rugalmasságot és a labdaérzékelést. A fák típusai általában a védekezőtől (DEF) a mindenoldalún (ALL) át az agresszív támadóig (OFF+) terjednek.",
+            title = stringResource(R.string.racket),
+            text = stringResource(R.string.raacket_description),
             onDismiss = { showInfo = false }
         )
     }
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Fa adatok", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            IconButton(onClick = { showInfo = true }) {
-                Icon(Icons.Default.Info, contentDescription = "Információ a fáról", tint = Color.Gray)
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.blade_icon),
+                contentDescription = "Fa ikon",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.racket_details), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                IconButton(onClick = { showInfo = true }) {
+                    Icon(Icons.Default.Info, contentDescription = "Információ a fáról", tint = Color.Gray)
+                }
             }
-            Icon(Icons.Default.SportsTennis, contentDescription = "Fa ikon", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
         }
 
         DropdownSelector(
-            label = "Gyártó",
+            label = stringResource(R.string.manufacturer),
             options = manufacturers,
             selectedOption = blade.manufacturer,
             onOptionSelected = onManufacturerChange
         )
 
         DropdownSelector(
-            label = "Modell",
+            label = stringResource(R.string.model),
             options = models,
             selectedOption = blade.model,
             onOptionSelected = onModelChange,
             isEnabled = blade.manufacturer.isNotEmpty()
         )
     }
-}
+} // TODO extract components
 
 @Composable
 fun RubberConfigurationBlock(
     title: String,
+    iconResId: Int,
     rubber: Rubber,
     manufacturers: List<String>,
     models: List<String>,
     colors: List<String>,
     onManufacturerChange: (String) -> Unit,
     onModelChange: (String) -> Unit,
-    onColorChange: (String) -> Unit
+    onColorChange: (String) -> Unit,
+    rotationAngle: Float = 0f
 ) {
     var showInfo by remember { mutableStateOf(false) }
 
     if (showInfo) {
         InfoDialog(
             title = title,
-            text = "A borítás felel a labda megpörgetéséért (spin) és a sebességért. Fontos, hogy versenyeken kötelező egy piros és egy fekete (vagy más ITTF által engedélyezett színű) borítást használni!",
+            text = stringResource(R.string.rubber_description),
             onDismiss = { showInfo = false }
         )
     }
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            IconButton(onClick = { showInfo = true }) {
-                Icon(Icons.Default.Info, contentDescription = "Információ a borításról", tint = Color.Gray)
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = iconResId),
+                contentDescription = "Borítás ikon",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .rotate(rotationAngle)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                IconButton(onClick = { showInfo = true }) {
+                    Icon(Icons.Default.Info, contentDescription = "Információ a borításról", tint = Color.Gray)
+                }
             }
         }
 
         DropdownSelector(
-            label = "Gyártó",
+            label = stringResource(R.string.manufacturer),
             options = manufacturers,
             selectedOption = rubber.manufacturer,
             onOptionSelected = onManufacturerChange
         )
 
         DropdownSelector(
-            label = "Modell",
+            label = stringResource(R.string.model),
             options = models,
             selectedOption = rubber.model,
             onOptionSelected = onModelChange,
@@ -237,10 +338,11 @@ fun RubberConfigurationBlock(
         )
 
         DropdownSelector(
-            label = "Szín",
+            label = stringResource(R.string.color),
             options = colors,
             selectedOption = rubber.color,
-            onOptionSelected = onColorChange
+            onOptionSelected = onColorChange,
+            isColorSelector = true
         )
     }
 }

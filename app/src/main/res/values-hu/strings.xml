@@ -164,4 +164,27 @@
     <string name="click_on_arrows_to_change_order">Kattints a nyilakra a sorrend változtatásához, vagy tegyél be cserét!</string>
     <string name="free_place">Üres hely</string>
     <string name="changing_table">Cserepad</string>
+    <string name="red">piros</string>
+    <string name="black">fekete</string>
+    <string name="blue">kék</string>
+    <string name="green">zöld</string>
+    <string name="yellow">sárga</string>
+    <string name="pink">rózsaszín</string>
+    <string name="purple">lila</string>
+    <string name="equipment">Felszerelés</string>
+    <string name="blade">Ütőfa</string>
+    <string name="forehand">Tenyeres</string>
+    <string name="backhand">Fonák</string>
+    <string name="add_new_racket">ÚJ ÜTŐ HOZZÁADÁSA</string>
+    <string name="new_racket_assembly">Új ütő összeállítása</string>
+    <string name="save_racket">Ütő mentése</string>
+    <string name="forehand_rubber">Tenyeres borítás</string>
+    <string name="backhand_rubber">Fonák borítás</string>
+    <string name="racket">Ütőfa</string>
+    <string name="raacket_description">Az ütőfa a felszerelésed \'lelke\'. Ez határozza meg a sebességet, a rugalmasságot és a labdaérzékelést. A fák típusai általában a védekezőtől (DEF) a mindenoldalún (ALL) át az agresszív támadóig (OFF+) terjednek.</string>
+    <string name="racket_details">Fa adatok</string>
+    <string name="rubber_description">A borítás felel a labda megpörgetéséért (spin) és a sebességért. Fontos, hogy versenyeken kötelező egy piros és egy fekete (vagy más ITTF által engedélyezett színű) borítást használni!</string>
+    <string name="manufacturer">Gyártó</string>
+    <string name="model">Modell</string>
+    <string name="color">Szín</string>
 </resources>

@@ -296,7 +296,7 @@ fun EquipmentCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Felszerelés", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.equipment), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Icon(Icons.Default.SportsTennis, contentDescription = "Ütő", tint = MaterialTheme.colorScheme.primary)
             }
 
@@ -309,7 +309,7 @@ fun EquipmentCard(
                 Column(modifier = Modifier
                     .padding(16.dp)
                     .fillMaxWidth()) {
-                    Text("Ütőfa", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text(stringResource(R.string.blade), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     Text(bladeName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -319,7 +319,7 @@ fun EquipmentCard(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 ColorCircle(color = stringToColor(fhColorName))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Tenyeres", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Text(stringResource(R.string.forehand), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             }
                             Text(fhName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         }
@@ -328,7 +328,7 @@ fun EquipmentCard(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 ColorCircle(color = stringToColor(bhColorName))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Fonák", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Text(stringResource(R.string.backhand), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             }
                             Text(bhName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         }
@@ -336,7 +336,6 @@ fun EquipmentCard(
                 }
             }
 
-            // Gomb csak akkor jelenik meg, ha kapott rá lambdát
             if (onAddEquipmentClick != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
@@ -346,7 +345,7 @@ fun EquipmentCard(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("ÚJ ÜTŐ HOZZÁADÁSA", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.add_new_racket), fontWeight = FontWeight.Bold)
                 }
             }
         }
