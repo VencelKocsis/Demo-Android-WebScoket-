@@ -7,6 +7,9 @@ import hu.bme.aut.android.demo.domain.catalog.usecase.GetBladeManufacturersUseCa
 import hu.bme.aut.android.demo.domain.catalog.usecase.GetBladeModelsUseCase
 import hu.bme.aut.android.demo.domain.catalog.usecase.GetRubberManufacturersUseCase
 import hu.bme.aut.android.demo.domain.catalog.usecase.GetRubberModelsUseCase
+import hu.bme.aut.android.demo.domain.equipment.model.Equipment
+import hu.bme.aut.android.demo.domain.equipment.usecase.DeleteUserEquipmentUseCase
+import hu.bme.aut.android.demo.domain.equipment.usecase.SaveUserEquipmentUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +20,9 @@ import javax.inject.Inject
 // Az állapot, amit a UI figyelni fog
 data class RacketEditorUiState(
     val isLoading: Boolean = true,
+    val isSuccess: Boolean = false,
+    val errorMessage: String? = null,
+    val racketId: Int? = null, // null ha új ütő, Int ha létezőt szerkesztünk
 
     // Lista a legördülőkhöz az adatbázisból
     val bladeManufacturers: List<String> = emptyList(),
@@ -26,6 +32,7 @@ data class RacketEditorUiState(
     val availableFhModels: List<String> = emptyList(),
     val availableBhModels: List<String> = emptyList(),
 
+    // TODO: Ezt is lehetne adatbázisból tölteni, de most hardcoded marad
     val rubberColors: List<String> = listOf("Red", "Black", "Blue", "Green", "Pink", "Purple"),
 
     // A felhasználó jelenlegi választásai
@@ -36,10 +43,15 @@ data class RacketEditorUiState(
 
 @HiltViewModel
 class RacketEditorViewModel @Inject constructor(
+    // Helyi (Katalógus) UseCase-ek
     private val getBladeManufacturersUseCase: GetBladeManufacturersUseCase,
     private val getBladeModelsUseCase: GetBladeModelsUseCase,
     private val getRubberManufacturersUseCase: GetRubberManufacturersUseCase,
-    private val getRubberModelsUseCase: GetRubberModelsUseCase
+    private val getRubberModelsUseCase: GetRubberModelsUseCase,
+
+    // API (Felszerelés) UseCase-ek
+    private val saveUserEquipmentUseCase: SaveUserEquipmentUseCase,
+    private val deleteUserEquipmentUseCase: DeleteUserEquipmentUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RacketEditorUiState())
@@ -51,20 +63,15 @@ class RacketEditorViewModel @Inject constructor(
 
     private fun loadInitialData() {
         viewModelScope.launch {
-            // Jelezzük a UI-nak, hogy még töltünk
             _uiState.update { it.copy(isLoading = true) }
 
-            // Lekérjük a gyártókat a Room adatbázisból
             var bladeMfs = getBladeManufacturersUseCase()
             var rubberMfs = getRubberManufacturersUseCase()
 
-            // --- VERSENYHELYZET (RACE CONDITION) KIVÉDÉSE ---
-            // Ha az app legelső indításakor a Room még épp a háttérben tölti be az adatokat
-            // az onCreate callbackből, akkor várunk egy picit, és újra lekérdezzük.
-            // Maximum 10-szer próbáljuk (kb. 2 másodperc), utána feladjuk.
+            // Versenyhelyzet kivédése első indításkor
             var retries = 0
             while (bladeMfs.isEmpty() && retries < 10) {
-                kotlinx.coroutines.delay(200) // Várunk 200 ms-ot
+                kotlinx.coroutines.delay(200)
                 bladeMfs = getBladeManufacturersUseCase()
                 rubberMfs = getRubberManufacturersUseCase()
                 retries++
@@ -90,7 +97,6 @@ class RacketEditorViewModel @Inject constructor(
     // --- FA ESEMÉNYEK ---
     fun updateBladeManufacturer(manufacturer: String) {
         viewModelScope.launch {
-            // Ha változik a gyártó, lekérjük a Hozzá tartozó modelleket!
             val models = getBladeModelsUseCase(manufacturer)
             val newModel = models.firstOrNull() ?: ""
             _uiState.update { state ->
@@ -150,10 +156,44 @@ class RacketEditorViewModel @Inject constructor(
         _uiState.update { it.copy(currentBackhand = it.currentBackhand.copy(color = color)) }
     }
 
-    // --- MENTÉS ---
+    // --- MENTÉS (ÚJ VAGY LÉTEZŐ) ---
     fun saveRacket() {
-        // TODO: Backend (Ktor) hívás a mentéshez
-        val currentState = _uiState.value
-        println("Mentés: ${currentState.currentBlade}, FH: ${currentState.currentForehand}, BH: ${currentState.currentBackhand}")
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                val state = _uiState.value
+
+                val domainModel = Equipment(
+                    id = state.racketId,
+                    bladeManufacturer = state.currentBlade.manufacturer,
+                    bladeModel = state.currentBlade.model,
+                    fhRubberManufacturer = state.currentForehand.manufacturer,
+                    fhRubberModel = state.currentForehand.model,
+                    fhRubberColor = state.currentForehand.color,
+                    bhRubberManufacturer = state.currentBackhand.manufacturer,
+                    bhRubberModel = state.currentBackhand.model,
+                    bhRubberColor = state.currentBackhand.color
+                )
+
+                saveUserEquipmentUseCase(domainModel)
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Hiba a mentésnél: ${e.message}") }
+            }
+        }
+    }
+
+    // --- TÖRLÉS ---
+    fun deleteRacket() {
+        val id = _uiState.value.racketId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                deleteUserEquipmentUseCase(id)
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Hiba a törlésnél: ${e.message}") }
+            }
+        }
     }
 }

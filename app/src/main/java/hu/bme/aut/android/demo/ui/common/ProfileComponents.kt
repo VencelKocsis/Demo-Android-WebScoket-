@@ -277,13 +277,20 @@ fun RatingGraphCard(ratingHistory: List<Float>, onInfoClick: () -> Unit) {
     }
 }
 
-// --- 7. FELSZERELÉS KÁRTYA ---
+// --- DATA CLASS A UI-NAK ---
+data class RacketUiModel(
+    val bladeName: String,
+    val fhName: String,
+    val fhColorName: String,
+    val bhName: String,
+    val bhColorName: String
+)
+
+// --- 7. FELSZERELÉS KÁRTYA (FRISSÍTETT) ---
 @Composable
 fun EquipmentCard(
-    bladeName: String,
-    fhName: String, fhColorName: String,
-    bhName: String, bhColorName: String,
-    onAddEquipmentClick: (() -> Unit)? = null // Ha null, nincs gomb (olvasási mód)
+    rackets: List<RacketUiModel>,
+    onAddEquipmentClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -302,35 +309,49 @@ fun EquipmentCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()) {
-                    Text(stringResource(R.string.blade), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text(bladeName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            if (rackets.isEmpty()) {
+                // Ha még nincs ütője
+                Text(
+                    text = "Nincs még rögzített felszerelés.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            } else {
+                // Ha van ütője, végigiterálunk rajtuk
+                rackets.forEachIndexed { index, racket ->
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.padding(bottom = if (index < rackets.lastIndex) 12.dp else 0.dp)
+                    ) {
+                        Column(modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()) {
+                            Text(stringResource(R.string.blade), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(racket.bladeName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                ColorCircle(color = stringToColor(fhColorName))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(stringResource(R.string.forehand), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        ColorCircle(color = stringToColor(racket.fhColorName))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(stringResource(R.string.forehand), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                    }
+                                    Text(racket.fhName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        ColorCircle(color = stringToColor(racket.bhColorName))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(stringResource(R.string.backhand), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                    }
+                                    Text(racket.bhName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                }
                             }
-                            Text(fhName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                ColorCircle(color = stringToColor(bhColorName))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(stringResource(R.string.backhand), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            }
-                            Text(bhName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         }
                     }
                 }

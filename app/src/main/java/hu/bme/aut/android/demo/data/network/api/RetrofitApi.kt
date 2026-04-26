@@ -11,6 +11,7 @@ import hu.bme.aut.android.demo.data.network.model.teamMatch.AddParticipantDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.LineupSubmitDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ScoreSubmitDTO
+import hu.bme.aut.android.demo.data.racket.model.RacketDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -94,8 +95,14 @@ interface RetrofitApi {
     /**
      * Lekér egy adott felhasználót az egyedi azonosítója (UID) alapján.
      */
-    @GET("users/{uid}") // A valós backend végpontodtól függően ez lehet pl. "api/users/{uid}" is!
+    @GET("users/{uid}")
     suspend fun getUserById(
         @Path("uid") uid: String
     ): UserDTO
+
+    @POST("api/users/equipment")
+    suspend fun saveEquipment(@Body racketDto: RacketDTO)
+
+    @DELETE("api/users/equipment/{racketId}")
+    suspend fun deleteEquipment(@Path("racketId") racketId: Int)
 }

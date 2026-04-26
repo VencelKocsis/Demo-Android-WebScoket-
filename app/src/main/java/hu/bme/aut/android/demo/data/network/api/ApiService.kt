@@ -6,6 +6,7 @@ import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.racket.model.RacketDTO
 
 interface ApiService {
     suspend fun registerFcmToken(registration: FcmToken)
@@ -23,4 +24,8 @@ interface ApiService {
     suspend fun syncUser(user: UserDTO): UserDTO
     suspend fun updateUser(user: UserDTO): UserDTO
     suspend fun getUserById(uid: String): UserDTO
+
+    // Racket
+    suspend fun saveEquipment(racketDTO: RacketDTO)
+    suspend fun deleteEquipment(racketId: Int)
 }

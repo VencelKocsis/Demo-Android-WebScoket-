@@ -16,6 +16,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
@@ -25,6 +28,7 @@ import hu.bme.aut.android.demo.ui.common.ExtraStatsCard
 import hu.bme.aut.android.demo.ui.common.H2HCard
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.ProfileHeader
+import hu.bme.aut.android.demo.ui.common.RacketUiModel
 import hu.bme.aut.android.demo.ui.common.RatingGraphCard
 import hu.bme.aut.android.demo.ui.common.RecentFormCard
 import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
@@ -64,14 +68,6 @@ fun ProfileScreen(
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
     val backendUser = authState.backendUser
-
-    // Ideális esetben ezeket a DTO-ból, most mock a példa kedvéért TODO
-    val bladeName = "Butterfly Timo Boll ALC"
-    val fhName = "DHS Hurricane 3"
-    val fhColor = "Black"
-    val bhName = "Yasaka Rakza 7"
-    val bhColor = "Red"
-
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(backendUser) {
@@ -82,6 +78,19 @@ fun ProfileScreen(
         uiState.error?.let {
             snackbarHostState.showSnackbar(it)
             profileViewModel.clearError()
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                profileViewModel.refreshProfile()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -152,6 +161,17 @@ fun ProfileScreen(
         // A letöltött játékos
         val user = uiState.user ?: return@Scaffold
 
+        // --- FELSZERELÉS MAPPELÉSE ---
+        val equipmentList = user.equipment.map { racket ->
+            RacketUiModel(
+                bladeName = "${racket.bladeManufacturer} ${racket.bladeModel}",
+                fhName = "${racket.fhRubberManufacturer} ${racket.fhRubberModel}",
+                fhColorName = racket.fhRubberColor,
+                bhName = "${racket.bhRubberManufacturer} ${racket.bhRubberModel}",
+                bhColorName = racket.bhRubberColor
+            )
+        }
+
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -162,9 +182,9 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ProfileHeader(
-                firstName = user?.firstName ?: "",
-                lastName = user?.lastName ?: "",
-                email = user?.email,
+                firstName = user.firstName,
+                lastName = user.lastName,
+                email = user.email,
                 teamNames = uiState.userTeamNames
             )
 
@@ -198,9 +218,7 @@ fun ProfileScreen(
             )
 
             EquipmentCard(
-                bladeName = bladeName,
-                fhName = fhName, fhColorName = fhColor,
-                bhName = bhName, bhColorName = bhColor,
+                rackets = equipmentList,
                 onAddEquipmentClick = onNavigateToRacketEditor
             )
         }

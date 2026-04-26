@@ -19,6 +19,7 @@ import hu.bme.aut.android.demo.ui.common.EquipmentCard
 import hu.bme.aut.android.demo.ui.common.ExtraStatsCard
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.ProfileHeader
+import hu.bme.aut.android.demo.ui.common.RacketUiModel
 import hu.bme.aut.android.demo.ui.common.RatingGraphCard
 import hu.bme.aut.android.demo.ui.common.RecentFormCard
 
@@ -41,13 +42,6 @@ fun PlayerProfileScreen(
     var showGraphInfoDialog by remember { mutableStateOf(false) }
     var showH2HInfoDialog by remember { mutableStateOf(false) }
     var showOverallInfoDialog by remember { mutableStateOf(false) }
-
-    // Ideális esetben ezeket a DTO-ból, most mock-oljuk a példa kedvéért TODO
-    val bladeName = "Butterfly Timo Boll ALC"
-    val fhName = "DHS Hurricane 3"
-    val fhColor = "Black"
-    val bhName = "Yasaka Rakza 7"
-    val bhColor = "Red"
 
     Scaffold(
         topBar = {
@@ -81,6 +75,17 @@ fun PlayerProfileScreen(
         // A letöltött játékos
         val user = uiState.user ?: return@Scaffold
 
+        // --- FELSZERELÉS MAPPELÉSE MÁSOK PROFILJÁN ---
+        val equipmentList = user.equipment.map { racket ->
+            RacketUiModel(
+                bladeName = "${racket.bladeManufacturer} ${racket.bladeModel}",
+                fhName = "${racket.fhRubberManufacturer} ${racket.fhRubberModel}",
+                fhColorName = racket.fhRubberColor,
+                bhName = "${racket.bhRubberManufacturer} ${racket.bhRubberModel}",
+                bhColorName = racket.bhRubberColor
+            )
+        }
+
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -113,17 +118,13 @@ fun PlayerProfileScreen(
                 )
             }
 
-            // H2HCard itt nincs, mert ez publikus profil, de a sajátnál hívhatod!
-
             RatingGraphCard(
                 ratingHistory = uiState.ratingHistory,
                 onInfoClick = { showGraphInfoDialog = true }
             )
 
             EquipmentCard(
-                bladeName = bladeName,
-                fhName = fhName, fhColorName = fhColor,
-                bhName = bhName, bhColorName = bhColor,
+                rackets = equipmentList,
                 onAddEquipmentClick = null // Olvasási mód, nincs gomb!
             )
         }

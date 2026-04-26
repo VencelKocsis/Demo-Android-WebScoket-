@@ -74,6 +74,29 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun refreshProfile() {
+        viewModelScope.launch {
+            try {
+                // 1. Megszerezzük a bejelentkezett felhasználó Firebase UID-ját
+                val firebaseUid = getCurrentUserUseCase()?.uid ?: return@launch
+
+                // 2. Lekérjük a legfrissebb adatokat a backendről (felszereléssel együtt!)
+                val freshUserDTO = apiService.getUserById(firebaseUid)
+
+                if (freshUserDTO != null) {
+                    // 3. Frissítjük a UI állapotot a vadonatúj ütőkkel
+                    _uiState.update { it.copy(user = freshUserDTO) }
+                    // Újra betöltjük a statisztikákat is (biztos, ami biztos)
+                    loadUserStats(freshUserDTO)
+                }
+            } catch (e: Exception) {
+                // Itt most csak logolunk, nem dobunk piros hibát,
+                // hogy ne zavarjuk a felhasználót, ha épp megszakadt a nete visszalépéskor
+                e.printStackTrace()
+            }
+        }
+    }
+
     private fun loadUserTeams() {
         viewModelScope.launch {
             val firebaseUid = getCurrentUserUseCase()?.uid ?: return@launch

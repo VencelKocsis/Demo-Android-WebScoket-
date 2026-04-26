@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,13 +40,13 @@ import hu.bme.aut.android.demo.ui.theme.Purple40
 @Composable
 fun ColorDot(colorName: String, modifier: Modifier = Modifier) {
     val color = when (colorName.lowercase()) {
-        stringResource(R.string.red) -> ErrorRedSolid
-        stringResource(R.string.black) -> RacketBlack
-        stringResource(R.string.blue) -> RacketBlue
-        stringResource(R.string.green) -> SuccessGreenSolid
-        stringResource(R.string.yellow) -> RacketYellow
-        stringResource(R.string.pink) -> ProgressPink
-        stringResource(R.string.purple) -> Purple40 // TODO language resource fix
+        stringResource(R.string.red).lowercase() -> ErrorRedSolid
+        stringResource(R.string.black).lowercase() -> RacketBlack
+        stringResource(R.string.blue).lowercase() -> RacketBlue
+        stringResource(R.string.green).lowercase() -> SuccessGreenSolid
+        stringResource(R.string.yellow).lowercase() -> RacketYellow
+        stringResource(R.string.pink).lowercase() -> ProgressPink
+        stringResource(R.string.purple).lowercase() -> Purple40
         else -> Color.Transparent
     }
 
@@ -67,13 +68,31 @@ fun RacketEditorScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            onNavigateBack()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.new_racket_assembly)) },
+                title = { Text(if (state.racketId == null) stringResource(R.string.new_racket_assembly) else "Ütő szerkesztése") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Vissza a profilhoz")
+                    }
+                },
+                actions = {
+                    // Csak akkor jelenik meg a törlés gomb, ha már létező ütőt szerkesztünk!
+                    if (state.racketId != null) {
+                        IconButton(onClick = { viewModel.deleteRacket() }) {
+                            Icon(
+                                Icons.Default.Close, // X ikon
+                                contentDescription = "Ütő törlése",
+                                tint = MaterialTheme.colorScheme.error // Piros színű lesz
+                            )
+                        }
                     }
                 }
             )
@@ -91,61 +110,73 @@ fun RacketEditorScreen(
             }
         }
     ) { padding ->
-        if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (state.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // FA
+                    BladeConfigurationBlock(
+                        blade = state.currentBlade,
+                        manufacturers = state.bladeManufacturers,
+                        models = state.availableBladeModels,
+                        onManufacturerChange = { viewModel.updateBladeManufacturer(it) },
+                        onModelChange = { viewModel.updateBladeModel(it) }
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // TENYERES
+                    RubberConfigurationBlock(
+                        title = stringResource(R.string.forehand_rubber),
+                        iconResId = R.drawable.forehand_rubber_icon,
+                        rubber = state.currentForehand,
+                        manufacturers = state.rubberManufacturers,
+                        models = state.availableFhModels,
+                        colors = state.rubberColors,
+                        onManufacturerChange = { viewModel.updateFhManufacturer(it) },
+                        onModelChange = { viewModel.updateFhModel(it) },
+                        onColorChange = { viewModel.updateFhColor(it) },
+                        rotationAngle = -45f
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // FONÁK
+                    RubberConfigurationBlock(
+                        title = stringResource(R.string.backhand_rubber),
+                        iconResId = R.drawable.backhand_rubber_icon,
+                        rubber = state.currentBackhand,
+                        manufacturers = state.rubberManufacturers,
+                        models = state.availableBhModels,
+                        colors = state.rubberColors,
+                        onManufacturerChange = { viewModel.updateBhManufacturer(it) },
+                        onModelChange = { viewModel.updateBhModel(it) },
+                        onColorChange = { viewModel.updateBhColor(it) },
+                        rotationAngle = 45f
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+                }
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // FA
-                BladeConfigurationBlock(
-                    blade = state.currentBlade,
-                    manufacturers = state.bladeManufacturers,
-                    models = state.availableBladeModels,
-                    onManufacturerChange = { viewModel.updateBladeManufacturer(it) },
-                    onModelChange = { viewModel.updateBladeModel(it) }
-                )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                // TENYERES
-                RubberConfigurationBlock(
-                    title = stringResource(R.string.forehand_rubber),
-                    iconResId = R.drawable.forehand_rubber_icon,
-                    rubber = state.currentForehand,
-                    manufacturers = state.rubberManufacturers,
-                    models = state.availableFhModels,
-                    colors = state.rubberColors,
-                    onManufacturerChange = { viewModel.updateFhManufacturer(it) },
-                    onModelChange = { viewModel.updateFhModel(it) },
-                    onColorChange = { viewModel.updateFhColor(it) },
-                    rotationAngle = -45f
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                // FONÁK
-                RubberConfigurationBlock(
-                    title = stringResource(R.string.backhand_rubber),
-                    iconResId = R.drawable.backhand_rubber_icon,
-                    rubber = state.currentBackhand,
-                    manufacturers = state.rubberManufacturers,
-                    models = state.availableBhModels,
-                    colors = state.rubberColors,
-                    onManufacturerChange = { viewModel.updateBhManufacturer(it) },
-                    onModelChange = { viewModel.updateBhModel(it) },
-                    onColorChange = { viewModel.updateBhColor(it) },
-                    rotationAngle = 45f
-                )
-
-                Spacer(Modifier.height(16.dp))
+            state.errorMessage?.let { error ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp, start = 16.dp, end = 16.dp)
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
     }
@@ -189,7 +220,6 @@ fun DropdownSelector(
             options.forEach { selectionOption ->
                 DropdownMenuItem(
                     text = {
-                        // --- Lista elem ikonja ---
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (isColorSelector) {
                                 ColorDot(colorName = selectionOption)
@@ -269,7 +299,7 @@ fun BladeConfigurationBlock(
             isEnabled = blade.manufacturer.isNotEmpty()
         )
     }
-} // TODO extract components
+}
 
 @Composable
 fun RubberConfigurationBlock(

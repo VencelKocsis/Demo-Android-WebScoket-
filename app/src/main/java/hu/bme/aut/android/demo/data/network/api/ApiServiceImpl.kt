@@ -6,6 +6,7 @@ import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.racket.model.RacketDTO
 import javax.inject.Inject
 
 class ApiServiceImpl @Inject constructor(
@@ -24,4 +25,8 @@ class ApiServiceImpl @Inject constructor(
     override suspend fun syncUser(user: UserDTO): UserDTO = retrofitApi.syncUser(user)
     override suspend fun updateUser(user: UserDTO): UserDTO = retrofitApi.updateUser(user)
     override suspend fun getUserById(uid: String): UserDTO = retrofitApi.getUserById(uid)
+
+    override suspend fun saveEquipment(racketDTO: RacketDTO) = retrofitApi.saveEquipment(racketDTO)
+
+    override suspend fun deleteEquipment(racketId: Int) = retrofitApi.deleteEquipment(racketId)
 }
