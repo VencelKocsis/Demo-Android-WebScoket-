@@ -1,5 +1,6 @@
 package hu.bme.aut.android.demo.feature.racketEditor
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -9,6 +10,7 @@ import hu.bme.aut.android.demo.domain.catalog.usecase.GetRubberManufacturersUseC
 import hu.bme.aut.android.demo.domain.catalog.usecase.GetRubberModelsUseCase
 import hu.bme.aut.android.demo.domain.equipment.model.Equipment
 import hu.bme.aut.android.demo.domain.equipment.usecase.DeleteUserEquipmentUseCase
+import hu.bme.aut.android.demo.domain.equipment.usecase.GetEquipmentByIdUseCase
 import hu.bme.aut.android.demo.domain.equipment.usecase.SaveUserEquipmentUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +45,8 @@ data class RacketEditorUiState(
 
 @HiltViewModel
 class RacketEditorViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
+
     // Helyi (Katalógus) UseCase-ek
     private val getBladeManufacturersUseCase: GetBladeManufacturersUseCase,
     private val getBladeModelsUseCase: GetBladeModelsUseCase,
@@ -51,7 +55,8 @@ class RacketEditorViewModel @Inject constructor(
 
     // API (Felszerelés) UseCase-ek
     private val saveUserEquipmentUseCase: SaveUserEquipmentUseCase,
-    private val deleteUserEquipmentUseCase: DeleteUserEquipmentUseCase
+    private val deleteUserEquipmentUseCase: DeleteUserEquipmentUseCase,
+    private val getEquipmentByIdUseCase: GetEquipmentByIdUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RacketEditorUiState())
@@ -85,7 +90,51 @@ class RacketEditorViewModel @Inject constructor(
                 )
             }
 
-            // Ha van adat az adatbázisban, kiválasztjuk az elsőt alapértelmezettnek
+            val editRacketId = savedStateHandle.get<Int>("racketId")
+
+            if (editRacketId != null) {
+                try {
+                    val existingRacket = getEquipmentByIdUseCase(editRacketId)
+
+                    if (existingRacket != null) {
+                        // Modellek letöltése a legördülőkhöz
+                        val bModels = getBladeModelsUseCase(existingRacket.bladeManufacturer)
+                        val fhModels = getRubberModelsUseCase(existingRacket.fhRubberManufacturer)
+                        val bhModels = getRubberModelsUseCase(existingRacket.bhRubberManufacturer)
+
+                        _uiState.update { state ->
+                            state.copy(
+                                racketId = existingRacket.id,
+                                availableBladeModels = bModels,
+                                availableFhModels = fhModels,
+                                availableBhModels = bhModels,
+                                currentBlade = Blade(
+                                    manufacturer = existingRacket.bladeManufacturer,
+                                    model = existingRacket.bladeModel
+                                ),
+                                currentForehand = Rubber(
+                                    manufacturer = existingRacket.fhRubberManufacturer,
+                                    model = existingRacket.fhRubberModel,
+                                    color = existingRacket.fhRubberColor
+                                ),
+                                currentBackhand = Rubber(
+                                    manufacturer = existingRacket.bhRubberManufacturer,
+                                    model = existingRacket.bhRubberModel,
+                                    color = existingRacket.bhRubberColor
+                                ),
+                                isLoading = false
+                            )
+                        }
+                        return@launch // Ha sikeresen betöltöttük a létezőt, kilépünk
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            // --- 3. ALAPÉRTELMEZETT / ÚJ ÜTŐ BEÁLLÍTÁSA ---
+            _uiState.update { it.copy(isLoading = false) }
+
             if (bladeMfs.isNotEmpty()) updateBladeManufacturer(bladeMfs.first())
             if (rubberMfs.isNotEmpty()) {
                 updateFhManufacturer(rubberMfs.first())

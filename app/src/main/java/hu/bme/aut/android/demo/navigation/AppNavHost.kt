@@ -30,8 +30,7 @@ fun AppNavHost(
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-    // Itt a Típus (Osztály/Objektum) az indító útvonal
-    val startDestination: Any = when (authState) { // TODO nav3
+    val startDestination: Any = when (authState) {
         AuthState.UNKNOWN -> Login
         AuthState.AUTHENTICATED -> Main
         AuthState.UNAUTHENTICATED -> Login
@@ -65,31 +64,21 @@ fun AppNavHost(
                         }
                     },
                     onNavigateToTeamEditor = { teamId -> navController.navigate(TeamEditor(teamId)) },
-                    onNavigateToMatchDetails = { matchId ->
-                        navController.navigate(
-                            MatchDetails(
-                                matchId
-                            )
-                        )
-                    },
-                    onNavigateToPlayerProfile = { playerId ->
-                        navController.navigate(
-                            PlayerProfile(playerId)
-                        )
-                    },
-                    onNavigateToRacketEditor = {
-                        navController.navigate(RacketEditor)
+                    onNavigateToMatchDetails = { matchId -> navController.navigate(MatchDetails(matchId)) },
+                    onNavigateToPlayerProfile = { playerId -> navController.navigate(PlayerProfile(playerId)) },
+
+                    // --- JAVÍTVA: Kinyerjük a racketId-t és átadjuk a RacketEditor Route-nak! ---
+                    onNavigateToRacketEditor = { racketId ->
+                        navController.navigate(RacketEditor(racketId = racketId))
                     }
                 )
             }
 
             // --- 3. Csapatszerkesztő ---
             composable<TeamEditor> { backStackEntry ->
-                // Automatikus típusos argumentum kinyerés!
                 val args = backStackEntry.toRoute<TeamEditor>()
                 TeamEditorScreen(
                     onNavigateBack = { navController.popBackStack() }
-                    // A ViewModel majd a SavedStateHandle-ből automatikusan megkapja az ID-t!
                 )
             }
 
@@ -141,6 +130,8 @@ fun AppNavHost(
 
             // --- 9. Felszerelés ---
             composable<RacketEditor> {
+                // A ViewModel (RacketEditorViewModel) a SavedStateHandle-ön keresztül
+                // fogja tudni automatikusan kiolvasni a racketId-t
                 RacketEditorScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )

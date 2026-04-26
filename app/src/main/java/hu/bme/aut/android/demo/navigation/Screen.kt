@@ -42,4 +42,4 @@ data class PlayerProfile(val playerId: String)
 data object Leaderboard
 
 @Serializable
-data object RacketEditor
+data class RacketEditor(val racketId: Int? = null) // null = új ütő, Int = meglévő ütő szerkesztése
