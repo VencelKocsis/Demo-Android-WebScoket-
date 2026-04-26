@@ -61,7 +61,7 @@ fun MainScreen(
     onNavigateToTeamEditor: (Int) -> Unit = {},
     onNavigateToMatchDetails: (Int) -> Unit = {},
     onNavigateToPlayerProfile: (String) -> Unit = {},
-    onNavigateToRacketEditor: () -> Unit = {}
+    onNavigateToRacketEditor: (Int?) -> Unit = {}
 ) {
     val bottomNavController = rememberNavController()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()

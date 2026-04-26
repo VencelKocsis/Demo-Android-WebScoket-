@@ -90,8 +90,6 @@ class ProfileViewModel @Inject constructor(
                     loadUserStats(freshUserDTO)
                 }
             } catch (e: Exception) {
-                // Itt most csak logolunk, nem dobunk piros hibát,
-                // hogy ne zavarjuk a felhasználót, ha épp megszakadt a nete visszalépéskor
                 e.printStackTrace()
             }
         }

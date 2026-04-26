@@ -76,14 +76,17 @@ fun PlayerProfileScreen(
         val user = uiState.user ?: return@Scaffold
 
         // --- FELSZERELÉS MAPPELÉSE MÁSOK PROFILJÁN ---
-        val equipmentList = user.equipment.map { racket ->
-            RacketUiModel(
-                bladeName = "${racket.bladeManufacturer} ${racket.bladeModel}",
-                fhName = "${racket.fhRubberManufacturer} ${racket.fhRubberModel}",
-                fhColorName = racket.fhRubberColor,
-                bhName = "${racket.bhRubberManufacturer} ${racket.bhRubberModel}",
-                bhColorName = racket.bhRubberColor
-            )
+        val equipmentList = user.equipment.mapNotNull { racket ->
+            if (racket.id == null) null else {
+                RacketUiModel(
+                    id = racket.id,
+                    bladeName = "${racket.bladeManufacturer} ${racket.bladeModel}",
+                    fhName = "${racket.fhRubberManufacturer} ${racket.fhRubberModel}",
+                    fhColorName = racket.fhRubberColor,
+                    bhName = "${racket.bhRubberManufacturer} ${racket.bhRubberModel}",
+                    bhColorName = racket.bhRubberColor
+                )
+            }
         }
 
         Column(

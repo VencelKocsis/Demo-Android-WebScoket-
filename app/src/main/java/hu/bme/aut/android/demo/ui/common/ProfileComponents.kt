@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.ui.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -279,6 +280,7 @@ fun RatingGraphCard(ratingHistory: List<Float>, onInfoClick: () -> Unit) {
 
 // --- DATA CLASS A UI-NAK ---
 data class RacketUiModel(
+    val id: Int,
     val bladeName: String,
     val fhName: String,
     val fhColorName: String,
@@ -290,7 +292,8 @@ data class RacketUiModel(
 @Composable
 fun EquipmentCard(
     rackets: List<RacketUiModel>,
-    onAddEquipmentClick: (() -> Unit)? = null
+    onAddEquipmentClick: (() -> Unit)? = null,
+    onEditEquipmentClick: ((Int) -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -312,7 +315,7 @@ fun EquipmentCard(
             if (rackets.isEmpty()) {
                 // Ha még nincs ütője
                 Text(
-                    text = "Nincs még rögzített felszerelés.",
+                    text = stringResource(R.string.no_saved_equipment),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -323,7 +326,12 @@ fun EquipmentCard(
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.padding(bottom = if (index < rackets.lastIndex) 12.dp else 0.dp)
+                        modifier = Modifier
+                            .padding(bottom = if (index < rackets.lastIndex) 12.dp else 0.dp)
+                            .then(
+                                if (onEditEquipmentClick != null) Modifier.clickable { onEditEquipmentClick(racket.id) }
+                                else Modifier
+                            )
                     ) {
                         Column(modifier = Modifier
                             .padding(16.dp)
