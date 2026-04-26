@@ -188,4 +188,8 @@
     <string name="model">Model</string>
     <string name="color">Color</string>
     <string name="no_saved_equipment">There is no saved equipment.</string>
+    <string name="confirm_delete">Confirm delete</string>
+    <string name="are_you_sure_to_delete_equipment">Are you sure you want to delete this equipment? This action cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="edit_equipment">Edit equipment</string>
 </resources>

@@ -25,12 +25,14 @@ import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.ui.common.AggregateStatsCard
 import hu.bme.aut.android.demo.ui.common.EquipmentCard
 import hu.bme.aut.android.demo.ui.common.ExtraStatsCard
+import hu.bme.aut.android.demo.ui.common.GenericFilterDropdown
 import hu.bme.aut.android.demo.ui.common.H2HCard
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.ProfileHeader
 import hu.bme.aut.android.demo.ui.common.RacketUiModel
 import hu.bme.aut.android.demo.ui.common.RatingGraphCard
 import hu.bme.aut.android.demo.ui.common.RecentFormCard
+import hu.bme.aut.android.demo.ui.common.translateSeasonName
 import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
 import hu.bme.aut.android.demo.ui.theme.RacketBlack
 import hu.bme.aut.android.demo.ui.theme.RacketBlue
@@ -191,6 +193,19 @@ fun ProfileScreen(
                 teamNames = uiState.userTeamNames
             )
 
+            // --- SZEZON VÁLASZTÓ ---
+            if (uiState.availableSeasons.isNotEmpty()) {
+                GenericFilterDropdown(
+                    label = stringResource(R.string.season),
+                    defaultOptionText = stringResource(R.string.all),
+                    options = uiState.availableSeasons,
+                    selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
+                    optionLabeler = { translateSeasonName(it.second) },
+                    onOptionSelected = { profileViewModel.selectSeason(it?.first) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             AggregateStatsCard(
                 matchesPlayed = uiState.matchesPlayed,
                 matchesWon = uiState.matchesWon,
@@ -206,8 +221,6 @@ fun ProfileScreen(
                     flawlessDays = uiState.flawlessDays
                 )
             }
-
-            // TODO stats to current season
 
             H2HCard(
                 favoriteOpponent = uiState.favoriteOpponent,

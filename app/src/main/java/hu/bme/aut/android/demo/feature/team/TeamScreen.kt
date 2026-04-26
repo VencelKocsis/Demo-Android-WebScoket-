@@ -55,50 +55,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
-import hu.bme.aut.android.demo.domain.team.model.Team
-import hu.bme.aut.android.demo.domain.team.model.TeamDetails
 import hu.bme.aut.android.demo.ui.common.CommonFilterDialog
 import hu.bme.aut.android.demo.ui.common.GenericFilterDropdown
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.RatingGraphCard
 import hu.bme.aut.android.demo.ui.common.StatItem
 import hu.bme.aut.android.demo.ui.common.UniversalMatchCard
+import hu.bme.aut.android.demo.ui.common.translateSeasonName
 import hu.bme.aut.android.demo.ui.theme.CaptainYellow
 import hu.bme.aut.android.demo.ui.theme.WarningOrangeDark
 import kotlin.collections.isNotEmpty
-
-// --- Adatmodellek ---
-data class MatchResult(
-    val matchId: Int,
-    val opponent: String,
-    val date: String,
-    val homeScore: Int,
-    val awayScore: Int,
-    val isWin: Boolean
-)
-
-data class TeamScreenState(
-    val isLoading: Boolean = false,
-    val teamList: List<Team> = emptyList(),
-    val selectedTeam: TeamDetails? = null,
-    val isCurrentUserCaptain: Boolean = false,
-    val errorMessage: String? = null,
-    val recentMatches: List<MatchResult> = emptyList(),
-    val pointsHistory: List<Float> = emptyList(),
-
-    // Szűrő adatok
-    val availableClubs: List<String> = emptyList(),
-    val availableDivisions: List<String> = emptyList(),
-    val selectedClub: String? = null,
-    val selectedDivision: String? = null
-)
-
-sealed class TeamScreenEvent {
-    object LoadInitialData : TeamScreenEvent()
-    data class OnTeamSelected(val teamId: Int) : TeamScreenEvent()
-    data class OnClubSelected(val club: String?) : TeamScreenEvent()
-    data class OnDivisionSelected(val division: String?) : TeamScreenEvent()
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -189,6 +155,18 @@ fun TeamScreenContent(
                 title = stringResource(R.string.select_team),
                 onDismiss = { showFilterDialog = false }
             ) {
+                // --- SZEZON VÁLASZTÓ BEKERÜLT ---
+                if (state.availableSeasons.isNotEmpty()) {
+                    GenericFilterDropdown(
+                        label = stringResource(R.string.season),
+                        defaultOptionText = stringResource(R.string.all),
+                        options = state.availableSeasons,
+                        selectedOption = state.availableSeasons.find { it.first == state.selectedSeasonId },
+                        optionLabeler = { translateSeasonName(it.second) },
+                        onOptionSelected = { onEvent(TeamScreenEvent.OnSeasonSelected(it?.first)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 GenericFilterDropdown(
                     label = stringResource(R.string.club),
                     defaultOptionText = stringResource(R.string.all_clubs),

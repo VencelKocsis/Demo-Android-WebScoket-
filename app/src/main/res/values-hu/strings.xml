@@ -188,4 +188,8 @@
     <string name="model">Modell</string>
     <string name="color">Szín</string>
     <string name="no_saved_equipment">Nincs még rögzített felszerelés.</string>
+    <string name="confirm_delete">Törlés megerősítése</string>
+    <string name="are_you_sure_to_delete_equipment">Biztosan törölni szeretnéd ezt a felszerelést? Ez a művelet nem vonható vissza.</string>
+    <string name="delete">Törlés</string>
+    <string name="edit_equipment">Ütő szerkesztése</string>
 </resources>

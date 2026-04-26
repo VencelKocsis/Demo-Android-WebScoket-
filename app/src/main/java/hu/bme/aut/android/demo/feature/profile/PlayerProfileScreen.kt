@@ -17,11 +17,13 @@ import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.common.AggregateStatsCard
 import hu.bme.aut.android.demo.ui.common.EquipmentCard
 import hu.bme.aut.android.demo.ui.common.ExtraStatsCard
+import hu.bme.aut.android.demo.ui.common.GenericFilterDropdown
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 import hu.bme.aut.android.demo.ui.common.ProfileHeader
 import hu.bme.aut.android.demo.ui.common.RacketUiModel
 import hu.bme.aut.android.demo.ui.common.RatingGraphCard
 import hu.bme.aut.android.demo.ui.common.RecentFormCard
+import hu.bme.aut.android.demo.ui.common.translateSeasonName
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,6 +106,19 @@ fun PlayerProfileScreen(
                 email = user.email,
                 teamNames = uiState.userTeamNames
             )
+
+            // --- SZEZON VÁLASZTÓ ---
+            if (uiState.availableSeasons.isNotEmpty()) {
+                GenericFilterDropdown(
+                    label = stringResource(R.string.season),
+                    defaultOptionText = stringResource(R.string.all),
+                    options = uiState.availableSeasons,
+                    selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
+                    optionLabeler = { translateSeasonName(it.second) },
+                    onOptionSelected = { viewModel.selectSeason(it?.first) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             AggregateStatsCard(
                 matchesPlayed = uiState.matchesPlayed,

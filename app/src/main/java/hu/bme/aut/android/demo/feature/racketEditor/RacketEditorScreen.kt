@@ -67,6 +67,7 @@ fun RacketEditorScreen(
     viewModel: RacketEditorViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
@@ -77,7 +78,9 @@ fun RacketEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.racketId == null) stringResource(R.string.new_racket_assembly) else "Ütő szerkesztése") },
+                title = { Text(if (state.racketId == null) stringResource(R.string.new_racket_assembly) else stringResource(
+                    R.string.edit_equipment
+                )) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Vissza a profilhoz")
@@ -86,11 +89,11 @@ fun RacketEditorScreen(
                 actions = {
                     // Csak akkor jelenik meg a törlés gomb, ha már létező ütőt szerkesztünk!
                     if (state.racketId != null) {
-                        IconButton(onClick = { viewModel.deleteRacket() }) {
+                        IconButton(onClick = { showDeleteConfirmDialog = true }) {
                             Icon(
                                 Icons.Default.Close, // X ikon
                                 contentDescription = "Ütő törlése",
-                                tint = MaterialTheme.colorScheme.error // Piros színű lesz
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -110,7 +113,9 @@ fun RacketEditorScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
@@ -169,7 +174,9 @@ fun RacketEditorScreen(
             state.errorMessage?.let { error ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp, start = 16.dp, end = 16.dp)
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 80.dp, start = 16.dp, end = 16.dp)
                 ) {
                     Text(
                         text = error,
@@ -179,6 +186,29 @@ fun RacketEditorScreen(
                 }
             }
         }
+    }// --- TÖRLÉST MEGERŐSÍTŐ DIALÓGUS ---
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text(stringResource(R.string.confirm_delete), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.are_you_sure_to_delete_equipment)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        viewModel.deleteRacket()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text(stringResource(R.string.cancel), color = Color.Gray)
+                }
+            }
+        )
     }
 }
 
