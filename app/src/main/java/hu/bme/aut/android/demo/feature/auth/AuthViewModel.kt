@@ -4,14 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.auth.model.UserDTO
-import hu.bme.aut.android.demo.domain.auth.repository.AuthRepository
-import hu.bme.aut.android.demo.data.network.api.ApiService
 import hu.bme.aut.android.demo.domain.auth.usecase.SignInUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecase.SignOutUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecases.ForgotPasswordUseCase
 import hu.bme.aut.android.demo.domain.auth.usecases.RegisterUserUseCase
 import hu.bme.aut.android.demo.data.fcm.service.FcmTokenManager
+import hu.bme.aut.android.demo.domain.auth.model.User
+import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
+import hu.bme.aut.android.demo.domain.auth.usecases.SyncUserUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,16 +29,16 @@ data class AuthUiState(
     val successMessage: String? = null,
     val isAuthenticated: Boolean = false,
     val currentUser: FirebaseUser? = null,
-    val backendUser: UserDTO? = null
+    val backendUser: User? = null
 )
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    private val syncUserUseCase: SyncUserUseCase,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val registerUserUseCase: RegisterUserUseCase,
     private val signInUserUseCase: SignInUserUseCase,
     private val signOutUserUseCase: SignOutUserUseCase,
-    private val apiService: ApiService,
     private val forgotPasswordUseCase: ForgotPasswordUseCase,
     private val fcmTokenManager: FcmTokenManager
 ) : ViewModel() {
@@ -60,17 +60,18 @@ class AuthViewModel @Inject constructor(
 
     init {
         // App indulásakor, ha be van jelentkezve, szinkronizáljuk a Usert és a Tokent is!
-        val currentUser = authRepository.getCurrentUser()
+        val currentUser = getCurrentUserUseCase()
         if (currentUser != null) {
             _uiState.update { it.copy(isAuthenticated = true, currentUser = currentUser) }
 
             viewModelScope.launch {
                 try {
-                    val dto = UserDTO(id = 0, email = currentUser.email ?: "", firstName = "", lastName = "")
-                    val backendUser = apiService.syncUser(dto)
+                    val userDomain = User(id = 0, email = currentUser.email ?: "", firstName = "", lastName = "")
+                    val backendUser = syncUserUseCase(userDomain)
+
                     _uiState.update { it.copy(backendUser = backendUser) }
 
-                    // Token szinkronizáció minden induláskor!
+                    // Token szinkronizáció minden induláskor
                     currentUser.email?.let { email ->
                         fcmTokenManager.syncTokenWithServer(email)
                     }
@@ -81,7 +82,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun getCurrentUser() = authRepository.getCurrentUser()
+    fun getCurrentUser() = getCurrentUserUseCase()
 
     fun updateEmail(email: String) {
         _uiState.update { it.copy(emailInput = email, error = null, successMessage = null) }
@@ -116,8 +117,8 @@ class AuthViewModel @Inject constructor(
 
             result.onSuccess { firebaseUser ->
                 try {
-                    val dto = UserDTO(id = 0, email = firebaseUser.email ?: "", firstName = "Új", lastName = "Játékos")
-                    val backendUser = apiService.syncUser(dto)
+                    val userDomain = User(id = 0, email = firebaseUser.email ?: "", firstName = "Új", lastName = "Játékos")
+                    val backendUser = syncUserUseCase(userDomain)
 
                     _uiState.update {
                         it.copy(isLoading = false, isAuthenticated = true, currentUser = firebaseUser, backendUser = backendUser)
@@ -144,8 +145,8 @@ class AuthViewModel @Inject constructor(
 
             result.onSuccess { firebaseUser ->
                 try {
-                    val dto = UserDTO(id = 0, email = firebaseUser.email ?: "", firstName = "", lastName = "")
-                    val backendUser = apiService.syncUser(dto)
+                    val userDomain = User(id = 0, email = firebaseUser.email ?: "", firstName = "", lastName = "")
+                    val backendUser = syncUserUseCase(userDomain)
 
                     _uiState.update {
                         it.copy(isLoading = false, isAuthenticated = true, currentUser = firebaseUser, backendUser = backendUser)

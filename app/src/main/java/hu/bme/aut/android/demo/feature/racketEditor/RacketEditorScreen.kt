@@ -36,7 +36,6 @@ import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 import hu.bme.aut.android.demo.ui.theme.ProgressPink
 import hu.bme.aut.android.demo.ui.theme.Purple40
 
-// --- KOMPONENS A SZÍNES PÖTTYHÖZ ---
 @Composable
 fun ColorDot(colorName: String, modifier: Modifier = Modifier) {
     val color = when (colorName.lowercase()) {
@@ -78,20 +77,19 @@ fun RacketEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.racketId == null) stringResource(R.string.new_racket_assembly) else stringResource(
-                    R.string.edit_equipment
-                )) },
+                title = {
+                    Text(if (state.racketId == null) stringResource(R.string.new_racket_assembly) else stringResource(R.string.edit_equipment))
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Vissza a profilhoz")
                     }
                 },
                 actions = {
-                    // Csak akkor jelenik meg a törlés gomb, ha már létező ütőt szerkesztünk!
                     if (state.racketId != null) {
                         IconButton(onClick = { showDeleteConfirmDialog = true }) {
                             Icon(
-                                Icons.Default.Close, // X ikon
+                                Icons.Default.Close,
                                 contentDescription = "Ütő törlése",
                                 tint = MaterialTheme.colorScheme.error
                             )
@@ -102,7 +100,7 @@ fun RacketEditorScreen(
         },
         bottomBar = {
             Button(
-                onClick = { viewModel.saveRacket() }, // Mentés hívása
+                onClick = { viewModel.saveRacket() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -113,9 +111,7 @@ fun RacketEditorScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
@@ -167,6 +163,39 @@ fun RacketEditorScreen(
                         rotationAngle = 45f
                     )
 
+                    // --- ELADÓ KAPCSOLÓ ---
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Eladásra kínálom",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = "Az ütő megjelenik a Piacon, ahol más játékosok érdeklődhetnek iránta.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                        }
+
+                        Switch(
+                            checked = state.isForSale,
+                            onCheckedChange = { viewModel.updateIsForSale(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        )
+                    }
+
                     Spacer(Modifier.height(16.dp))
                 }
             }
@@ -176,7 +205,7 @@ fun RacketEditorScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 80.dp, start = 16.dp, end = 16.dp)
+                        .padding(bottom = 16.dp, start = 16.dp, end = 16.dp) // JAVÍTVA: 80.dp helyett
                 ) {
                     Text(
                         text = error,
@@ -186,7 +215,9 @@ fun RacketEditorScreen(
                 }
             }
         }
-    }// --- TÖRLÉST MEGERŐSÍTŐ DIALÓGUS ---
+    }
+
+    // --- TÖRLÉST MEGERŐSÍTŐ DIALÓGUS (Javított zárójelezés!) ---
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
@@ -211,6 +242,10 @@ fun RacketEditorScreen(
         )
     }
 }
+
+// ==========================================
+// 3. SEGÉDKOMPONENSEK
+// ==========================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

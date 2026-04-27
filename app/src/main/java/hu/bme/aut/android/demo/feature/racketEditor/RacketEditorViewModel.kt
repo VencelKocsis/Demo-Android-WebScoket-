@@ -19,14 +19,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Az állapot, amit a UI figyelni fog
 data class RacketEditorUiState(
     val isLoading: Boolean = true,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
-    val racketId: Int? = null, // null ha új ütő, Int ha létezőt szerkesztünk
+    val racketId: Int? = null,
+    val isForSale: Boolean = false,
 
-    // Lista a legördülőkhöz az adatbázisból
     val bladeManufacturers: List<String> = emptyList(),
     val rubberManufacturers: List<String> = emptyList(),
 
@@ -34,10 +33,8 @@ data class RacketEditorUiState(
     val availableFhModels: List<String> = emptyList(),
     val availableBhModels: List<String> = emptyList(),
 
-    // TODO: Ezt is lehetne adatbázisból tölteni, de most hardcoded marad
     val rubberColors: List<String> = listOf("Red", "Black", "Blue", "Green", "Pink", "Purple"),
 
-    // A felhasználó jelenlegi választásai
     val currentBlade: Blade = Blade(),
     val currentForehand: Rubber = Rubber(color = "Black"),
     val currentBackhand: Rubber = Rubber(color = "Red")
@@ -46,14 +43,10 @@ data class RacketEditorUiState(
 @HiltViewModel
 class RacketEditorViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-
-    // Helyi (Katalógus) UseCase-ek
     private val getBladeManufacturersUseCase: GetBladeManufacturersUseCase,
     private val getBladeModelsUseCase: GetBladeModelsUseCase,
     private val getRubberManufacturersUseCase: GetRubberManufacturersUseCase,
     private val getRubberModelsUseCase: GetRubberModelsUseCase,
-
-    // API (Felszerelés) UseCase-ek
     private val saveUserEquipmentUseCase: SaveUserEquipmentUseCase,
     private val deleteUserEquipmentUseCase: DeleteUserEquipmentUseCase,
     private val getEquipmentByIdUseCase: GetEquipmentByIdUseCase
@@ -73,7 +66,6 @@ class RacketEditorViewModel @Inject constructor(
             var bladeMfs = getBladeManufacturersUseCase()
             var rubberMfs = getRubberManufacturersUseCase()
 
-            // Versenyhelyzet kivédése első indításkor
             var retries = 0
             while (bladeMfs.isEmpty() && retries < 10) {
                 kotlinx.coroutines.delay(200)
@@ -85,8 +77,7 @@ class RacketEditorViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     bladeManufacturers = bladeMfs,
-                    rubberManufacturers = rubberMfs,
-                    isLoading = false
+                    rubberManufacturers = rubberMfs
                 )
             }
 
@@ -97,7 +88,6 @@ class RacketEditorViewModel @Inject constructor(
                     val existingRacket = getEquipmentByIdUseCase(editRacketId)
 
                     if (existingRacket != null) {
-                        // Modellek letöltése a legördülőkhöz
                         val bModels = getBladeModelsUseCase(existingRacket.bladeManufacturer)
                         val fhModels = getRubberModelsUseCase(existingRacket.fhRubberManufacturer)
                         val bhModels = getRubberModelsUseCase(existingRacket.bhRubberManufacturer)
@@ -122,17 +112,17 @@ class RacketEditorViewModel @Inject constructor(
                                     model = existingRacket.bhRubberModel,
                                     color = existingRacket.bhRubberColor
                                 ),
+                                isForSale = existingRacket.isForSale, // <-- PIAC: Betöltés
                                 isLoading = false
                             )
                         }
-                        return@launch // Ha sikeresen betöltöttük a létezőt, kilépünk
+                        return@launch
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
             }
 
-            // --- 3. ALAPÉRTELMEZETT / ÚJ ÜTŐ BEÁLLÍTÁSA ---
             _uiState.update { it.copy(isLoading = false) }
 
             if (bladeMfs.isNotEmpty()) updateBladeManufacturer(bladeMfs.first())
@@ -143,7 +133,10 @@ class RacketEditorViewModel @Inject constructor(
         }
     }
 
-    // --- FA ESEMÉNYEK ---
+    fun updateIsForSale(isForSale: Boolean) {
+        _uiState.update { it.copy(isForSale = isForSale) }
+    }
+
     fun updateBladeManufacturer(manufacturer: String) {
         viewModelScope.launch {
             val models = getBladeModelsUseCase(manufacturer)
@@ -161,7 +154,6 @@ class RacketEditorViewModel @Inject constructor(
         _uiState.update { it.copy(currentBlade = it.currentBlade.copy(model = model)) }
     }
 
-    // --- TENYERES (FH) ESEMÉNYEK ---
     fun updateFhManufacturer(manufacturer: String) {
         viewModelScope.launch {
             val models = getRubberModelsUseCase(manufacturer)
@@ -183,7 +175,6 @@ class RacketEditorViewModel @Inject constructor(
         _uiState.update { it.copy(currentForehand = it.currentForehand.copy(color = color)) }
     }
 
-    // --- FONÁK (BH) ESEMÉNYEK ---
     fun updateBhManufacturer(manufacturer: String) {
         viewModelScope.launch {
             val models = getRubberModelsUseCase(manufacturer)
@@ -205,7 +196,6 @@ class RacketEditorViewModel @Inject constructor(
         _uiState.update { it.copy(currentBackhand = it.currentBackhand.copy(color = color)) }
     }
 
-    // --- MENTÉS (ÚJ VAGY LÉTEZŐ) ---
     fun saveRacket() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -221,7 +211,8 @@ class RacketEditorViewModel @Inject constructor(
                     fhRubberColor = state.currentForehand.color,
                     bhRubberManufacturer = state.currentBackhand.manufacturer,
                     bhRubberModel = state.currentBackhand.model,
-                    bhRubberColor = state.currentBackhand.color
+                    bhRubberColor = state.currentBackhand.color,
+                    isForSale = state.isForSale // <-- PIAC: Mentés
                 )
 
                 saveUserEquipmentUseCase(domainModel)
@@ -232,7 +223,6 @@ class RacketEditorViewModel @Inject constructor(
         }
     }
 
-    // --- TÖRLÉS ---
     fun deleteRacket() {
         val id = _uiState.value.racketId ?: return
         viewModelScope.launch {

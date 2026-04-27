@@ -2,12 +2,15 @@ package hu.bme.aut.android.demo.data.auth.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import hu.bme.aut.android.demo.data.network.api.auth.AuthApiService
+import hu.bme.aut.android.demo.domain.auth.model.User
 import hu.bme.aut.android.demo.domain.auth.repository.AuthRepository
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val authApiService: AuthApiService
 ) : AuthRepository {
     override suspend fun registerUser(email: String, password: String): Result<FirebaseUser> {
         return try {
@@ -45,5 +48,17 @@ class AuthRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun getUserById(uid: String): User {
+        return authApiService.getUserById(uid)
+    }
+
+    override suspend fun updateUser(user: User): User {
+        return authApiService.updateUser(user)
+    }
+
+    override suspend fun syncUser(user: User): User {
+        return authApiService.syncUser(user)
     }
 }

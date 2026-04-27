@@ -9,5 +9,6 @@ data class Equipment(
     val fhRubberColor: String,
     val bhRubberManufacturer: String,
     val bhRubberModel: String,
-    val bhRubberColor: String
+    val bhRubberColor: String,
+    val isForSale: Boolean = false
 )

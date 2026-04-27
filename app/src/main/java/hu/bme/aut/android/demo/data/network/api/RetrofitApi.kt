@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.data.network.api
 
 import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
+import hu.bme.aut.android.demo.data.market.model.MarketItemDTO
 import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
@@ -73,12 +74,6 @@ interface RetrofitApi {
     @GET("matches/{id}")
     suspend fun getTeamMatchById(@Path("id") matchId: Int): TeamMatchDTO
 
-    @POST("/auth/sync")
-    suspend fun syncUser(@Body user: UserDTO): UserDTO
-
-    @PUT("/auth/me")
-    suspend fun updateUser(@Body user: UserDTO): UserDTO
-
     // --- Csapat szerkesztése ---
     @PUT("teams/{id}")
     suspend fun updateTeam(@Path("id") teamId: Int, @Body team: TeamUpdateDTO)
@@ -92,17 +87,17 @@ interface RetrofitApi {
     @DELETE("teams/{id}/members/{userId}")
     suspend fun removeTeamMember(@Path("id") teamId: Int, @Path("userId") userId: Int)
 
-    /**
-     * Lekér egy adott felhasználót az egyedi azonosítója (UID) alapján.
-     */
-    @GET("users/{uid}")
-    suspend fun getUserById(
-        @Path("uid") uid: String
-    ): UserDTO
-
     @POST("api/users/equipment")
     suspend fun saveEquipment(@Body racketDto: RacketDTO)
 
     @DELETE("api/users/equipment/{racketId}")
     suspend fun deleteEquipment(@Path("racketId") racketId: Int)
+
+    // Piac lekérdezése
+    @GET("/api/market/equipment")
+    suspend fun getMarketItems(): List<MarketItemDTO>
+
+    // Érdeklődés küldése (Push értesítés)
+    @POST("/api/market/equipment/{id}/inquire")
+    suspend fun inquireAboutEquipment(@Path("id") equipmentId: Int)
 }

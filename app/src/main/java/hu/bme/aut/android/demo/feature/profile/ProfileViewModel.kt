@@ -3,9 +3,10 @@ package hu.bme.aut.android.demo.feature.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.auth.model.UserDTO
-import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.domain.auth.model.User
 import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
+import hu.bme.aut.android.demo.domain.auth.usecases.GetUserByIdUseCase
+import hu.bme.aut.android.demo.domain.auth.usecases.UpdateUserUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchesUseCase
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ProfileUiState(
-    val user: UserDTO? = null,
+    val user: User? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val userTeamNames: List<String> = emptyList(),
@@ -47,7 +48,8 @@ data class ProfileUiState(
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val apiService: ApiService,
+    private val getUserByIdUseCase: GetUserByIdUseCase,
+    private val updateUserUseCase: UpdateUserUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val getTeamsUseCase: GetTeamsUseCase,
     private val getTeamMatchesUseCase: GetTeamMatchesUseCase
@@ -70,7 +72,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    private fun loadUserStats(user: UserDTO) {
+    private fun loadUserStats(user: User) {
         viewModelScope.launch {
             try {
                 val allMatches = getTeamMatchesUseCase()
@@ -97,7 +99,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    private fun calculateStatsForSeason(user: UserDTO, seasonId: Int?) {
+    private fun calculateStatsForSeason(user: User, seasonId: Int?) {
         val fullName = "${user.lastName} ${user.firstName}"
 
         // Csak a kiválasztott szezon meccseit tartjuk meg (vagy mindet, ha a seasonId null)
@@ -165,12 +167,12 @@ class ProfileViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
-                val userDTO = apiService.getUserById(uid)
+                val user = getUserByIdUseCase(uid)
 
-                _uiState.update { it.copy(user = userDTO, isLoading = false) }
+                _uiState.update { it.copy(user = user, isLoading = false) }
 
-                if (userDTO != null) {
-                    loadUserStats(userDTO as UserDTO)
+                if (user != null) {
+                    loadUserStats(user)
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -187,13 +189,13 @@ class ProfileViewModel @Inject constructor(
                 val firebaseUid = getCurrentUserUseCase()?.uid ?: return@launch
 
                 // 2. Lekérjük a legfrissebb adatokat a backendről (felszereléssel együtt!)
-                val freshUserDTO = apiService.getUserById(firebaseUid)
+                val freshUser = getUserByIdUseCase(firebaseUid)
 
-                if (freshUserDTO != null) {
+                if (freshUser != null) {
                     // 3. Frissítjük a UI állapotot a vadonatúj ütőkkel
-                    _uiState.update { it.copy(user = freshUserDTO) }
+                    _uiState.update { it.copy(user = freshUser) }
                     // Újra betöltjük a statisztikákat is (biztos, ami biztos)
-                    loadUserStats(freshUserDTO)
+                    loadUserStats(freshUser)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -214,10 +216,10 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun initUser(userDTO: UserDTO?) {
-        if (userDTO != null && _uiState.value.user?.id != userDTO.id) {
-            _uiState.update { it.copy(user = userDTO, isLoading = false) }
-            loadUserStats(userDTO)
+    fun initUser(user: User?) {
+        if (user != null && _uiState.value.user?.id != user.id) {
+            _uiState.update { it.copy(user = user, isLoading = false) }
+            loadUserStats(user)
         }
     }
 
@@ -231,7 +233,7 @@ class ProfileViewModel @Inject constructor(
                 val optimisticUser = currentUser.copy(firstName = firstName, lastName = lastName)
                 _uiState.update { it.copy(user = optimisticUser) }
 
-                val savedUser = apiService.updateUser(optimisticUser)
+                val savedUser = updateUserUseCase(optimisticUser)
                 _uiState.update { it.copy(isLoading = false, user = savedUser) }
             } catch (e: Exception) {
                 _uiState.update {

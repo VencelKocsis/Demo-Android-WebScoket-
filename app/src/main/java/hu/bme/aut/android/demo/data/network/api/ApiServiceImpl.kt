@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.data.network.api
 
 import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
+import hu.bme.aut.android.demo.data.market.model.MarketItemDTO
 import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
@@ -22,11 +23,10 @@ class ApiServiceImpl @Inject constructor(
     override suspend fun removeTeamMember(teamId: Int, userId: Int) = retrofitApi.removeTeamMember(teamId, userId)
     override suspend fun signMatch(matchId: Int) = retrofitApi.signMatch(matchId)
 
-    override suspend fun syncUser(user: UserDTO): UserDTO = retrofitApi.syncUser(user)
-    override suspend fun updateUser(user: UserDTO): UserDTO = retrofitApi.updateUser(user)
-    override suspend fun getUserById(uid: String): UserDTO = retrofitApi.getUserById(uid)
-
     override suspend fun saveEquipment(racketDTO: RacketDTO) = retrofitApi.saveEquipment(racketDTO)
 
     override suspend fun deleteEquipment(racketId: Int) = retrofitApi.deleteEquipment(racketId)
+    override suspend fun getMarketItems(): List<MarketItemDTO> = retrofitApi.getMarketItems()
+
+    override suspend fun inquireAboutEquipment(equipmentId: Int) = retrofitApi.inquireAboutEquipment(equipmentId)
 }

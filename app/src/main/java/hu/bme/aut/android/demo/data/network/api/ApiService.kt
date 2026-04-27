@@ -2,6 +2,7 @@ package hu.bme.aut.android.demo.data.network.api
 
 import hu.bme.aut.android.demo.data.auth.model.UserDTO
 import hu.bme.aut.android.demo.data.fcm.model.FcmToken
+import hu.bme.aut.android.demo.data.market.model.MarketItemDTO
 import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
@@ -20,12 +21,11 @@ interface ApiService {
     suspend fun removeTeamMember(teamId: Int, userId: Int)
     suspend fun signMatch(matchId: Int)
 
-    // Auth
-    suspend fun syncUser(user: UserDTO): UserDTO
-    suspend fun updateUser(user: UserDTO): UserDTO
-    suspend fun getUserById(uid: String): UserDTO
-
     // Racket
     suspend fun saveEquipment(racketDTO: RacketDTO)
     suspend fun deleteEquipment(racketId: Int)
+
+    // Market
+    suspend fun getMarketItems(): List<MarketItemDTO>
+    suspend fun inquireAboutEquipment(equipmentId: Int)
 }

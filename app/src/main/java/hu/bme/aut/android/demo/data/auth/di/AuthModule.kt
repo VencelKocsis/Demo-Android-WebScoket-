@@ -7,7 +7,11 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.android.demo.data.auth.repository.AuthRepositoryImpl
+import hu.bme.aut.android.demo.data.network.api.auth.AuthApiService
+import hu.bme.aut.android.demo.data.network.api.auth.AuthApiServiceImpl
+import hu.bme.aut.android.demo.data.network.api.auth.AuthRetrofitApi
 import hu.bme.aut.android.demo.domain.auth.repository.AuthRepository
+import retrofit2.Retrofit
 import javax.inject.Singleton
 
 /**
@@ -19,7 +23,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AuthModule {
 
-    // --- @Provides: Harmadik fél könyvtárak példányainak biztosítása ---
+    // --- @Provides: Harmadik fél könyvtárak / Generált API-k biztosítása ---
 
     /**
      * Biztosítja a FirebaseAuth egyetlen példányát a Hilt számára.
@@ -30,6 +34,16 @@ object AuthModule {
         return FirebaseAuth.getInstance()
     }
 
+    /**
+     * Létrehozza az AuthRetrofitApi-t a globális Retrofit példány segítségével.
+     * (A Retrofit példányt a Hilt automatikusan injektálja a NetworkModule-ból).
+     */
+    @Provides
+    @Singleton
+    fun provideAuthRetrofitApi(retrofit: Retrofit): AuthRetrofitApi {
+        return retrofit.create(AuthRetrofitApi::class.java)
+    }
+
     // --- @Binds: Interfész és implementáció összekapcsolása ---
 
     @Module
@@ -38,15 +52,20 @@ object AuthModule {
 
         /**
          * Összekapcsolja az AuthRepository interfészt az AuthRepositoryImpl implementációval.
-         *
-         * @param authRepositoryImpl Az AuthRepositoryImpl, amit a Hilt képes felépíteni
-         * (mivel a FirebaseAuth-ot most már tudja biztosítani).
-         * @return Az AuthRepository interfész implementációja.
          */
         @Binds
         @Singleton
         abstract fun bindAuthRepository(
             authRepositoryImpl: AuthRepositoryImpl
         ): AuthRepository
+
+        /**
+         * Összekapcsolja az AuthApiService interfészt az AuthApiServiceImpl implementációval.
+         */
+        @Binds
+        @Singleton
+        abstract fun bindAuthApiService(
+            authApiServiceImpl: AuthApiServiceImpl
+        ): AuthApiService
     }
 }

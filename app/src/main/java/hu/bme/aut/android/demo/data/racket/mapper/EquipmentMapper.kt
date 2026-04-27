@@ -13,7 +13,8 @@ fun Equipment.toDTO(): RacketDTO {
         fhRubberColor = this.fhRubberColor,
         bhRubberManufacturer = this.bhRubberManufacturer,
         bhRubberModel = this.bhRubberModel,
-        bhRubberColor = this.bhRubberColor
+        bhRubberColor = this.bhRubberColor,
+        isForSale = this.isForSale
     )
 }
 
@@ -27,6 +28,7 @@ fun RacketDTO.toDomain(): Equipment {
         fhRubberColor = this.fhRubberColor,
         bhRubberManufacturer = this.bhRubberManufacturer,
         bhRubberModel = this.bhRubberModel,
-        bhRubberColor = this.bhRubberColor
+        bhRubberColor = this.bhRubberColor,
+        isForSale = this.isForSale
     )
 }

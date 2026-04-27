@@ -1,6 +1,7 @@
 package hu.bme.aut.android.demo.data.racket.repository
 
 import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.network.api.auth.AuthApiService
 import hu.bme.aut.android.demo.data.racket.mapper.toDTO
 import hu.bme.aut.android.demo.data.racket.mapper.toDomain
 import hu.bme.aut.android.demo.data.racket.model.RacketDTO
@@ -13,6 +14,7 @@ import javax.inject.Singleton
 @Singleton
 class EquipmentRepositoryImpl @Inject constructor(
     private val apiService: ApiService,
+    private val authApiService: AuthApiService,
     private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : EquipmentRepository {
 
@@ -26,13 +28,12 @@ class EquipmentRepositoryImpl @Inject constructor(
 
     override suspend fun getEquipmentById(racketId: Int): Equipment? {
         val uid = getCurrentUserUseCase()?.uid ?: return null
-        val userProfile = apiService.getUserById(uid) ?: return null
+        val userProfile = authApiService.getUserById(uid) ?: return null
 
         // Kikeresjük az ütőt az id alapján
-        val racketDto = userProfile.equipment.find { it.id == racketId }
+        val racket = userProfile.equipment.find { it.id == racketId }
 
         // DTO-ból Domain Modellbe mapeljük
-        return racketDto?.toDomain()
+        return racket
     }
-
 }
