@@ -111,7 +111,9 @@ fun RacketEditorScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
@@ -175,12 +177,12 @@ fun RacketEditorScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Eladásra kínálom",
+                                text = stringResource(R.string.offer_for_sale),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(
-                                text = "Az ütő megjelenik a Piacon, ahol más játékosok érdeklődhetnek iránta.",
+                                text = stringResource(R.string.racket_appears_on_market),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.Gray
                             )

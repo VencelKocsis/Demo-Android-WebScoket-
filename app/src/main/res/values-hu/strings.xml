@@ -192,4 +192,12 @@
     <string name="are_you_sure_to_delete_equipment">Biztosan törölni szeretnéd ezt a felszerelést? Ez a művelet nem vonható vissza.</string>
     <string name="delete">Törlés</string>
     <string name="edit_equipment">Ütő szerkesztése</string>
+    <string name="interested">Érdekel!</string>
+    <string name="forehand_v3">Tenyerese: %1$s %2$s (%3$s)</string>
+    <string name="backhand_v3">Fonákja: %1$s %2$s (%3$s)</string>
+    <string name="racket_v3">Fa: %1$s %2$s</string>
+    <string name="no_racket_for_sale">Jelenleg nincs eladó felszerelés a piacon.</string>
+    <string name="market">Piac</string>
+    <string name="offer_for_sale">Eladásra kínálom</string>
+    <string name="racket_appears_on_market">Az ütő megjelenik a Piacon, ahol más játékosok érdeklődhetnek iránta.</string>
 </resources>

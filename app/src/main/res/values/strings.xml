@@ -192,4 +192,12 @@
     <string name="are_you_sure_to_delete_equipment">Are you sure you want to delete this equipment? This action cannot be undone.</string>
     <string name="delete">Delete</string>
     <string name="edit_equipment">Edit equipment</string>
+    <string name="interested">Interested!</string>
+    <string name="forehand_v3">Forehand: %1$s %2$s (%3$s)</string>
+    <string name="backhand_v3">Backhand: %1$s %2$s (%3$s)</string>
+    <string name="racket_v3">Racket: %1$s %2$s</string>
+    <string name="no_racket_for_sale">There is currently no equipment for sale on the market.</string>
+    <string name="market">Market</string>
+    <string name="offer_for_sale">Offer for sale</string>
+    <string name="racket_appears_on_market">The racket will appear on the Market, where other players may be interested in it.</string>
 </resources>

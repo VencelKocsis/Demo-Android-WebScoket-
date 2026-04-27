@@ -160,7 +160,9 @@ fun MainScreen(
                     LeaderboardScreen()
                 }
                 composable<Market> {
-                    MarketScreen()
+                    MarketScreen(
+                        onNavigateBack = { bottomNavController.popBackStack() }
+                    )
                 }
             }
         }

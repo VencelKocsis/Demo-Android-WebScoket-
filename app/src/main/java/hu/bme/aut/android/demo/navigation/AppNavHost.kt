@@ -67,8 +67,6 @@ fun AppNavHost(
                     onNavigateToTeamEditor = { teamId -> navController.navigate(TeamEditor(teamId)) },
                     onNavigateToMatchDetails = { matchId -> navController.navigate(MatchDetails(matchId)) },
                     onNavigateToPlayerProfile = { playerId -> navController.navigate(PlayerProfile(playerId)) },
-
-                    // --- JAVÍTVA: Kinyerjük a racketId-t és átadjuk a RacketEditor Route-nak! ---
                     onNavigateToRacketEditor = { racketId ->
                         navController.navigate(RacketEditor(racketId = racketId))
                     }
