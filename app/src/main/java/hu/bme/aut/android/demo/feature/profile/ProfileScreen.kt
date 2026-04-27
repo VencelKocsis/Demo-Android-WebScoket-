@@ -114,15 +114,6 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.user_profile)) },
                 actions = {
-
-                    IconButton(onClick = onNavigateToMarket) {
-                        Icon(
-                            imageVector = Icons.Default.ShoppingCart,
-                            contentDescription = "Piac",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-
                     LanguageSelector()
 
                     IconButton(onClick = { showMenu = true }) {
@@ -246,7 +237,8 @@ fun ProfileScreen(
             EquipmentCard(
                 rackets = equipmentList,
                 onAddEquipmentClick = { onNavigateToRacketEditor(null) },
-                onEditEquipmentClick = { racketId -> onNavigateToRacketEditor(racketId) }
+                onEditEquipmentClick = { racketId -> onNavigateToRacketEditor(racketId) },
+                onNavigateToMarket = onNavigateToMarket
             )
         }
     }

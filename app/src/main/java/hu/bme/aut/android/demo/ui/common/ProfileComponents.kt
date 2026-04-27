@@ -293,7 +293,8 @@ data class RacketUiModel(
 fun EquipmentCard(
     rackets: List<RacketUiModel>,
     onAddEquipmentClick: (() -> Unit)? = null,
-    onEditEquipmentClick: ((Int) -> Unit)? = null
+    onEditEquipmentClick: ((Int) -> Unit)? = null,
+    onNavigateToMarket: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -307,7 +308,20 @@ fun EquipmentCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(stringResource(R.string.equipment), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Icon(Icons.Default.SportsTennis, contentDescription = "Ütő", tint = MaterialTheme.colorScheme.primary)
+
+                if (onNavigateToMarket != null) {
+                    FilledTonalIconButton(
+                        onClick = onNavigateToMarket,
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Ugrás a Piacra")
+                    }
+                } else {
+                    Icon(Icons.Default.SportsTennis, contentDescription = "Ütő", tint = MaterialTheme.colorScheme.primary)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

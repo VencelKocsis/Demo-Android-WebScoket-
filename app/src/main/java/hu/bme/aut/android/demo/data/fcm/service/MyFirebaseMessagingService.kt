@@ -84,10 +84,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     showNotification(title, body, matchId)
                 }
 
-                "MANUAL_TEST" -> {
-                    val testTitle = data["title"] ?: "Teszt Értesítés"
-                    val testBody = data["body"] ?: "Ez egy manuális teszt üzenet."
-                    showNotification(testTitle, testBody, null)
+                "MARKET_INQUIRY" -> {
+                    val title = data["title"] ?: "Érdeklődés felszerelésre!"
+                    val body = data["body"] ?: "Valakit érdekel a piacon lévő ütőd!"
+
+                    showNotification(title, body, null)
                 }
 
                 else -> {
