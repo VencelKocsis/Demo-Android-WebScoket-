@@ -15,6 +15,7 @@ import hu.bme.aut.android.demo.feature.auth.LoginScreen
 import hu.bme.aut.android.demo.feature.auth.AuthViewModel
 import hu.bme.aut.android.demo.feature.leaderboard.LeaderboardScreen
 import hu.bme.aut.android.demo.feature.main.MainScreen
+import hu.bme.aut.android.demo.feature.market.MarketScreen
 import hu.bme.aut.android.demo.feature.profile.PlayerProfileScreen
 import hu.bme.aut.android.demo.feature.racketEditor.RacketEditorScreen
 import hu.bme.aut.android.demo.feature.team.editor.TeamEditorScreen
@@ -119,7 +120,8 @@ fun AppNavHost(
                 val args = backStackEntry.toRoute<PlayerProfile>()
                 PlayerProfileScreen(
                     playerId = args.playerId,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToMarket = { navController.navigate(Market) }
                 )
             }
 

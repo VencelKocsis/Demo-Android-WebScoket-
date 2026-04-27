@@ -42,4 +42,8 @@ data class PlayerProfile(val playerId: String)
 data object Leaderboard
 
 @Serializable
-data class RacketEditor(val racketId: Int? = null) // null = új ütő, Int = meglévő ütő szerkesztése
+data class RacketEditor(val racketId: Int? = null)// null = új ütő, Int = meglévő ütő szerkesztése
+
+@Serializable
+data object Market {
+}

@@ -66,6 +66,7 @@ fun ProfileScreen(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     onLogoutClick: () -> Unit,
     onNavigateToRacketEditor: (Int?) -> Unit,
+    onNavigateToMarket: () -> Unit
 ) {
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
@@ -113,6 +114,15 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.user_profile)) },
                 actions = {
+
+                    IconButton(onClick = onNavigateToMarket) {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingCart,
+                            contentDescription = "Piac",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+
                     LanguageSelector()
 
                     IconButton(onClick = { showMenu = true }) {

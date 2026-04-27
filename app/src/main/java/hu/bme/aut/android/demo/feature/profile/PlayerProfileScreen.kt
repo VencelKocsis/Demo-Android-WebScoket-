@@ -30,7 +30,8 @@ import hu.bme.aut.android.demo.ui.common.translateSeasonName
 fun PlayerProfileScreen(
     playerId: String,
     onNavigateBack: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
+    onNavigateToMarket: () -> Unit
 ) {
     // Állapot kinyerése
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
