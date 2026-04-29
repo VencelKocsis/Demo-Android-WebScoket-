@@ -1,4 +1,4 @@
-package hu.bme.aut.android.demo.feature.racketEditor
+package hu.bme.aut.android.demo.feature.equipment
 
 import androidx.compose.runtime.Immutable
  // TODO replace and delete

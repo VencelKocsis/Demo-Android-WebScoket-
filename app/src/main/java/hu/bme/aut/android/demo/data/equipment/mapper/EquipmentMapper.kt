@@ -1,8 +1,12 @@
-package hu.bme.aut.android.demo.data.racket.mapper
+package hu.bme.aut.android.demo.data.equipment.mapper
 
-import hu.bme.aut.android.demo.data.racket.model.RacketDTO
+import hu.bme.aut.android.demo.data.equipment.model.RacketDTO
 import hu.bme.aut.android.demo.domain.equipment.model.Equipment
 
+/**
+ * A tiszta Domain modellt alakítja át hálózati adatátviteli objektummá (DTO),
+ * hogy a Retrofit el tudja küldeni a szervernek.
+ */
 fun Equipment.toDTO(): RacketDTO {
     return RacketDTO(
         id = this.id,
@@ -18,6 +22,9 @@ fun Equipment.toDTO(): RacketDTO {
     )
 }
 
+/**
+ * A hálózati JSON modellt (DTO) alakítja át tiszta Domain modellé az üzleti logika számára.
+ */
 fun RacketDTO.toDomain(): Equipment {
     return Equipment(
         id = this.id,

@@ -1,10 +1,10 @@
 package hu.bme.aut.android.demo.data.network.api.match
 
-import hu.bme.aut.android.demo.data.network.model.teamMatch.AddParticipantDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.LineupSubmitDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.ScoreSubmitDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.mapper.toDomain
+import hu.bme.aut.android.demo.data.teammatch.model.AddParticipantDTO
+import hu.bme.aut.android.demo.data.teammatch.model.LineupSubmitDTO
+import hu.bme.aut.android.demo.data.teammatch.model.ParticipantStatusUpdateDTO
+import hu.bme.aut.android.demo.data.teammatch.model.ScoreSubmitDTO
+import hu.bme.aut.android.demo.data.teammatch.mapper.toDomain
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import javax.inject.Inject
 

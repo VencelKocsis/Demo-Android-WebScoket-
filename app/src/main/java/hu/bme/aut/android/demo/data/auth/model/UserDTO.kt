@@ -1,7 +1,7 @@
 package hu.bme.aut.android.demo.data.auth.model
 
 import kotlinx.serialization.Serializable
-import hu.bme.aut.android.demo.data.racket.model.RacketDTO
+import hu.bme.aut.android.demo.data.equipment.model.RacketDTO
 
 /**
  * Data Transfer Object (DTO) a felhasználó adatainak tárolására és hálózati küldésére.

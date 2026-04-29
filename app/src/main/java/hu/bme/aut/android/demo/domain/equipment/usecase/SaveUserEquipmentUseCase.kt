@@ -4,10 +4,9 @@ import hu.bme.aut.android.demo.domain.equipment.model.Equipment
 import hu.bme.aut.android.demo.domain.equipment.repository.EquipmentRepository
 import javax.inject.Inject
 
+/** UseCase egy új ütő hozzáadásához, vagy egy meglévő módosításához. */
 class SaveUserEquipmentUseCase @Inject constructor(
     private val repository: EquipmentRepository
 ) {
-    suspend operator fun invoke(racket: Equipment) {
-        repository.saveEquipment(racket)
-    }
+    suspend operator fun invoke(racket: Equipment) = repository.saveEquipment(racket)
 }

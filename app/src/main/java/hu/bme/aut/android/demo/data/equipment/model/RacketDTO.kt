@@ -1,7 +1,11 @@
-package hu.bme.aut.android.demo.data.racket.model
+package hu.bme.aut.android.demo.data.equipment.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Data Transfer Object (DTO) egy asztalitenisz ütő adatainak hálózati küldéséhez és fogadásához.
+ * * Csak a Data és Network rétegek használják!
+ */
 @Serializable
 data class RacketDTO(
     val id: Int? = null,

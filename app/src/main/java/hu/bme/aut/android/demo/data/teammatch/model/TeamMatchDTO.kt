@@ -1,7 +1,11 @@
-package hu.bme.aut.android.demo.data.network.model.teamMatch
+package hu.bme.aut.android.demo.data.teammatch.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * DTO a teljes csapatmérkőzés (TeamMatch) adatainak fogadására (API válasz).
+ * * Bonyolult fa struktúra, ami listákat (IndividualMatches, Participants) is tartalmaz.
+ */
 @Serializable
 data class TeamMatchDTO(
     val id: Int,

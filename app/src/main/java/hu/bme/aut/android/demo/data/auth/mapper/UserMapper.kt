@@ -1,8 +1,8 @@
 package hu.bme.aut.android.demo.data.auth.mapper
 
 import hu.bme.aut.android.demo.data.auth.model.UserDTO
-import hu.bme.aut.android.demo.data.racket.mapper.toDTO
-import hu.bme.aut.android.demo.data.racket.mapper.toDomain
+import hu.bme.aut.android.demo.data.equipment.mapper.toDTO
+import hu.bme.aut.android.demo.data.equipment.mapper.toDomain
 import hu.bme.aut.android.demo.domain.auth.model.User
 
 /**

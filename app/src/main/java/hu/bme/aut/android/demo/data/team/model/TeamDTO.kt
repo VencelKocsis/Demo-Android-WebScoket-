@@ -1,7 +1,11 @@
-package hu.bme.aut.android.demo.data.network.model.team
+package hu.bme.aut.android.demo.data.team.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Data Transfer Object (DTO) egy csapat részletes adatainak fogadására a backendtől.
+ * * A [@Serializable] annotáció utasítja a JSON konvertert a szerializációra.
+ */
 @Serializable
 data class TeamWithMembersDTO(
     val teamId: Int,
@@ -16,6 +20,9 @@ data class TeamWithMembersDTO(
     val points: Int
 )
 
+/**
+ * Data Transfer Object (DTO) egy csapattag adatainak fogadására.
+ */
 @Serializable
 data class MemberDTO(
     val userId: Int,

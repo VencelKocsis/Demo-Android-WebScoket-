@@ -1,6 +1,6 @@
 package hu.bme.aut.android.demo.data.network.api.equipment
 
-import hu.bme.aut.android.demo.data.racket.model.RacketDTO
+import hu.bme.aut.android.demo.data.equipment.model.RacketDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.POST

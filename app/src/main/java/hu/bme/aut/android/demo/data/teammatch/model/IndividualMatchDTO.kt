@@ -1,7 +1,10 @@
-package hu.bme.aut.android.demo.data.network.model.teamMatch
+package hu.bme.aut.android.demo.data.teammatch.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * DTO egy csapatmérkőzésen belüli egyéni meccs fogadásához (API válasz).
+ */
 @Serializable
 data class IndividualMatchDTO(
     val id: Int,

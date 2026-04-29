@@ -11,12 +11,17 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
+/**
+ * Alacsony szintű hálózati osztály, amely az OkHttp segítségével kezeli
+ * a valós idejű (WebSocket) kapcsolatot a Ktor backenddel.
+ */
 class MatchWebSocketClient(
     private val client: OkHttpClient,
     private val json: Json
 ) {
     private var ws: WebSocket? = null
 
+    // A SharedFlow tökéletes választás események (event bus) sugárzására
     private val _events = MutableSharedFlow<MatchWsEvent>(extraBufferCapacity = 10)
     val events = _events.asSharedFlow()
 
@@ -24,13 +29,13 @@ class MatchWebSocketClient(
         if (ws != null) return // Ne csatlakozzunk duplán
 
         val request = Request.Builder()
-        // FIGYELEM: Ez a Ktor backend új végpontja lesz!
             .url("wss://ktor-demo-c3yb.onrender.com/ws/matches")
             .build()
 
         ws = client.newWebSocket(request, object : WebSocketListener() {
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try {
+                    // A JSON szöveget azonnal átalakítjuk Kotlin objektummá
                     val event = json.decodeFromString(MatchWsEvent.serializer(), text)
                     _events.tryEmit(event)
                 } catch (e: Exception) {
@@ -38,7 +43,7 @@ class MatchWebSocketClient(
                 }
             }
 
-            override fun onFailure(webScoket: WebSocket, t: Throwable, response: Response?) {
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 Log.e("MatchWS", "WebSocket failure: ${t.message}")
                 ws = null
             }
@@ -56,6 +61,6 @@ class MatchWebSocketClient(
     }
 
     fun signMatch(matchId: Int, teamSide: String) {
-
+        // Implementálandó, ha kliensről is küldünk fel üzenetet
     }
 }

@@ -1,10 +1,10 @@
 package hu.bme.aut.android.demo.data.network.api.match
 
-import hu.bme.aut.android.demo.data.network.model.teamMatch.AddParticipantDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.LineupSubmitDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.ScoreSubmitDTO
-import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
+import hu.bme.aut.android.demo.data.teammatch.model.AddParticipantDTO
+import hu.bme.aut.android.demo.data.teammatch.model.LineupSubmitDTO
+import hu.bme.aut.android.demo.data.teammatch.model.ParticipantStatusUpdateDTO
+import hu.bme.aut.android.demo.data.teammatch.model.ScoreSubmitDTO
+import hu.bme.aut.android.demo.data.teammatch.model.TeamMatchDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET

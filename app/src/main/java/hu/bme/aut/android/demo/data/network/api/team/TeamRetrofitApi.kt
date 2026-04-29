@@ -1,9 +1,9 @@
 package hu.bme.aut.android.demo.data.network.api.team
 
-import hu.bme.aut.android.demo.data.network.model.team.MemberDTO
-import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
-import hu.bme.aut.android.demo.data.network.model.team.TeamUpdateDTO
-import hu.bme.aut.android.demo.data.network.model.team.TeamWithMembersDTO
+import hu.bme.aut.android.demo.data.team.model.MemberDTO
+import hu.bme.aut.android.demo.data.team.model.TeamMemberOperationDTO
+import hu.bme.aut.android.demo.data.team.model.TeamUpdateDTO
+import hu.bme.aut.android.demo.data.team.model.TeamWithMembersDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -19,7 +19,7 @@ interface TeamRetrofitApi {
     @GET("teams")
     suspend fun getTeams(): List<TeamWithMembersDTO>
 
-    @PUT("teams/{id}")
+    @PUT("teams/{id}/name")
     suspend fun updateTeam(@Path("id") teamId: Int, @Body team: TeamUpdateDTO)
 
     @GET("users/available")

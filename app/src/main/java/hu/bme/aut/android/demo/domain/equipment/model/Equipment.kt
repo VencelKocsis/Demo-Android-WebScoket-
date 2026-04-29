@@ -1,5 +1,9 @@
 package hu.bme.aut.android.demo.domain.equipment.model
 
+/**
+ * Egy asztalitenisz ütő (felszerelés) tiszta üzleti modellje.
+ * * A UI (ViewModellek) és a UseCase-ek kizárólag ezt a modellt ismerik.
+ */
 data class Equipment(
     val id: Int? = null,
     val bladeManufacturer: String,

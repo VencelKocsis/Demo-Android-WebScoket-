@@ -7,7 +7,6 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import hu.bme.aut.android.demo.data.network.api.* // Importáljuk a szétbontott API fájlokat
 import hu.bme.aut.android.demo.data.network.api.equipment.EquipmentApiService
 import hu.bme.aut.android.demo.data.network.api.equipment.EquipmentApiServiceImpl
 import hu.bme.aut.android.demo.data.network.api.equipment.EquipmentRetrofitApi
@@ -31,32 +30,36 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import javax.inject.Singleton
-import kotlin.jvm.java
 
+/**
+ * Központi Hilt modul a hálózati (Network) réteghez.
+ * * Itt építjük fel a HTTP klienst (OkHttp), a JSON konvertereket és a Retrofit példányt.
+ * * Ez az egyetlen hely, ahol a projekt "összedrótozza" a hálózati keretrendszereket.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // Az URL a 10.0.2.2:8080/ (Android emulátor localhost-ja)
     private const val BASE_URL = "https://ktor-demo-c3yb.onrender.com/"
 
+    /**
+     * Biztosítja az azonosítást végző Interceptor-t.
+     * Ez csatolja a Firebase tokent minden egyes kimenő HTTP kéréshez.
+     */
     @Provides
     @Singleton
     fun provideAuthInterceptor(auth: FirebaseAuth): AuthInterceptor {
         return AuthInterceptor(auth)
     }
 
-    // ----------------------------------------------------
-    // 1. OkHttpClient (Minden hálózati forgalomhoz)
-    // ----------------------------------------------------
+    /**
+     * Felépíti az OkHttpClient-et, amely a tényleges hálózati forgalmat bonyolítja.
+     */
     @Provides
     @Singleton
-    fun provideOkHttpClient(
-        authInterceptor: AuthInterceptor
-    ): OkHttpClient {
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            // A Level.BODY mindent kiír: URL, Fejlécek (itt lesz a Token!) és a JSON test is.
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.BODY // Minden kérést/választ kilogol a Logcatbe
         }
 
         return OkHttpClient.Builder()
@@ -65,37 +68,35 @@ object NetworkModule {
             .build()
     }
 
-    // ----------------------------------------------------
-    // 2. Retrofit (REST API hívásokhoz)
-    // ----------------------------------------------------
+    /**
+     * Létrehozza a Retrofit példányt, amely a hálózati hívásokat generálja az interfészek alapján.
+     */
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         val gson = Gson()
-
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(ScalarsConverterFactory.create())
-            .addConverterFactory(GsonConverterFactory.create(gson))
+            .addConverterFactory(ScalarsConverterFactory.create()) // Szöveges válaszokhoz
+            .addConverterFactory(GsonConverterFactory.create(gson)) // JSON konverzióhoz (Gson)
             .build()
     }
 
-    // ----------------------------------------------------
-    // 3. Json Serializer (Ezt a WS-hez használjuk, de közös beállítás lehet)
-    // ----------------------------------------------------
+    /**
+     * Biztosítja a kotlinx.serialization Json példányát (főleg WebSocketekhez használatos).
+     */
     @Provides
     @Singleton
     fun provideJsonSerializer(): Json {
         return Json {
             classDiscriminator = "type"
-            ignoreUnknownKeys = true
+            ignoreUnknownKeys = true // Nem omlik össze, ha a szerver új, ismeretlen mezőt küld
         }
     }
 
-    // ----------------------------------------------------
-    // 4. Specifikus Retrofit API-k biztosítása
-    // ----------------------------------------------------
+    // --- ALACSONY SZINTŰ RETROFIT API-K LÉTREHOZÁSA ---
+
     @Provides
     @Singleton
     fun provideFcmRetrofitApi(retrofit: Retrofit): FcmRetrofitApi = retrofit.create(FcmRetrofitApi::class.java)
@@ -114,13 +115,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideEquipmentRetrofitApi(retrofit: Retrofit): EquipmentRetrofitApi {
-        return retrofit.create(EquipmentRetrofitApi::class.java)
-    }
+    fun provideEquipmentRetrofitApi(retrofit: Retrofit): EquipmentRetrofitApi = retrofit.create(EquipmentRetrofitApi::class.java)
 
-    // ----------------------------------------------------
-    // 5. Interfészek és Implementációk összekötése (@Binds)
-    // ----------------------------------------------------
+    // --- TISZTA INTERFÉSZEK ÉS IMPLEMENTÁCIÓK ÖSSZEKÖTÉSE (A HÍD) ---
+
     @Module
     @InstallIn(SingletonComponent::class)
     abstract class NetworkBindsModule {

@@ -9,13 +9,17 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import javax.inject.Singleton
 
+/**
+ * Hilt modul a WebSocket kliens példányosításához és beinjektálásához.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object WebSocketModule {
 
-    // ----------------------------------------------------
-    // 1. PlayersWebSocketClient (WS kapcsolat)
-    // ----------------------------------------------------
+    /**
+     * Létrehozza a [MatchWebSocketClient] egyetlen példányát, megkapva
+     * az OkHttpClient-et és a JSON serializert a [NetworkModule]-ból.
+     */
     @Provides
     @Singleton
     fun provideMatchWebSocketClient(okHttpClient: OkHttpClient, json: Json): MatchWebSocketClient {

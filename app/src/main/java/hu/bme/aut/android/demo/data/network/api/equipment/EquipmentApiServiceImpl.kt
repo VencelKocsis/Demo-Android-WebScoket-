@@ -1,6 +1,6 @@
 package hu.bme.aut.android.demo.data.network.api.equipment
 
-import hu.bme.aut.android.demo.data.racket.mapper.toDTO
+import hu.bme.aut.android.demo.data.equipment.mapper.toDTO
 import hu.bme.aut.android.demo.domain.equipment.model.Equipment
 import javax.inject.Inject
 

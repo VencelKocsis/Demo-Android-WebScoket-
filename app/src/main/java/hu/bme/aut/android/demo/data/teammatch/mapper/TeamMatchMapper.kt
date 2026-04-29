@@ -1,10 +1,16 @@
-package hu.bme.aut.android.demo.data.network.model.teamMatch.mapper
+package hu.bme.aut.android.demo.data.teammatch.mapper
 
-import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
+import hu.bme.aut.android.demo.data.teammatch.model.TeamMatchDTO
 import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
 import hu.bme.aut.android.demo.domain.teammatch.model.MatchParticipant
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 
+/**
+ * A hálózati adatátviteli objektumot ([TeamMatchDTO]) alakítja át a tiszta
+ * [TeamMatch] Domain modellé.
+ * * Mivel a modell komplex, a belső listákat ([IndividualMatchDTO], [MatchParticipantDTO])
+ * is iterálva Domain modellekké kell alakítani.
+ */
 fun TeamMatchDTO.toDomain(): TeamMatch {
     return TeamMatch(
         id = this.id,
@@ -23,6 +29,7 @@ fun TeamMatchDTO.toDomain(): TeamMatch {
         homeTeamSigned = this.homeTeamSigned,
         guestTeamSigned = this.guestTeamSigned,
 
+        // A belső (beágyazott) egyéni meccs listák konvertálása
         individualMatches = this.individualMatches?.map { dto ->
             IndividualMatch(
                 id = dto.id,
@@ -36,6 +43,7 @@ fun TeamMatchDTO.toDomain(): TeamMatch {
             )
         } ?: emptyList(),
 
+        // A belső (beágyazott) résztvevők listájának konvertálása
         participants = this.participants?.map { dto ->
             MatchParticipant(
                 id = dto.id,

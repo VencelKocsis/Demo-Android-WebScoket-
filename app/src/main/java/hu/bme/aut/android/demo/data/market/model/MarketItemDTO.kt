@@ -1,6 +1,6 @@
 package hu.bme.aut.android.demo.data.market.model
 
-import hu.bme.aut.android.demo.data.racket.model.RacketDTO
+import hu.bme.aut.android.demo.data.equipment.model.RacketDTO
 import kotlinx.serialization.Serializable
 
 /**
