@@ -5,13 +5,26 @@ import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import hu.bme.aut.android.demo.domain.fcm.repository.FcmRepository
 import javax.inject.Inject
 
+/**
+ * Az [FcmRepository] interfész megvalósítása a Data rétegben.
+ * Feladata a push értesítésekhez szükséges tokenek regisztrálása és
+ * a push üzenetek küldésének kezdeményezése a backend API felé.
+ */
 class FcmRepositoryImpl @Inject constructor(
     private val retrofitApi: RetrofitApi
 ) : FcmRepository {
+
+    /**
+     * Regisztrálja vagy frissíti a felhasználó aktuális eszközének FCM tokenjét a backend adatbázisában.
+     */
     override suspend fun registerFcmToken(email: String, token: String) {
         retrofitApi.registerFcmToken(FcmToken(email, token))
     }
 
+    /**
+     * Manuálisan kezdeményez egy push értesítés küldését a backendtől egy célzott e-mail címre.
+     * (Ezt használhatjuk pl. tesztelésre vagy egyedi kliens-alapú triggerekhez).
+     */
     override suspend fun sendPushNotification(targetEmail: String, title: String, body: String) {
         val payload = mapOf(
             "targetEmail" to targetEmail,

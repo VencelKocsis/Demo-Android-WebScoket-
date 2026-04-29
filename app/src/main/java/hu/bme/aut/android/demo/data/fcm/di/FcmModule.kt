@@ -7,10 +7,18 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * Hilt modul, amely a Firebase Cloud Messaging (FCM) szolgáltatásokhoz
+ * szükséges külső függőségeket biztosítja az alkalmazás számára.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object FcmModule {
 
+    /**
+     * Biztosítja a [FirebaseMessaging] egyetlen (Singleton) példányát a Hilt számára.
+     * Ezt használjuk a kliens oldali FCM tokenek lekérésére.
+     */
     @Provides
     @Singleton
     fun provideFirebaseMessaging(): FirebaseMessaging {
