@@ -13,5 +13,4 @@ interface TeamMatchRepository {
     suspend fun submitLineup(matchId: Int, teamSide: String, positions: Map<Int, Int>)
     suspend fun updateIndividualScore(individualMatchId: Int, homeScore: Int, guestScore: Int, setScores: String, status: String)
     suspend fun signMatch(matchId: Int)
-
 }

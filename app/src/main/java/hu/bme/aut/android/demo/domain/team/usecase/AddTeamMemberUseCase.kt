@@ -1,13 +1,13 @@
 package hu.bme.aut.android.demo.domain.team.usecase
 
-import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.network.api.team.TeamApiService
 import hu.bme.aut.android.demo.data.network.model.team.TeamMemberOperationDTO
 import javax.inject.Inject
 
 class AddTeamMemberUseCase @Inject constructor(
-    private val apiService: ApiService
+    private val teamApiService: TeamApiService
 ) {
     suspend operator fun invoke(teamId: Int, userId: Int) {
-        apiService.addTeamMember(teamId, TeamMemberOperationDTO(userId))
+        teamApiService.addTeamMember(teamId, TeamMemberOperationDTO(userId))
     }
 }

@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
+import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
 import hu.bme.aut.android.demo.domain.websocket.usecases.ObserveMatchEventUseCase
 import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
 import hu.bme.aut.android.demo.domain.teammatch.model.MatchParticipant
@@ -58,7 +58,7 @@ class LiveMatchViewModel @Inject constructor(
     private val submitLineupUseCase: SubmitLineupUseCase,
     private val observeMatchEventUseCase: ObserveMatchEventUseCase,
     private val signMatchUseCase: SignMatchUseCase,
-    private val retrofitApi: RetrofitApi
+    private val getTeamsUseCase: GetTeamsUseCase
 ) : ViewModel() {
 
     private val matchId: Int = checkNotNull(savedStateHandle["matchId"])
@@ -125,13 +125,13 @@ class LiveMatchViewModel @Inject constructor(
                             teamSide = myParticipant.teamSide
                         } else {
                             try {
-                                val allTeams = retrofitApi.getTeams()
-                                val homeTeam = allTeams.find { it.teamId == match.homeTeamId }
-                                val guestTeam = allTeams.find { it.teamId == match.guestTeamId }
+                                val allTeams = getTeamsUseCase()
+                                val homeTeam = allTeams.find { it.id == match.homeTeamId }
+                                val guestTeam = allTeams.find { it.id == match.guestTeamId }
 
-                                if (guestTeam?.members?.any { it.firebaseUid == currentUserUid } == true) {
+                                if (guestTeam?.members?.any { it.uid == currentUserUid } == true) {
                                     teamSide = "GUEST"
-                                } else if (homeTeam?.members?.any { it.firebaseUid == currentUserUid } == true) {
+                                } else if (homeTeam?.members?.any { it.uid == currentUserUid } == true) {
                                     teamSide = "HOME"
                                 } else {
                                     spectatorFlag = true

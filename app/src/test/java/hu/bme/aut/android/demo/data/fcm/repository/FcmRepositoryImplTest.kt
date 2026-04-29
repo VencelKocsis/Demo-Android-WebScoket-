@@ -1,6 +1,5 @@
 package hu.bme.aut.android.demo.data.fcm.repository
 
-import hu.bme.aut.android.demo.data.network.api.RetrofitApi
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

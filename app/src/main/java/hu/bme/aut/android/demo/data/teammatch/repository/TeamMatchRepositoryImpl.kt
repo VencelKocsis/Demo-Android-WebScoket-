@@ -1,6 +1,6 @@
 package hu.bme.aut.android.demo.data.teammatch.repository
 
-import hu.bme.aut.android.demo.data.network.api.RetrofitApi
+import hu.bme.aut.android.demo.data.network.api.match.MatchRetrofitApi
 import hu.bme.aut.android.demo.data.network.model.teamMatch.AddParticipantDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.LineupSubmitDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpdateDTO
@@ -11,38 +11,38 @@ import hu.bme.aut.android.demo.domain.teammatch.repository.TeamMatchRepository
 import javax.inject.Inject
 
 class TeamMatchRepositoryImpl @Inject constructor(
-    private val retrofitApi: RetrofitApi
+    private val teamMatchRetrofitApi: MatchRetrofitApi
 ) : TeamMatchRepository {
 
     override suspend fun getTeamMatches(): List<TeamMatch> {
-        val dtoList = retrofitApi.getTeamMatches()
+        val dtoList = teamMatchRetrofitApi.getTeamMatches()
         return dtoList.map { it.toDomain() }
     }
 
     override suspend fun getTeamMatchById(matchId: Int): TeamMatch {
-        val dto = retrofitApi.getTeamMatchById(matchId)
+        val dto = teamMatchRetrofitApi.getTeamMatchById(matchId)
         return dto.toDomain()
     }
 
     override suspend fun applyForMatch(matchId: Int) {
-        retrofitApi.applyToMatch(matchId)
+        teamMatchRetrofitApi.applyToMatch(matchId)
     }
 
     override suspend fun updateParticipantStatus(participantId: Int, status: String) {
-        retrofitApi.updateParticipantStatus(participantId, ParticipantStatusUpdateDTO(status))
+        teamMatchRetrofitApi.updateParticipantStatus(participantId, ParticipantStatusUpdateDTO(status))
     }
 
     override suspend fun captainAddParticipantToMatch(matchId: Int, userId: Int) {
         val request = AddParticipantDTO(userId = userId)
-        retrofitApi.captainAddParticipantToMatch(matchId, request)
+        teamMatchRetrofitApi.captainAddParticipantToMatch(matchId, request)
     }
 
     override suspend fun withdrawFromMatch(matchId: Int) {
-        retrofitApi.withdrawFromMatch(matchId)
+        teamMatchRetrofitApi.withdrawFromMatch(matchId)
     }
 
     override suspend fun finalizeMatch(matchId: Int) {
-        retrofitApi.finalizeMatch(matchId)
+        teamMatchRetrofitApi.finalizeMatch(matchId)
     }
 
     override suspend fun submitLineup(matchId: Int, teamSide: String, positions: Map<Int, Int>) {
@@ -52,7 +52,7 @@ class TeamMatchRepositoryImpl @Inject constructor(
             positions = positions
         )
         // Elküldjük a Retrofittel
-        retrofitApi.submitLineup(matchId, request)
+        teamMatchRetrofitApi.submitLineup(matchId, request)
     }
 
     override suspend fun updateIndividualScore(
@@ -71,10 +71,10 @@ class TeamMatchRepositoryImpl @Inject constructor(
         )
 
         // 2. Elküldjük a Retrofittel
-        retrofitApi.updateIndividualScore(individualMatchId, request)
+        teamMatchRetrofitApi.updateIndividualScore(individualMatchId, request)
     }
 
     override suspend fun signMatch(matchId: Int) {
-        retrofitApi.signMatch(matchId)
+        teamMatchRetrofitApi.signMatch(matchId)
     }
 }

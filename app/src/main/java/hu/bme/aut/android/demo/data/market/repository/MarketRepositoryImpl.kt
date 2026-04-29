@@ -1,7 +1,7 @@
 package hu.bme.aut.android.demo.data.market.repository
 
 import hu.bme.aut.android.demo.data.market.mapper.toDomain
-import hu.bme.aut.android.demo.data.network.api.ApiService
+import hu.bme.aut.android.demo.data.network.api.market.MarketRetrofitApi
 import hu.bme.aut.android.demo.domain.market.model.MarketItem
 import hu.bme.aut.android.demo.domain.market.repository.MarketRepository
 import javax.inject.Inject
@@ -9,12 +9,12 @@ import javax.inject.Singleton
 
 /**
  * A [MarketRepository] interfész megvalósítása a Data rétegben.
- * * Feladata a piaccal kapcsolatos hálózati hívások kezelése a Retrofit [ApiService]-en keresztül,
+ * * Feladata a piaccal kapcsolatos hálózati hívások kezelése a Retrofit [MarketRetrofitApi]-en keresztül,
  * valamint a hálózati DTO-k lefordítása a UI számára emészthető Domain modellekre.
  */
 @Singleton
 class MarketRepositoryImpl @Inject constructor(
-    private val apiService: ApiService
+    private val marketRetrofitApi: MarketRetrofitApi
 ) : MarketRepository {
 
     /**
@@ -24,7 +24,7 @@ class MarketRepositoryImpl @Inject constructor(
      * @return Az eladó ütők és tulajdonosok listája.
      */
     override suspend fun getMarketItems(): List<MarketItem> {
-        return apiService.getMarketItems().map { it.toDomain() }
+        return marketRetrofitApi.getMarketItems().map { it.toDomain() }
     }
 
     /**
@@ -33,6 +33,6 @@ class MarketRepositoryImpl @Inject constructor(
      * @param equipmentId Az érdeklődés tárgyát képező felszerelés egyedi azonosítója.
      */
     override suspend fun inquireAboutEquipment(equipmentId: Int) {
-        apiService.inquireAboutEquipment(equipmentId)
+        marketRetrofitApi.inquireAboutEquipment(equipmentId)
     }
 }
