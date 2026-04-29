@@ -11,9 +11,14 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
+/**
+ * A csapatokkal kapcsolatos műveletek alacsony szintű hálózati interfésze.
+ * * Kezeli a csapatok és csapattagok lekérdezését, módosítását (DTO réteg).
+ */
 interface TeamRetrofitApi {
     @GET("teams")
     suspend fun getTeams(): List<TeamWithMembersDTO>
+
     @PUT("teams/{id}")
     suspend fun updateTeam(@Path("id") teamId: Int, @Body team: TeamUpdateDTO)
 
@@ -25,5 +30,4 @@ interface TeamRetrofitApi {
 
     @DELETE("teams/{id}/members/{userId}")
     suspend fun removeTeamMember(@Path("id") teamId: Int, @Path("userId") userId: Int)
-
 }

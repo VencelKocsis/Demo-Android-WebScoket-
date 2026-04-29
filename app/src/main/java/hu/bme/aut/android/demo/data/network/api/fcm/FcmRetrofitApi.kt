@@ -4,6 +4,9 @@ import hu.bme.aut.android.demo.data.fcm.model.FcmToken
 import retrofit2.http.Body
 import retrofit2.http.POST
 
+/**
+ * Alacsony szintű hálózati interfész a Firebase Cloud Messaging hívásokhoz.
+ */
 interface FcmRetrofitApi {
     @POST("register_fcm_token")
     suspend fun registerFcmToken(@Body registration: FcmToken)

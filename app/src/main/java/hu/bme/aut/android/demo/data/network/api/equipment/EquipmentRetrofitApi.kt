@@ -6,6 +6,10 @@ import retrofit2.http.DELETE
 import retrofit2.http.POST
 import retrofit2.http.Path
 
+/**
+ * A Retrofit hálózati interfésze a saját felszerelések (ütők) kezeléséhez.
+ * * Ez az egyetlen hely, amely ismeri a HTTP kéréseket és a [RacketDTO] hálózati adatszerkezetet.
+ */
 interface EquipmentRetrofitApi {
     @POST("api/users/equipment")
     suspend fun saveEquipment(@Body racketDto: RacketDTO)

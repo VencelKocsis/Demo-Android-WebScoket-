@@ -6,6 +6,10 @@ import hu.bme.aut.android.demo.data.network.model.teamMatch.ParticipantStatusUpd
 import hu.bme.aut.android.demo.data.network.model.teamMatch.ScoreSubmitDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 
+/**
+ * A mérkőzések hálózati műveleteinek elvont szerződése.
+ * * A Repository ezt az interfészt használja a hálózati folyamatok irányítására.
+ */
 interface MatchApiService {
     suspend fun getTeamMatches(): List<TeamMatchDTO>
     suspend fun getTeamMatchById(matchId: Int): TeamMatchDTO

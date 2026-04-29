@@ -2,7 +2,6 @@ package hu.bme.aut.android.demo.data.racket.repository
 
 import hu.bme.aut.android.demo.data.network.api.auth.AuthApiService
 import hu.bme.aut.android.demo.data.network.api.equipment.EquipmentApiService
-import hu.bme.aut.android.demo.data.racket.mapper.toDTO
 import hu.bme.aut.android.demo.domain.auth.usecases.GetCurrentUserUseCase
 import hu.bme.aut.android.demo.domain.equipment.model.Equipment
 import hu.bme.aut.android.demo.domain.equipment.repository.EquipmentRepository
@@ -17,7 +16,7 @@ class EquipmentRepositoryImpl @Inject constructor(
 ) : EquipmentRepository {
 
     override suspend fun saveEquipment(racket: Equipment) {
-        equipmentApiService.saveEquipment(racket.toDTO())
+        equipmentApiService.saveEquipment(racket)
     }
 
     override suspend fun deleteEquipment(racketId: Int) {

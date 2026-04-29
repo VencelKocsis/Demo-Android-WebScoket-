@@ -7,6 +7,9 @@ import hu.bme.aut.android.demo.data.network.model.teamMatch.ScoreSubmitDTO
 import hu.bme.aut.android.demo.data.network.model.teamMatch.TeamMatchDTO
 import javax.inject.Inject
 
+/**
+ * A [MatchApiService] konkrét megvalósítása, amely továbbítja a hívásokat a Retrofit kliens felé.
+ */
 class MatchApiServiceImpl @Inject constructor(
     private val matchRetrofitApi: MatchRetrofitApi
 ) : MatchApiService {

@@ -12,38 +12,27 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
+/**
+ * A mérkőzésekkel kapcsolatos műveletek alacsony szintű (Retrofit) hálózati interfésze.
+ */
 interface MatchRetrofitApi {
     @POST("matches/{matchId}/apply")
     suspend fun applyToMatch(@Path("matchId") matchId: Int)
 
     @PUT("matches/participants/{participantId}/status")
-    suspend fun updateParticipantStatus(
-        @Path("participantId") participantId: Int,
-        @Body statusUpdate: ParticipantStatusUpdateDTO
-    )
+    suspend fun updateParticipantStatus(@Path("participantId") participantId: Int, @Body statusUpdate: ParticipantStatusUpdateDTO)
 
     @POST("/matches/{matchId}/participants")
-    suspend fun captainAddParticipantToMatch(
-        @Path("matchId") matchId: Int,
-        @Body request: AddParticipantDTO
-    )
+    suspend fun captainAddParticipantToMatch(@Path("matchId") matchId: Int, @Body request: AddParticipantDTO)
 
     @POST("matches/{matchId}/lineup")
-    suspend fun submitLineup(
-        @Path("matchId") matchId: Int,
-        @Body request: LineupSubmitDTO
-    )
+    suspend fun submitLineup(@Path("matchId") matchId: Int, @Body request: LineupSubmitDTO)
 
     @PUT("matches/individual/{id}/score")
-    suspend fun updateIndividualScore(
-        @Path("id") individualMatchId: Int,
-        @Body request: ScoreSubmitDTO
-    )
+    suspend fun updateIndividualScore(@Path("id") individualMatchId: Int, @Body request: ScoreSubmitDTO)
 
     @POST("/matches/{matchId}/sign")
-    suspend fun signMatch(
-        @Path("matchId") matchId: Int
-    )
+    suspend fun signMatch(@Path("matchId") matchId: Int)
 
     @DELETE("matches/{matchId}/apply")
     suspend fun withdrawFromMatch(@Path("matchId") matchId: Int)
