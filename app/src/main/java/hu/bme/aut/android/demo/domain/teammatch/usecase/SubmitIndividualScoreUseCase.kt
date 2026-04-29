@@ -3,6 +3,9 @@ package hu.bme.aut.android.demo.domain.teammatch.usecase
 import hu.bme.aut.android.demo.domain.teammatch.repository.TeamMatchRepository
 import javax.inject.Inject
 
+/**
+ * Egyéni mérkőzés (IndividualMatch) pontszámainak rögzítése és beküldése.
+ */
 class SubmitIndividualScoreUseCase @Inject constructor(
     private val repository: TeamMatchRepository
 ) {

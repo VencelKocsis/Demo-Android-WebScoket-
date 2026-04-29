@@ -1,5 +1,8 @@
 package hu.bme.aut.android.demo.domain.teammatch.model
 
+/**
+ * Egy mérkőzésre jelentkezett játékos (résztvevő) tiszta üzleti modellje.
+ */
 data class MatchParticipant(
     val id: Int,
     val userId: Int,

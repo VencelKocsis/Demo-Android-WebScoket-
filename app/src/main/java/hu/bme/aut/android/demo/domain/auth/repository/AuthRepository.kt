@@ -10,7 +10,6 @@ import hu.bme.aut.android.demo.domain.auth.model.User
  * Ez teszi lehetővé, hogy a backend bármikor lecserélhető legyen a UI módosítása nélkül.
  */
 interface AuthRepository {
-
     suspend fun registerUser(email: String, password: String): Result<FirebaseUser>
     suspend fun signInUser(email: String, password: String): Result<FirebaseUser>
     fun signOutUser()

@@ -14,6 +14,7 @@ import retrofit2.http.Path
 
 /**
  * A mérkőzésekkel kapcsolatos műveletek alacsony szintű (Retrofit) hálózati interfésze.
+ * * Csak ez az osztály ismeri az API végpontokat és a hálózati DTO-kat.
  */
 interface MatchRetrofitApi {
     @POST("matches/{matchId}/apply")

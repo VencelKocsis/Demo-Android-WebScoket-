@@ -1,5 +1,8 @@
 package hu.bme.aut.android.demo.domain.teammatch.model
 
+/**
+ * Egy csapatmérkőzésen belüli egyéni összecsapás tiszta üzleti modellje.
+ */
 data class IndividualMatch(
     val id: Int,
     val homePlayerName: String,

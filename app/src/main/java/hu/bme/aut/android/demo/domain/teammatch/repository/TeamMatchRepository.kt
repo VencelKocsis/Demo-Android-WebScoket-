@@ -2,6 +2,10 @@ package hu.bme.aut.android.demo.domain.teammatch.repository
 
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 
+/**
+ * A mérkőzésekkel kapcsolatos adatelérési műveletek tiszta szerződése a Domain rétegben.
+ * * Elrejti az üzleti logika elől, hogy az adatok honnan származnak (pl. REST API, WebSocket, Mock).
+ */
 interface TeamMatchRepository {
     suspend fun getTeamMatches(): List<TeamMatch>
     suspend fun getTeamMatchById(matchId: Int): TeamMatch

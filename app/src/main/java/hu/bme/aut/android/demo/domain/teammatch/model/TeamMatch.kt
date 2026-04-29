@@ -1,5 +1,10 @@
 package hu.bme.aut.android.demo.domain.teammatch.model
 
+/**
+ * Egy csapatmérkőzés (TeamMatch) teljes, tiszta üzleti modellje.
+ * * Tartalmazza a mérkőzés metaadatait, a jelentkezett játékosokat és az egyéni meccseket is.
+ * * Ez az osztály teljesen független a JSON DTO-któl, a UI kizárólag ezt használja.
+ */
 data class TeamMatch(
     val id: Int,
     val seasonId: Int,

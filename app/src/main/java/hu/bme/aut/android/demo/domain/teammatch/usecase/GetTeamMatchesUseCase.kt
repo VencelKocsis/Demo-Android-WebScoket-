@@ -4,6 +4,9 @@ import hu.bme.aut.android.demo.domain.teammatch.repository.TeamMatchRepository
 import hu.bme.aut.android.demo.domain.teammatch.model.TeamMatch
 import javax.inject.Inject
 
+/**
+ * Az összes elérhető mérkőzés listájának lekérdezése.
+ */
 class GetTeamMatchesUseCase @Inject constructor(
     private val repository: TeamMatchRepository
 ) {
