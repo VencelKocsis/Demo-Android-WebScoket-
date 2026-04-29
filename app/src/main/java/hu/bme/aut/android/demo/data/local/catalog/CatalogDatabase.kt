@@ -8,11 +8,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Provider
 
+/**
+ * A helyi Room adatbázis konfigurációja a felszerelés-katalógushoz.
+ * * Meghatározza a táblákat (entities) és biztosítja a hozzáférést a DAO-hoz.
+ */
 @Database(entities = [BladeEntity::class, RubberEntity::class], version = 1, exportSchema = false)
 abstract class CatalogDatabase : RoomDatabase() {
 
     abstract fun catalogDao(): CatalogDao
 
+    /**
+     * Visszahívás (Callback), amely az adatbázis legelső létrehozásakor lefut.
+     * * Célja, hogy előre feltöltse (pre-populate) az adatbázist a leggyakoribb
+     * asztalitenisz fákkal és borításokkal, így a lenyíló listák sosem lesznek üresek.
+     * * @param databaseProvider Egy [Provider], ami késleltetve (Lazy) adja át az adatbázist,
+     * elkerülve a körkörös függőséget (circular dependency) a Dagger/Hilt inicializálásakor.
+     */
     class CatalogDatabaseCallback(
         private val databaseProvider: Provider<CatalogDatabase>
     ) : RoomDatabase.Callback() {
@@ -20,11 +31,15 @@ abstract class CatalogDatabase : RoomDatabase() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
 
+            // Háttérszálon (IO) elindítjuk az adatbázis feltöltését
             CoroutineScope(Dispatchers.IO).launch {
                 populateDatabase(databaseProvider.get().catalogDao())
             }
         }
 
+        /**
+         * Inicializálja a táblákat a beégetett (hardcoded) alapértelmezett értékekkel.
+         */
         private suspend fun populateDatabase(dao: CatalogDao) {
             val initialBlades = listOf(
                 "Butterfly" to listOf("Timo Boll ALC", "Viscaria", "Innerforce Layer ZLC"),

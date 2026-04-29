@@ -5,6 +5,12 @@ import hu.bme.aut.android.demo.domain.catalog.repository.CatalogRepository
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
 
+/**
+ * A [CatalogRepository] interfész megvalósítása a Data rétegben.
+ * * Közvetítő szerepet tölt be a UseCase-ek és a helyi Room adatbázis (DAO) között.
+ * Mivel itt a Domain modellek (Stringek listája) teljesen megegyeznek a DAO válaszaival,
+ * nincs szükség különálló Mapper fájlokra, egyszerűen továbbítjuk a lekérdezéseket.
+ */
 @Singleton
 class CatalogRepositoryImpl @Inject constructor(
     private val catalogDao: CatalogDao
