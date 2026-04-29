@@ -12,6 +12,7 @@ import hu.bme.aut.android.demo.domain.equipment.model.Equipment
 import hu.bme.aut.android.demo.domain.equipment.usecase.DeleteUserEquipmentUseCase
 import hu.bme.aut.android.demo.domain.equipment.usecase.GetEquipmentByIdUseCase
 import hu.bme.aut.android.demo.domain.equipment.usecase.SaveUserEquipmentUseCase
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,27 +20,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class RacketEditorUiState(
-    val isLoading: Boolean = true,
-    val isSuccess: Boolean = false,
-    val errorMessage: String? = null,
-    val racketId: Int? = null,
-    val isForSale: Boolean = false,
-
-    val bladeManufacturers: List<String> = emptyList(),
-    val rubberManufacturers: List<String> = emptyList(),
-
-    val availableBladeModels: List<String> = emptyList(),
-    val availableFhModels: List<String> = emptyList(),
-    val availableBhModels: List<String> = emptyList(),
-
-    val rubberColors: List<String> = listOf("Red", "Black", "Blue", "Green", "Pink", "Purple"),
-
-    val currentBlade: Blade = Blade(),
-    val currentForehand: Rubber = Rubber(color = "Black"),
-    val currentBackhand: Rubber = Rubber(color = "Red")
-)
-
+/**
+ * Az Ütő Szerkesztő logikai központja.
+ * * Kezeli a katalógusadatok (gyártók, modellek) lekérését a megfelelő UseCase-eken keresztül.
+ * * Fogadja a UI-tól a felhasználói interakciókat, és frissíti a [RacketEditorUiState]-et.
+ */
 @HiltViewModel
 class RacketEditorViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
@@ -66,9 +51,10 @@ class RacketEditorViewModel @Inject constructor(
             var bladeMfs = getBladeManufacturersUseCase()
             var rubberMfs = getRubberManufacturersUseCase()
 
+            // Pragmatikus újrapróbálkozás, ha a katalógus esetleg még nem töltött be
             var retries = 0
             while (bladeMfs.isEmpty() && retries < 10) {
-                kotlinx.coroutines.delay(200)
+                delay(200)
                 bladeMfs = getBladeManufacturersUseCase()
                 rubberMfs = getRubberManufacturersUseCase()
                 retries++
@@ -83,6 +69,7 @@ class RacketEditorViewModel @Inject constructor(
 
             val editRacketId = savedStateHandle.get<Int>("racketId")
 
+            // Ha létező ütőt szerkesztünk, betöltjük az adatait
             if (editRacketId != null) {
                 try {
                     val existingRacket = getEquipmentByIdUseCase(editRacketId)
@@ -112,7 +99,7 @@ class RacketEditorViewModel @Inject constructor(
                                     model = existingRacket.bhRubberModel,
                                     color = existingRacket.bhRubberColor
                                 ),
-                                isForSale = existingRacket.isForSale, // <-- PIAC: Betöltés
+                                isForSale = existingRacket.isForSale,
                                 isLoading = false
                             )
                         }
@@ -125,6 +112,7 @@ class RacketEditorViewModel @Inject constructor(
 
             _uiState.update { it.copy(isLoading = false) }
 
+            // Ha új ütőt hozunk létre, betöltjük az első gyártó modelljeit
             if (bladeMfs.isNotEmpty()) updateBladeManufacturer(bladeMfs.first())
             if (rubberMfs.isNotEmpty()) {
                 updateFhManufacturer(rubberMfs.first())
@@ -202,6 +190,7 @@ class RacketEditorViewModel @Inject constructor(
             try {
                 val state = _uiState.value
 
+                // A UI adatokból tiszta Domain modellt építünk
                 val domainModel = Equipment(
                     id = state.racketId,
                     bladeManufacturer = state.currentBlade.manufacturer,
@@ -212,7 +201,7 @@ class RacketEditorViewModel @Inject constructor(
                     bhRubberManufacturer = state.currentBackhand.manufacturer,
                     bhRubberModel = state.currentBackhand.model,
                     bhRubberColor = state.currentBackhand.color,
-                    isForSale = state.isForSale // <-- PIAC: Mentés
+                    isForSale = state.isForSale
                 )
 
                 saveUserEquipmentUseCase(domainModel)

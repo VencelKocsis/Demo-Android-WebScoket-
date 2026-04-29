@@ -2,7 +2,6 @@ package hu.bme.aut.android.demo.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.android.demo.domain.auth.usecases.SignInUserUseCase
 import hu.bme.aut.android.demo.domain.auth.usecases.SignOutUserUseCase
@@ -21,17 +20,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class AuthUiState(
-    val emailInput: String = "",
-    val passwordInput: String = "",
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val successMessage: String? = null,
-    val isAuthenticated: Boolean = false,
-    val currentUser: FirebaseUser? = null,
-    val backendUser: User? = null
-)
-
+/**
+ * A hitelesítési folyamatokért felelős ViewModel.
+ * * Feladata: A [LoginScreen] felől érkező események (kattintások, gépelés) feldolgozása,
+ * a megfelelő UseCase-ek (üzleti logika) meghívása, és az [AuthUiState] frissítése.
+ * * A UI közvetlenül nem hívhatja a Repository-t, csak a ViewModelen (és a UseCase-eken) keresztül.
+ */
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val syncUserUseCase: SyncUserUseCase,
@@ -46,6 +40,10 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
+    /**
+     * Egy magasabb szintű, redukált állapot a navigáció (AppNavHost) számára.
+     * Csak azt mondja meg, hogy a felhasználó bent van-e, vagy kint.
+     */
     val authState: StateFlow<AuthState> = _uiState.map { uiState ->
         when {
             uiState.isAuthenticated -> AuthState.AUTHENTICATED
@@ -59,7 +57,7 @@ class AuthViewModel @Inject constructor(
     )
 
     init {
-        // App indulásakor, ha be van jelentkezve, szinkronizáljuk a Usert és a Tokent is!
+        // App indulásakor, ha be van jelentkezve, szinkronizáljuk a Usert és a Tokent is
         val currentUser = getCurrentUserUseCase()
         if (currentUser != null) {
             _uiState.update { it.copy(isAuthenticated = true, currentUser = currentUser) }

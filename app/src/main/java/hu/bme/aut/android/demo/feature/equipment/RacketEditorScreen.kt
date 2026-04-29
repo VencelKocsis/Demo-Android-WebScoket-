@@ -27,7 +27,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.common.InfoDialog
 
-// --- IMPORTÁLUK A TÉMA SZÍNEIT ---
 import hu.bme.aut.android.demo.ui.theme.ErrorRedSolid
 import hu.bme.aut.android.demo.ui.theme.RacketBlack
 import hu.bme.aut.android.demo.ui.theme.RacketBlue
@@ -36,6 +35,9 @@ import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 import hu.bme.aut.android.demo.ui.theme.ProgressPink
 import hu.bme.aut.android.demo.ui.theme.Purple40
 
+/**
+ * Színjelölő pontot rajzol a borítás színének vizuális megjelenítéséhez.
+ */
 @Composable
 fun ColorDot(colorName: String, modifier: Modifier = Modifier) {
     val color = when (colorName.lowercase()) {
@@ -59,6 +61,11 @@ fun ColorDot(colorName: String, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Az Ütő Szerkesztő képernyő (Compose UI).
+ * * "Buta" UI réteg: csak a State adatait jeleníti meg, és a ViewModel-nek
+ * küldi el a felhasználói interakciókat.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RacketEditorScreen(
@@ -124,7 +131,7 @@ fun RacketEditorScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // FA
+                    // FA BLOKK
                     BladeConfigurationBlock(
                         blade = state.currentBlade,
                         manufacturers = state.bladeManufacturers,
@@ -135,7 +142,7 @@ fun RacketEditorScreen(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    // TENYERES
+                    // TENYERES BLOKK
                     RubberConfigurationBlock(
                         title = stringResource(R.string.forehand_rubber),
                         iconResId = R.drawable.forehand_rubber_icon,
@@ -151,7 +158,7 @@ fun RacketEditorScreen(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    // FONÁK
+                    // FONÁK BLOKK
                     RubberConfigurationBlock(
                         title = stringResource(R.string.backhand_rubber),
                         iconResId = R.drawable.backhand_rubber_icon,
@@ -165,9 +172,9 @@ fun RacketEditorScreen(
                         rotationAngle = 45f
                     )
 
-                    // --- ELADÓ KAPCSOLÓ ---
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+                    // ELADÓ KAPCSOLÓ BLOKK
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -207,7 +214,7 @@ fun RacketEditorScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp, start = 16.dp, end = 16.dp) // JAVÍTVA: 80.dp helyett
+                        .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
                 ) {
                     Text(
                         text = error,
@@ -219,7 +226,6 @@ fun RacketEditorScreen(
         }
     }
 
-    // --- TÖRLÉST MEGERŐSÍTŐ DIALÓGUS (Javított zárójelezés!) ---
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
@@ -246,7 +252,7 @@ fun RacketEditorScreen(
 }
 
 // ==========================================
-// 3. SEGÉDKOMPONENSEK
+// SEGÉDKOMPONENSEK
 // ==========================================
 
 @OptIn(ExperimentalMaterial3Api::class)

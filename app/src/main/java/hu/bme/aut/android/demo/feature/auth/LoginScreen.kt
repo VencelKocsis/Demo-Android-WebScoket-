@@ -29,17 +29,25 @@ import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 
 typealias OnAuthSuccess = (FirebaseUser) -> Unit
 
+/**
+ * A bejelentkezést és regisztrációt kezelő Compose UI képernyő.
+ * * "Buta" komponens: Csak az [AuthUiState]-ből kapott adatokat jeleníti meg,
+ * és a felhasználói interakciókat továbbítja a ViewModel felé.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     onAuthSuccess: OnAuthSuccess
 ) {
+    // A UI State reaktív megfigyelése életciklus-tudatosan
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
+    // Lokális UI állapot (csak a vizuális megjelenítést befolyásolja, így maradhat itt)
     var passwordVisible by remember { mutableStateOf(false) }
 
+    // Navigáció kiváltása, ha a bejelentkezés sikeres
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated && state.currentUser != null) {
             onAuthSuccess(state.currentUser!!)
@@ -79,13 +87,12 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- MÓDOSÍTOTT: Jelszó beviteli mező ---
+                // Jelszó beviteli mező
                 OutlinedTextField(
                     value = state.passwordInput,
                     onValueChange = viewModel::updatePassword,
                     label = { Text(stringResource(R.string.password)) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Jelszó") },
-                    // 1. A láthatóság kapcsolása a gomb megnyomásával
                     trailingIcon = {
                         val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                         val description = if (passwordVisible) "Jelszó elrejtése" else "Jelszó megjelenítése"
@@ -94,7 +101,6 @@ fun LoginScreen(
                             Icon(imageVector = image, contentDescription = description)
                         }
                     },
-                    // 2. A transzformáció cseréje
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
