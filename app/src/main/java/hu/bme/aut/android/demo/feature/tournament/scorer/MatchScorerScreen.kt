@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -46,7 +46,7 @@ fun MatchScorerScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.loadMatch()
+                viewModel.onEvent(MatchScorerEvent.LoadMatch)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -58,7 +58,7 @@ fun MatchScorerScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.save_result)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Vissza") }
+                    IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Vissza") }
                 }
             )
         }
@@ -66,7 +66,7 @@ fun MatchScorerScreen(
 
         PullToRefreshBox(
             isRefreshing = state.isLoading,
-            onRefresh = { viewModel.loadMatch() },
+            onRefresh = { viewModel.onEvent(MatchScorerEvent.LoadMatch) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -130,7 +130,7 @@ fun MatchScorerScreen(
                                         ) {
                                             ScoreInputBox(
                                                 value = setScore.home,
-                                                onValueChange = { viewModel.updateSetScore(index, it, setScore.guest) },
+                                                onValueChange = { viewModel.onEvent(MatchScorerEvent.UpdateSetScore(index, it, setScore.guest)) },
                                                 isWinner = isHomeWinner,
                                                 enabled = !isReadOnly,
                                                 testTag = "input_home_$index"
@@ -140,7 +140,7 @@ fun MatchScorerScreen(
 
                                             ScoreInputBox(
                                                 value = setScore.guest,
-                                                onValueChange = { viewModel.updateSetScore(index, setScore.home, it) },
+                                                onValueChange = { viewModel.onEvent(MatchScorerEvent.UpdateSetScore(index, setScore.home, it)) },
                                                 isWinner = isGuestWinner,
                                                 enabled = !isReadOnly,
                                                 testTag = "input_guest_$index"
@@ -165,7 +165,7 @@ fun MatchScorerScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     OutlinedButton(
-                                        onClick = { viewModel.submitScore(isFinal = false) },
+                                        onClick = { viewModel.onEvent(MatchScorerEvent.SubmitScore(isFinal = false)) },
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(50.dp),
@@ -175,7 +175,7 @@ fun MatchScorerScreen(
                                     }
 
                                     Button(
-                                        onClick = { viewModel.submitScore(isFinal = true) },
+                                        onClick = { viewModel.onEvent(MatchScorerEvent.SubmitScore(isFinal = true)) },
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(50.dp),

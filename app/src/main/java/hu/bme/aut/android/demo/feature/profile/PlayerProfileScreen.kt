@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,12 +33,11 @@ fun PlayerProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     onNavigateToMarket: () -> Unit
 ) {
-    // Állapot kinyerése
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Amikor a képernyő betölt, azonnal lekérjük az adatokat a playerId alapján
+    // Amikor a képernyő betölt, küldjük a LoadPublicProfile eseményt!
     LaunchedEffect(playerId) {
-        viewModel.loadPublicProfile(playerId)
+        viewModel.onEvent(ProfileEvent.LoadPublicProfile(playerId))
     }
 
     // --- ÁLLAPOTOK A DIALÓGUSOKHOZ ---
@@ -52,7 +51,7 @@ fun PlayerProfileScreen(
                 title = { Text(stringResource(R.string.profile_statistics)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Vissza")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Vissza")
                     }
                 }
             )
@@ -116,7 +115,10 @@ fun PlayerProfileScreen(
                     options = uiState.availableSeasons,
                     selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
                     optionLabeler = { translateSeasonName(it.second) },
-                    onOptionSelected = { viewModel.selectSeason(it?.first) },
+
+                    // Esemény küldése
+                    onOptionSelected = { viewModel.onEvent(ProfileEvent.SelectSeason(it?.first)) },
+
                     modifier = Modifier.fillMaxWidth()
                 )
             }

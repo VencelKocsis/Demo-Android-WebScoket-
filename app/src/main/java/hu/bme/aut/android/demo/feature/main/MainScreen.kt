@@ -45,14 +45,22 @@ import hu.bme.aut.android.demo.navigation.Market
 import hu.bme.aut.android.demo.navigation.Profile
 import hu.bme.aut.android.demo.navigation.Team
 import hu.bme.aut.android.demo.navigation.Tournament
+import kotlin.reflect.KClass
 
-// Segéd osztály az alsó menüpontoknak
+/**
+ * Segéd osztály az alsó navigációs sáv (Bottom Navigation) menüpontjaihoz.
+ */
 private data class BottomNavItem(
     val route: Any,
+    val routeClass: KClass<*>, // Szükséges a pontos type-safe összehasonlításhoz
     @StringRes val titleResId: Int,
     val icon: ImageVector
 )
 
+/**
+ * A bejelentkezett felhasználó fő képernyője, amely magában foglalja az alsó navigációs sávot,
+ * és egy belső (Nested) NavHost-ot a menüpontok közötti váltáshoz.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(
@@ -63,6 +71,7 @@ fun MainScreen(
     onNavigateToPlayerProfile: (String) -> Unit = {},
     onNavigateToRacketEditor: (Int?) -> Unit = {}
 ) {
+    // Belső NavController, ami kizárólag az alsó menüpontokat kezeli
     val bottomNavController = rememberNavController()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
@@ -72,12 +81,12 @@ fun MainScreen(
         }
     }
 
-    // ÉRTESÍTÉSI ENGEDÉLY
+    // ÉRTESÍTÉSI ENGEDÉLY KÉRÉSE (Push Notification)
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
-                Log.d("MainScreen", "Push Notification engedély megadva az operációs rendszertől!")
+                Log.d("MainScreen", "Push Notification engedély megadva!")
             } else {
                 Log.w("MainScreen", "Push Notification engedély MEGTAGADVA!")
             }
@@ -85,11 +94,11 @@ fun MainScreen(
     )
 
     val bottomNavItems = listOf(
-        BottomNavItem(Tournament, R.string.championship, Icons.Default.EmojiEvents),
-        BottomNavItem(Team, R.string.club, Icons.Default.Group),
-        BottomNavItem(History, R.string.history, Icons.Default.History),
-        BottomNavItem(Leaderboard, R.string.leaderboard, Icons.Default.FormatListNumbered),
-        BottomNavItem(Profile, R.string.profile, Icons.Default.Person)
+        BottomNavItem(Tournament, Tournament::class, R.string.championship, Icons.Default.EmojiEvents),
+        BottomNavItem(Team, Team::class, R.string.club, Icons.Default.Group),
+        BottomNavItem(History, History::class, R.string.history, Icons.Default.History),
+        BottomNavItem(Leaderboard, Leaderboard::class, R.string.leaderboard, Icons.Default.FormatListNumbered),
+        BottomNavItem(Profile, Profile::class, R.string.profile, Icons.Default.Person)
     )
 
     Scaffold(
@@ -99,7 +108,8 @@ fun MainScreen(
                 val currentDestination = navBackStackEntry?.destination
 
                 bottomNavItems.forEach { item ->
-                    val isSelected = currentDestination?.hierarchy?.any { it.hasRoute(item.route::class) } == true
+                    // Type-safe ellenőrzés a kiválasztott állapot megállapítására
+                    val isSelected = currentDestination?.hierarchy?.any { it.hasRoute(item.routeClass) } == true
 
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = stringResource(item.titleResId)) },
@@ -107,6 +117,7 @@ fun MainScreen(
                         selected = isSelected,
                         onClick = {
                             bottomNavController.navigate(item.route) {
+                                // Kerüljük a végtelen back stack felépítést
                                 popUpTo(bottomNavController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -127,6 +138,7 @@ fun MainScreen(
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding)
         ) {
+            // A belső (nested) NavHost
             NavHost(
                 navController = bottomNavController,
                 startDestination = Tournament

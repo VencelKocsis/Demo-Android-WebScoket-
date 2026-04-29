@@ -7,8 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Remove
@@ -73,7 +73,7 @@ fun LiveMatchScreen(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("back_button")
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Visszalépés")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Visszalépés")
                     }
                 }
             )

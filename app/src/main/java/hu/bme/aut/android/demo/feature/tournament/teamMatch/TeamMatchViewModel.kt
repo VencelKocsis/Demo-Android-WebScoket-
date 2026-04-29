@@ -22,35 +22,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// --- STATE & EVENTS ---
-data class TeamMatchUiState(
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null,
-    val teamMatchesByRound: Map<Int, List<TeamMatch>> = emptyMap(),
-
-    val liveMatches: List<TeamMatch> = emptyList(),
-
-    val currentUserName: String = "",
-    val userTeamIds: List<Int> = emptyList(),
-    val userCaptainTeamIds: List<Int> = emptyList(),
-
-    val availableDivisions: List<String> = emptyList(),
-    val availableTeams: List<Pair<Int, String>> = emptyList(),
-    val teamDivisions: Map<Int, String> = emptyMap(),
-
-    val selectedDivision: String? = null,
-    val selectedTeamId: Int? = null
-)
-
-sealed class TeamMatchScreenEvent {
-    object LoadTeamMatches : TeamMatchScreenEvent()
-    data class OnApplyForMatch(val matchId: Int) : TeamMatchScreenEvent()
-    data class OnToggleParticipantStatus(val participantId: Int, val currentStatus: String) : TeamMatchScreenEvent()
-    data class OnDivisionSelected(val division: String?) : TeamMatchScreenEvent()
-    data class OnTeamSelected(val teamId: Int?) : TeamMatchScreenEvent()
-}
-
-// --- VIEWMODEL ---
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TeamMatchViewModel @Inject constructor(

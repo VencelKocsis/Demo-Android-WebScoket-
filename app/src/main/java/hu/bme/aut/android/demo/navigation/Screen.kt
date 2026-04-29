@@ -2,14 +2,25 @@ package hu.bme.aut.android.demo.navigation
 
 import kotlinx.serialization.Serializable
 
-// --- FŐ KÉPERNYŐK --- // TODO nav3
+/**
+ * Type-Safe (típusbiztos) navigációs útvonalak a Compose Navigation 2.8.0+ verziójához.
+ * * A String alapú útvonalak helyett [@Serializable] Kotlin objektumokat használunk,
+ * így a fordító ellenőrzi a paraméterek típusát és meglétét.
+ */
+
+// ==========================================
+// FŐ GYÖKÉR (ROOT) KÉPERNYŐK
+// ==========================================
 @Serializable
 data object Login
 
 @Serializable
 data object Main
 
-// --- ALSÓ MENÜS (BOTTOM NAV) KÉPERNYŐK ---
+
+// ==========================================
+// ALSÓ MENÜS (BOTTOM NAV) KÉPERNYŐK
+// ==========================================
 @Serializable
 data object Tournament
 
@@ -22,7 +33,13 @@ data object History
 @Serializable
 data object Profile
 
-// --- PARAMÉTERES KÉPERNYŐK ---
+@Serializable
+data object Leaderboard
+
+
+// ==========================================
+// RÉSZLETEZŐ / PARAMÉTERES KÉPERNYŐK
+// ==========================================
 @Serializable
 data class TeamEditor(val teamId: Int)
 
@@ -39,11 +56,7 @@ data class MatchScorer(val matchId: Int, val individualMatchId: Int)
 data class PlayerProfile(val playerId: String)
 
 @Serializable
-data object Leaderboard
+data class RacketEditor(val racketId: Int? = null) // null = új ütő felvitele
 
 @Serializable
-data class RacketEditor(val racketId: Int? = null)// null = új ütő, Int = meglévő ütő szerkesztése
-
-@Serializable
-data object Market {
-}
+data object Market

@@ -22,6 +22,11 @@ import hu.bme.aut.android.demo.feature.tournament.match.MatchDetailsScreen
 import hu.bme.aut.android.demo.feature.tournament.liveMatch.LiveMatchScreen
 import hu.bme.aut.android.demo.feature.tournament.scorer.MatchScorerScreen
 
+/**
+ * Az alkalmazás gyökér szintű navigációs fája (Root Graph).
+ * * Csak két fő ága van: a [Login] (ha nincs bejelentkezve) és a [Main] (ha be van).
+ * * Minden más képernyő a Main képernyőből nyílik meg.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(
@@ -30,12 +35,15 @@ fun AppNavHost(
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
+    // Indulási pont meghatározása a hitelesítés állapota alapján
     val startDestination: Any = when (authState) {
-        AuthState.UNKNOWN -> Login
+        AuthState.UNKNOWN -> Login // Amíg tölt, a Loginon várunk
         AuthState.AUTHENTICATED -> Main
         AuthState.UNAUTHENTICATED -> Login
     }
 
+    // Amíg az AuthState betöltésére várunk (UNKNOWN állapotban a SplashScreen után),
+    // érdemes megvárni a tényleges értéket, hogy ne villanjon fel a rossz képernyő.
     if (authState != AuthState.UNKNOWN) {
         NavHost(
             navController = navController,
@@ -47,13 +55,13 @@ fun AppNavHost(
                     viewModel = authViewModel,
                     onAuthSuccess = {
                         navController.navigate(Main) {
-                            popUpTo<Login> { inclusive = true }
+                            popUpTo<Login> { inclusive = true } // Visszagombbal nem lehet visszajönni a Loginra
                         }
                     }
                 )
             }
 
-            // --- 2. FőKépernyő ---
+            // --- 2. FőKépernyő (Tartalmazza az alsó menüt) ---
             composable<Main> {
                 MainScreen(
                     authViewModel = authViewModel,
@@ -72,15 +80,18 @@ fun AppNavHost(
                 )
             }
 
-            // --- 3. Csapatszerkesztő ---
+            // ==========================================
+            // PARAMÉTERES (RÉSZLETEZŐ) KÉPERNYŐK
+            // ==========================================
+
             composable<TeamEditor> { backStackEntry ->
+                // A .toRoute() kinyeri a type-safe argumentumokat a navigációból
                 val args = backStackEntry.toRoute<TeamEditor>()
                 TeamEditorScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
 
-            // --- 4. Meccs Részletek ---
             composable<MatchDetails> { backStackEntry ->
                 val args = backStackEntry.toRoute<MatchDetails>()
                 MatchDetailsScreen(
@@ -90,7 +101,6 @@ fun AppNavHost(
                 )
             }
 
-            // --- 5. Élő Mérkőzés ---
             composable<LiveMatch> { backStackEntry ->
                 val args = backStackEntry.toRoute<LiveMatch>()
                 LiveMatchScreen(
@@ -102,7 +112,6 @@ fun AppNavHost(
                 )
             }
 
-            // --- 6. Pontozó ---
             composable<MatchScorer> { backStackEntry ->
                 val args = backStackEntry.toRoute<MatchScorer>()
                 MatchScorerScreen(
@@ -112,7 +121,6 @@ fun AppNavHost(
                 )
             }
 
-            // --- 7. Játékos Profil ---
             composable<PlayerProfile> { backStackEntry ->
                 val args = backStackEntry.toRoute<PlayerProfile>()
                 PlayerProfileScreen(
@@ -122,15 +130,13 @@ fun AppNavHost(
                 )
             }
 
-            // --- 8. Ranglista ---
             composable<Leaderboard> {
                 LeaderboardScreen()
             }
 
-            // --- 9. Felszerelés ---
             composable<RacketEditor> {
-                // A ViewModel (RacketEditorViewModel) a SavedStateHandle-ön keresztül
-                // fogja tudni automatikusan kiolvasni a racketId-t
+                // A ViewModel a SavedStateHandle-ön keresztül fogja
+                // automatikusan kiolvasni az opcionális racketId-t.
                 RacketEditorScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )

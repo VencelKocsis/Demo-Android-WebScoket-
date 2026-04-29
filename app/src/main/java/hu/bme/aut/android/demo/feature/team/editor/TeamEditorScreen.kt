@@ -20,10 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -59,40 +59,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
-import hu.bme.aut.android.demo.domain.team.model.TeamMember
 import hu.bme.aut.android.demo.ui.theme.CaptainYellow
 import hu.bme.aut.android.demo.ui.theme.CaptainYellowSolid
 import hu.bme.aut.android.demo.ui.theme.WarningOrangeLight
-
-// --- ÁLLAPOT ÉS ESEMÉNYEK ---
-data class TeamEditorState(
-    val teamId: Int = 0,
-    val teamName: String = "",
-    val newNameInput: String = "",
-    val isEditNameDialogVisible: Boolean = false,
-    val currentMembers: List<TeamMember> = emptyList(),
-    val availableUsers: List<TeamMember> = emptyList(),
-    val memberToKick: TeamMember? = null,
-    val userToAdd: TeamMember? = null,
-    val isLoading: Boolean = false
-)
-
-sealed class TeamEditorEvent {
-    object LoadTeamData : TeamEditorEvent()
-
-    data class OnKickClicked(val member: TeamMember) : TeamEditorEvent()
-    object OnConfirmKick : TeamEditorEvent()
-    object OnDismissKick : TeamEditorEvent()
-
-    data class OnAddClicked(val member: TeamMember) : TeamEditorEvent()
-    object OnConfirmAdd : TeamEditorEvent()
-    object OnDismissAdd : TeamEditorEvent()
-
-    object OnEditNameClicked : TeamEditorEvent()
-    object OnDismissEditName : TeamEditorEvent()
-    data class OnNameInputChanged(val newName: String) : TeamEditorEvent()
-    object OnSaveNameClicked : TeamEditorEvent()
-}
 
 @Composable
 fun TeamEditorScreen(
@@ -123,7 +92,7 @@ fun TeamEditorContent(
                 title = { Text(stringResource(R.string.edit_team)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Visszalépés")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Visszalépés")
                     }
                 }
             )
@@ -384,7 +353,7 @@ fun EditorPlayerCardRow(
             // Csak akkor mutatunk kuka ikont, ha NEM ő a kapitány
             if (!isCaptain) {
                 IconButton(onClick = onRemoveClick, modifier = Modifier.testTag("kick_$name")) {
-                    Icon(Icons.Default.Login, contentDescription = "Eltávolítás", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.AutoMirrored.Filled.Login, contentDescription = "Eltávolítás", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

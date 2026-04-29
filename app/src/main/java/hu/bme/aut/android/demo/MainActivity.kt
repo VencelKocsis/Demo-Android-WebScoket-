@@ -20,12 +20,21 @@ import hu.bme.aut.android.demo.navigation.MatchDetails
 import hu.bme.aut.android.demo.ui.theme.DemoTheme
 import kotlinx.coroutines.delay
 
+/**
+ * Az alkalmazás egyetlen Activity-je (Single Activity Architecture).
+ * * Clean Architecture szempontból ez a legkülső, Framework (Keretrendszer) réteghez tartozik.
+ * * Feladata kizárólag az operációs rendszerrel való kapcsolattartás (Engedélyek, Intentek, Értesítési csatornák)
+ * és a Jetpack Compose UI (AppNavHost) elindítása.
+ */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private val CHANNEL_ID = "DEMO_CHANNEL"
     private val CHANNEL_NAME = "Demó Értesítések"
 
+    /**
+     * Rendszerszintű hívás a Push Értesítések (Android 13+) engedélyezéséhez.
+     */
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -40,29 +49,36 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Rendszer beállítások inicializálása
         createNotificationChannel()
         requestNotificationPermission()
-
         enableEdgeToEdge()
 
-        // Kiolvassuk a PendingIntent-ből a meccs ID-t
+        // Operációs rendszertől kapott Intent adatok kiolvasása (Pl.: Push értesítésre kattintás)
         val targetMatchId = intent.extras?.getString("NAVIGATE_TO_MATCH")?.toIntOrNull()
 
+        // A deklaratív UI (Jetpack Compose) belépési pontja
         setContent {
             DemoTheme {
                 val navController = rememberNavController()
 
+                // Ha az alkalmazást egy FCM értesítés indította el, automatikusan
+                // a megfelelő meccs részleteire navigálunk.
                 LaunchedEffect(targetMatchId) {
                     if (targetMatchId != null) {
                         Log.d("MainActivity", "Navigálás a meccs részleteire: $targetMatchId")
 
+                        // Kis késleltetés, hogy a Compose NavHost biztosan felépüljön a navigáció előtt
                         delay(150)
 
                         try {
+                            // Type-Safe navigáció használata a megadott képernyőre
                             navController.navigate(MatchDetails(matchId = targetMatchId)) {
                                 launchSingleTop = true
                             }
 
+                            // Töröljük az extrát, hogy egy konfigurációváltás (pl. képernyő elforgatás)
+                            // esetén ne navigáljon újra.
                             intent.removeExtra("NAVIGATE_TO_MATCH")
                         } catch (e: Exception) {
                             Log.e("MainActivity", "Hiba a navigációnál: ${e.message}")
@@ -70,11 +86,16 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                // A fő navigációs gráf elindítása
                 AppNavHost(navController = navController)
             }
         }
     }
 
+    /**
+     * Létrehozza a Push Értesítésekhez szükséges csatornát az Android (8.0+) rendszerben.
+     * Enélkül a Firebase hiába küld üzenetet, a telefon nem jeleníti meg.
+     */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -90,6 +111,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Android 13 (TIRAMISU) felett futásidőben kell engedélyt kérni a vizuális értesítésekhez.
+     */
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!getSystemService(NotificationManager::class.java).areNotificationsEnabled()) {

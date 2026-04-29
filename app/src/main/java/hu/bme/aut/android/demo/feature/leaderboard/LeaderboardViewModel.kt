@@ -15,20 +15,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class LeaderboardUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
-
-    val allTeams: List<TeamDetails> = emptyList(),
-    val filteredTeams: List<TeamDetails> = emptyList(),
-
-    val availableSeasons: List<Pair<Int, String>> = emptyList(),
-    val availableDivisions: List<String> = emptyList(),
-
-    val selectedSeasonId: Int? = null,
-    val selectedDivision: String? = null
-)
-
+/**
+ * A Ranglista üzleti és prezentációs logikájáért felelős ViewModel.
+ * * Feladata: Nyers adatok bekérése a Domain rétegből, a pontszámítások és
+ * statisztikák elvégzése, majd az [LeaderboardUiState] frissítése a UI számára.
+ */
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
     private val getTeamsUseCase: GetTeamsUseCase,
@@ -39,9 +30,28 @@ class LeaderboardViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LeaderboardUiState())
     val uiState: StateFlow<LeaderboardUiState> = _uiState.asStateFlow()
 
-    init { loadStandings() }
+    init {
+        onEvent(LeaderboardEvent.LoadStandings)
+    }
 
-    fun loadStandings() {
+    /**
+     * A UI-ról érkező interakciók központosított kezelése.
+     */
+    fun onEvent(event: LeaderboardEvent) {
+        when (event) {
+            is LeaderboardEvent.LoadStandings -> loadStandings()
+            is LeaderboardEvent.OnSeasonSelected -> {
+                _uiState.update { it.copy(selectedSeasonId = event.seasonId) }
+                applyFilterAndSort()
+            }
+            is LeaderboardEvent.OnDivisionSelected -> {
+                _uiState.update { it.copy(selectedDivision = event.division) }
+                applyFilterAndSort()
+            }
+        }
+    }
+
+    private fun loadStandings() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
@@ -67,7 +77,7 @@ class LeaderboardViewModel @Inject constructor(
                                 else -> d++
                             }
                         }
-                        // PONTSZÁMÍTÁS SZABÁLY: (pl. 2 pont a győzelem, 1 pont döntetlen, 0 pont vereség)
+                        // PONTSZÁMÍTÁS SZABÁLY: (2 pont a győzelem, 1 pont döntetlen, 0 pont vereség)
                         val p = (w * 2) + (d * 1)
                         TeamStats(matches.size, w, l, d, p)
                     }
@@ -84,7 +94,7 @@ class LeaderboardViewModel @Inject constructor(
                     if (userTeam != null) { userPrimaryDivision = userTeam.division }
                 }
 
-                // --- 3. SZEZONOK KINYERÉSE ---
+                // --- 3. SZEZONOK ÉS DIVÍZIÓK KINYERÉSE ---
                 val seasonPairs = finishedMatches
                     .map { Pair(it.seasonId, it.seasonName ?: "Ismeretlen szezon") }
                     .distinctBy { it.first }
@@ -97,7 +107,7 @@ class LeaderboardViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        allTeams = enhancedTeams, // A felokosított csapatokat adjuk át
+                        allTeams = enhancedTeams,
                         availableSeasons = seasonPairs,
                         availableDivisions = divisions,
                         selectedSeasonId = latestSeasonId,
@@ -111,6 +121,9 @@ class LeaderboardViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Kliens-oldali szűrés és sorba rendezés (pontok, majd győzelmek alapján).
+     */
     private fun applyFilterAndSort() {
         val state = _uiState.value
         var currentTeams = state.allTeams
@@ -125,15 +138,5 @@ class LeaderboardViewModel @Inject constructor(
         )
 
         _uiState.update { it.copy(filteredTeams = sorted) }
-    }
-
-    fun selectDivision(division: String?) {
-        _uiState.update { it.copy(selectedDivision = division) }
-        applyFilterAndSort()
-    }
-
-    fun selectSeason(seasonId: Int?) {
-        _uiState.update { it.copy(selectedSeasonId = seasonId) }
-        applyFilterAndSort()
     }
 }

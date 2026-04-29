@@ -19,6 +19,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.ui.common.*
 
+/**
+ * A lezárt mérkőzések (Előzmények) képernyője.
+ * * "Buta" Compose réteg: A logikát a ViewModel vezérli, a UI csak kiküldi a MVI Eventeket.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +30,10 @@ fun HistoryScreen(
     viewModel: HistoryViewModel = hiltViewModel(),
     onNavigateToMatchDetails: (Int) -> Unit
 ) {
+    // Életciklus-tudatos, memóriakímélő adatfolyam-megfigyelés
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Csak vizuális (UI) állapot, maradhat a Composable-ben
     var showFilterDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -60,19 +67,23 @@ fun HistoryScreen(
                         options = uiState.availableSeasons,
                         selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
                         optionLabeler = { translateSeasonName(it.second) },
+                        // Esemény (Intent) küldése a ViewModel-nek
                         onOptionSelected = { viewModel.onEvent(HistoryScreenEvent.OnSeasonSelected(it?.first)) },
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     GenericFilterDropdown(
                         label = stringResource(R.string.division_1),
                         defaultOptionText = stringResource(R.string.all),
                         options = uiState.availableDivisions,
                         selectedOption = uiState.selectedDivision,
                         optionLabeler = { it },
+                        // Esemény (Intent) küldése a ViewModel-nek
                         onOptionSelected = { viewModel.onEvent(HistoryScreenEvent.OnDivisionSelected(it)) },
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    // Lokális lista szűrés a dropdown számára (gyors, UI oldali logika)
                     val filteredTeams = if (uiState.selectedDivision != null) {
                         uiState.availableTeams.filter { uiState.teamDivisions[it.first] == uiState.selectedDivision }
                     } else uiState.availableTeams
@@ -83,6 +94,7 @@ fun HistoryScreen(
                         options = filteredTeams,
                         selectedOption = uiState.availableTeams.find { it.first == uiState.selectedTeamId },
                         optionLabeler = { it.second },
+                        // Esemény (Intent) küldése a ViewModel-nek
                         onOptionSelected = { viewModel.onEvent(HistoryScreenEvent.OnTeamSelected(it?.first)) },
                         modifier = Modifier.fillMaxWidth()
                     )

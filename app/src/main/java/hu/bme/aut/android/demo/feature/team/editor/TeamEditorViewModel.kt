@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.domain.team.model.TeamMember
 import hu.bme.aut.android.demo.domain.team.usecase.AddTeamMemberUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetAvailableUsersUseCase
 import hu.bme.aut.android.demo.domain.team.usecase.GetTeamsUseCase
@@ -23,6 +22,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * A Csapatszerkesztő üzleti logikáját (név módosítás, tagok felvétele/kirúgása)
+ * kezelő ViewModel.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TeamEditorViewModel @Inject constructor(
@@ -34,40 +37,26 @@ class TeamEditorViewModel @Inject constructor(
     private val removeTeamMemberUseCase: RemoveTeamMemberUseCase
 ) : ViewModel() {
 
-    // A Dagger Hilt automatikusan kiszedi nekünk a teamId-t a Navigációs argumentumokból!
+    // Navigációs argumentum kinyerése Type-Safe módon
     private val teamId: Int = checkNotNull(savedStateHandle["teamId"])
 
-    // 1. Triggerek a reaktív adatfolyamhoz
     private val _refreshTrigger = MutableStateFlow(0)
-
-    // 2. UI állapot változók (Dialógusok és Inputok)
     private val _newNameInput = MutableStateFlow("")
     private val _isEditNameDialogVisible = MutableStateFlow(false)
-    private val _memberToKick = MutableStateFlow<TeamMember?>(null)
-    private val _userToAdd = MutableStateFlow<TeamMember?>(null)
-
-    // Explicit loading a mutációs (író) műveletek idejére
+    private val _memberToKick = MutableStateFlow<hu.bme.aut.android.demo.domain.team.model.TeamMember?>(null)
+    private val _userToAdd = MutableStateFlow<hu.bme.aut.android.demo.domain.team.model.TeamMember?>(null)
     private val _isMutating = MutableStateFlow(false)
 
-    // 3. A tiszta adat-Flow-k, mapLatest-el, hogy ne villogjon
     private val teamDataFlow = _refreshTrigger.mapLatest {
         val allTeams = getTeamsUseCase()
         val team = allTeams.find { it.id == teamId }
         val availableUsers = getAvailableUsersUseCase()
-
         Resource.success(Pair(team, availableUsers))
-    }.onStart {
-        // Ez csak a legelső betöltésnél teszi ki a töltőikont a képernyő közepére
-        emit(Resource.loading())
-    }.catch { e ->
-        emit(Resource.error(e))
-    }
+    }.onStart { emit(Resource.loading()) }
+        .catch { e -> emit(Resource.error(e)) }
 
-    // 4. A UI Állapot összerakása (Mivel 5-nél több Flow-nk van, csoportosítjuk őket)
     val uiState: StateFlow<TeamEditorState> = combine(
-        // Első hármas csoport
         combine(teamDataFlow, _newNameInput, _isEditNameDialogVisible, ::Triple),
-        // Második hármas csoport
         combine(_memberToKick, _userToAdd, _isMutating, ::Triple)
     ) { (dataResource, newName, editDialog), (kickTarget, addTarget, isMutating) ->
 
@@ -75,7 +64,6 @@ class TeamEditorViewModel @Inject constructor(
         val currentTeam = dataPair?.first
         val availableUsers = dataPair?.second ?: emptyList()
 
-        // Ha a dialógus épp megnyílt, és a név még üres, beállítjuk a jelenlegire
         val displayNewName = if (newName.isEmpty() && editDialog) currentTeam?.name ?: "" else newName
 
         TeamEditorState(
@@ -87,7 +75,6 @@ class TeamEditorViewModel @Inject constructor(
             availableUsers = availableUsers,
             memberToKick = kickTarget,
             userToAdd = addTarget,
-            // A képernyő akkor tölt, ha a Flow tölt, vagy ha épp írunk a szerverre
             isLoading = dataResource.isLoading || isMutating
         )
     }.stateIn(
@@ -99,22 +86,19 @@ class TeamEditorViewModel @Inject constructor(
     fun onEvent(event: TeamEditorEvent) {
         when (event) {
             is TeamEditorEvent.LoadTeamData -> _refreshTrigger.value += 1
-
             is TeamEditorEvent.OnEditNameClicked -> _isEditNameDialogVisible.value = true
             is TeamEditorEvent.OnDismissEditName -> {
                 _isEditNameDialogVisible.value = false
-                _newNameInput.value = "" // Tiszta lappal indulunk legközelebb
+                _newNameInput.value = ""
             }
             is TeamEditorEvent.OnNameInputChanged -> _newNameInput.value = event.newName
-
             is TeamEditorEvent.OnSaveNameClicked -> {
                 viewModelScope.launch {
                     _isMutating.value = true
                     try {
                         updateTeamNameUseCase(teamId = teamId, newName = _newNameInput.value)
                         _isEditNameDialogVisible.value = false
-                        _refreshTrigger.value += 1 // Frissítés a szerverről
-
+                        _refreshTrigger.value += 1
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {
@@ -122,7 +106,6 @@ class TeamEditorViewModel @Inject constructor(
                     }
                 }
             }
-
             is TeamEditorEvent.OnKickClicked -> _memberToKick.value = event.member
             is TeamEditorEvent.OnDismissKick -> _memberToKick.value = null
             is TeamEditorEvent.OnConfirmKick -> {
@@ -132,7 +115,7 @@ class TeamEditorViewModel @Inject constructor(
                     try {
                         removeTeamMemberUseCase(teamId = teamId, userId = member.id)
                         _memberToKick.value = null
-                        _refreshTrigger.value += 1 // Frissítés szerverről!
+                        _refreshTrigger.value += 1
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {
@@ -140,7 +123,6 @@ class TeamEditorViewModel @Inject constructor(
                     }
                 }
             }
-
             is TeamEditorEvent.OnAddClicked -> _userToAdd.value = event.member
             is TeamEditorEvent.OnDismissAdd -> _userToAdd.value = null
             is TeamEditorEvent.OnConfirmAdd -> {
@@ -150,7 +132,7 @@ class TeamEditorViewModel @Inject constructor(
                     try {
                         addTeamMemberUseCase(teamId = teamId, userId = user.id)
                         _userToAdd.value = null
-                        _refreshTrigger.value += 1 // Frissítés szerverről!
+                        _refreshTrigger.value += 1
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {

@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -20,6 +20,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.bme.aut.android.demo.R
 import hu.bme.aut.android.demo.domain.market.model.MarketItem
 
+/**
+ * A Piac képernyő Compose megvalósítása.
+ * * "Buta" UI: Csak megjeleníti az adatokat, a műveleteket [MarketEvent] formájában
+ * adja át a ViewModel-nek.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketScreen(
@@ -29,15 +34,15 @@ fun MarketScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Üzenetek (Snackbar) kezelése
+    // Üzenetek (Snackbar) kezelése - Csak akkor fut le, ha a state megváltozik
     LaunchedEffect(uiState.errorMessage, uiState.inquirySuccessMessage) {
         uiState.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.clearMessages()
+            viewModel.onEvent(MarketEvent.ClearMessages)
         }
         uiState.inquirySuccessMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.clearMessages()
+            viewModel.onEvent(MarketEvent.ClearMessages)
         }
     }
 
@@ -48,12 +53,11 @@ fun MarketScreen(
                 title = { Text(stringResource(R.string.market), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Visszalépés")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Visszalépés")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.loadMarketItems() }) {
-                        // Kézi frissítés gomb (opcionális, jó ha van)
+                    IconButton(onClick = { viewModel.onEvent(MarketEvent.RefreshMarket) }) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Frissítés")
                     }
                 }
@@ -81,11 +85,11 @@ fun MarketScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(uiState.items) { item ->
+                    items(uiState.items, key = { it.equipment.id ?: 0 }) { item ->
                         MarketItemCard(
                             item = item,
                             onInquireClick = { equipmentId ->
-                                viewModel.inquireAboutEquipment(equipmentId)
+                                viewModel.onEvent(MarketEvent.InquireAboutEquipment(equipmentId))
                             }
                         )
                     }
@@ -95,6 +99,9 @@ fun MarketScreen(
     }
 }
 
+/**
+ * Egy eladó ütő kártyájának Compose vizuális eleme.
+ */
 @Composable
 fun MarketItemCard(
     item: MarketItem,

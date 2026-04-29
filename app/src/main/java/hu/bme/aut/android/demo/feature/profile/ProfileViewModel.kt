@@ -17,35 +17,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class ProfileUiState(
-    val user: User? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val userTeamNames: List<String> = emptyList(),
-
-    // Szezon szűrő adatok
-    val availableSeasons: List<Pair<Int, String>> = emptyList(),
-    val selectedSeasonId: Int? = null,
-
-    // Alap statisztikák
-    val matchesPlayed: Int = 0,
-    val matchesWon: Int = 0,
-    val winRate: Int = 0,
-
-    // 1. Forma és Élő-pont (Rating)
-    val recentForm: List<Boolean> = emptyList(), // Utolsó 5 meccs (true = győzelem)
-    val ratingHistory: List<Float> = emptyList(), // Grafikonhoz
-
-    // 2. Szett Mutatók (Best of 5 alapján)
-    val sweeps: Int = 0, // 3-0-ás győzelmek
-    val decidingSetWins: Int = 0, // 3-2-es győzelmek (Clutch)
-    val flawlessDays: Int = 0, // 4/4 győzelmek egy napon belül (Flawless Victory)
-
-    // 3. Egymás elleni (H2H)
-    val favoriteOpponent: Pair<String, Int>? = null, // Név és Győzelmek száma
-    val nemesis: Pair<String, Int>? = null // Név és Vereségek száma
-)
-
+/**
+ * A Profil képernyő üzleti logikájáért és komplex statisztika számításaiért felelős ViewModel.
+ * * Támogatja mind a saját profil megtekintését/szerkesztését, mind pedig a
+ * publikus játékosok (ellenfelek) adatainak lekérdezését.
+ */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val getUserByIdUseCase: GetUserByIdUseCase,
@@ -58,14 +34,28 @@ class ProfileViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ProfileUiState(isLoading = true))
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
-    // Eltároljuk a memóriában a már letöltött összes meccset a gyors szűréshez
+    // Eltároljuk a memóriában a már letöltött összes meccset a gyors kliensoldali szűréshez
     private var cachedFinishedMatches = listOf<TeamMatch>()
 
     init {
         loadUserTeams()
     }
 
-    fun selectSeason(seasonId: Int?) {
+    /**
+     * MVI események (Intent) központi kezelője.
+     */
+    fun onEvent(event: ProfileEvent) {
+        when (event) {
+            is ProfileEvent.InitOwnUser -> initUser(event.user)
+            is ProfileEvent.LoadPublicProfile -> loadPublicProfile(event.uid)
+            is ProfileEvent.UpdateProfileData -> updateUser(event.firstName, event.lastName)
+            is ProfileEvent.SelectSeason -> selectSeason(event.seasonId)
+            is ProfileEvent.RefreshProfile -> refreshProfile()
+            is ProfileEvent.ClearError -> clearError()
+        }
+    }
+
+    private fun selectSeason(seasonId: Int?) {
         _uiState.update { it.copy(selectedSeasonId = seasonId) }
         _uiState.value.user?.let { user ->
             calculateStatsForSeason(user, seasonId)
@@ -78,7 +68,7 @@ class ProfileViewModel @Inject constructor(
                 val allMatches = getTeamMatchesUseCase()
                 cachedFinishedMatches = allMatches.filter { it.status == "finished" }
 
-                // Szezonok kinyerése (ahogy a ranglistánál is)
+                // Szezonok kinyerése a menühöz
                 val seasonPairs = cachedFinishedMatches
                     .map { Pair(it.seasonId, it.seasonName ?: "Ismeretlen szezon") }
                     .distinctBy { it.first }
@@ -99,10 +89,13 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    /**
+     * A "varázslat" helye: Itt számolódnak ki a komplex statisztikák
+     * (WinRate, Sweeps, Flawless Days, Nemesis, Forma) a kiválasztott szezon alapján.
+     */
     private fun calculateStatsForSeason(user: User, seasonId: Int?) {
         val fullName = "${user.lastName} ${user.firstName}"
 
-        // Csak a kiválasztott szezon meccseit tartjuk meg (vagy mindet, ha a seasonId null)
         val seasonMatches = if (seasonId == null) cachedFinishedMatches else cachedFinishedMatches.filter { it.seasonId == seasonId }
 
         val userMatches = seasonMatches.flatMap { teamMatch ->
@@ -163,38 +156,27 @@ class ProfileViewModel @Inject constructor(
         )}
     }
 
-    fun loadPublicProfile(uid: String) {
+    private fun loadPublicProfile(uid: String) {
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
                 val user = getUserByIdUseCase(uid)
-
                 _uiState.update { it.copy(user = user, isLoading = false) }
-
-                if (user != null) {
-                    loadUserStats(user)
-                }
+                if (user != null) loadUserStats(user)
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(isLoading = false, error = e.message ?: "Hiba a profil letöltésekor")
-                }
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Hiba a profil letöltésekor") }
             }
         }
     }
 
-    fun refreshProfile() {
+    private fun refreshProfile() {
         viewModelScope.launch {
             try {
-                // 1. Megszerezzük a bejelentkezett felhasználó Firebase UID-ját
                 val firebaseUid = getCurrentUserUseCase()?.uid ?: return@launch
-
-                // 2. Lekérjük a legfrissebb adatokat a backendről (felszereléssel együtt!)
                 val freshUser = getUserByIdUseCase(firebaseUid)
 
                 if (freshUser != null) {
-                    // 3. Frissítjük a UI állapotot a vadonatúj ütőkkel
                     _uiState.update { it.copy(user = freshUser) }
-                    // Újra betöltjük a statisztikákat is (biztos, ami biztos)
                     loadUserStats(freshUser)
                 }
             } catch (e: Exception) {
@@ -216,14 +198,14 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun initUser(user: User?) {
+    private fun initUser(user: User?) {
         if (user != null && _uiState.value.user?.id != user.id) {
             _uiState.update { it.copy(user = user, isLoading = false) }
             loadUserStats(user)
         }
     }
 
-    fun updateUser(firstName: String, lastName: String) {
+    private fun updateUser(firstName: String, lastName: String) {
         val currentUser = _uiState.value.user ?: return
 
         _uiState.update { it.copy(isLoading = true, error = null) }
@@ -237,17 +219,13 @@ class ProfileViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, user = savedUser) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Ismeretlen hiba történt",
-                        user = currentUser
-                    )
+                    it.copy(isLoading = false, error = e.message ?: "Ismeretlen hiba történt", user = currentUser)
                 }
             }
         }
     }
 
-    fun clearError() {
+    private fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
 }

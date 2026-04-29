@@ -20,36 +20,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class LiveMatchPhase {
-    LOADING,
-    LINEUP_SETUP,
-    WAITING_FOR_OPPONENT,
-    MATCH_GRID
-}
-
-data class LiveMatchUiState(
-    val isLoading: Boolean = true,
-    val isMutating: Boolean = false,
-    val isSubmitSuccessful: Boolean = false,
-    val phase: LiveMatchPhase = LiveMatchPhase.LOADING,
-    val match: TeamMatch? = null,
-    val myTeamSide: String = "HOME",
-    val isSpectator: Boolean = false,
-    val isStartingPlayer: Boolean = false,
-    val lineupList: List<MatchParticipant> = emptyList(),
-    val availablePlayers: List<MatchParticipant> = emptyList(),
-    val individualMatches: List<IndividualMatch> = emptyList(),
-    val errorMessage: String? = null
-)
-
-sealed class LiveMatchEvent {
-    object LoadMatchData : LiveMatchEvent()
-    data class TogglePlayerSlot(val participant: MatchParticipant, val sendToBench: Boolean = false) : LiveMatchEvent()
-    object SubmitLineup : LiveMatchEvent()
-    data class OpenIndividualMatchScoring(val individualMatchId: Int) : LiveMatchEvent()
-    object SignMatch : LiveMatchEvent()
-}
-
 @HiltViewModel
 class LiveMatchViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,

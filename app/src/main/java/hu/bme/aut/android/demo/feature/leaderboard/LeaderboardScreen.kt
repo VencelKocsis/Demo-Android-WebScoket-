@@ -30,6 +30,11 @@ import hu.bme.aut.android.demo.ui.theme.Bronze
 import hu.bme.aut.android.demo.ui.theme.Gold
 import hu.bme.aut.android.demo.ui.theme.Silver
 
+/**
+ * A Ranglista (Leaderboard) képernyője.
+ * * Csak vizuális logika: Itt már nem történik szűrés vagy statisztika-számítás,
+ * azt a [LeaderboardViewModel] már elvégezte. A UI csak rajzol.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(
@@ -59,7 +64,8 @@ fun LeaderboardScreen(
                         options = uiState.availableSeasons,
                         selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
                         optionLabeler = { translateSeasonName(it.second) },
-                        onOptionSelected = { viewModel.selectSeason(it?.first) },
+                        // Esemény küldése az új MVI struktúrában
+                        onOptionSelected = { viewModel.onEvent(LeaderboardEvent.OnSeasonSelected(it?.first)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -72,7 +78,8 @@ fun LeaderboardScreen(
                         options = uiState.availableDivisions,
                         selectedOption = uiState.selectedDivision,
                         optionLabeler = { it },
-                        onOptionSelected = { viewModel.selectDivision(it) },
+                        // Esemény küldése az új MVI struktúrában
+                        onOptionSelected = { viewModel.onEvent(LeaderboardEvent.OnDivisionSelected(it)) },
                         modifier = Modifier.weight(1f)
                     )
                 }

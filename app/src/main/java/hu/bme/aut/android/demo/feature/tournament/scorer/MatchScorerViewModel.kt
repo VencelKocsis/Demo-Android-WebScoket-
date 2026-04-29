@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.android.demo.domain.teammatch.model.IndividualMatch
 import hu.bme.aut.android.demo.domain.teammatch.usecase.GetTeamMatchByIdUseCase
 import hu.bme.aut.android.demo.domain.teammatch.usecase.SubmitIndividualScoreUseCase
 import hu.bme.aut.android.demo.domain.websocket.model.MatchWsEvent
@@ -14,19 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class SetScoreInput(val home: String = "", val guest: String = "")
-
-data class MatchScorerUiState(
-    val isLoading: Boolean = true,
-    val isSaving: Boolean = false,
-    val match: IndividualMatch? = null,
-    val sets: List<SetScoreInput> = listOf(SetScoreInput()),
-    val homeSetsWon: Int = 0,
-    val guestSetsWon: Int = 0,
-    val isFinished: Boolean = false,
-    val isTeamMatchFinished: Boolean = false
-)
 
 @HiltViewModel
 class MatchScorerViewModel @Inject constructor(
@@ -43,8 +29,16 @@ class MatchScorerViewModel @Inject constructor(
     val uiState: StateFlow<MatchScorerUiState> = _uiState
 
     init {
-        loadMatch()
+        onEvent(MatchScorerEvent.LoadMatch)
         observeWs()
+    }
+
+    fun onEvent(event: MatchScorerEvent) {
+        when (event) {
+            is MatchScorerEvent.LoadMatch -> loadMatch()
+            is MatchScorerEvent.UpdateSetScore -> updateSetScore(event.index, event.home, event.guest)
+            is MatchScorerEvent.SubmitScore -> submitScore(event.isFinal)
+        }
     }
 
     private fun observeWs() {
@@ -84,7 +78,6 @@ class MatchScorerViewModel @Inject constructor(
                     }
 
                     is MatchWsEvent.MatchSignatureUpdated -> {
-                        // <--- ÚJ: Ha a Live képernyőn aláírják, itt is azonnal letiltjuk a szerkesztést!
                         if (event.matchId == teamMatchId) {
                             _uiState.update { it.copy(isTeamMatchFinished = event.status == "finished") }
                         }
@@ -94,7 +87,7 @@ class MatchScorerViewModel @Inject constructor(
         }
     }
 
-    fun loadMatch() {
+    private fun loadMatch() {
         viewModelScope.launch {
             try {
                 val parentMatch = getTeamMatchByIdUseCase(teamMatchId)
@@ -107,8 +100,7 @@ class MatchScorerViewModel @Inject constructor(
 
                 if (loadedSets.isEmpty()) loadedSets.add(SetScoreInput())
 
-                var hWins = 0
-                var gWins = 0
+                var hWins = 0; var gWins = 0
                 loadedSets.forEach { set ->
                     val h = set.home.toIntOrNull() ?: 0
                     val g = set.guest.toIntOrNull() ?: 0
@@ -139,13 +131,12 @@ class MatchScorerViewModel @Inject constructor(
         }
     }
 
-    fun updateSetScore(index: Int, home: String, guest: String) {
+    private fun updateSetScore(index: Int, home: String, guest: String) {
         _uiState.update { state ->
             val mutableSets = state.sets.toMutableList()
             mutableSets[index] = SetScoreInput(home, guest)
 
-            var hWins = 0
-            var gWins = 0
+            var hWins = 0; var gWins = 0
             mutableSets.forEach { set ->
                 val h = set.home.toIntOrNull() ?: 0
                 val g = set.guest.toIntOrNull() ?: 0
@@ -166,7 +157,7 @@ class MatchScorerViewModel @Inject constructor(
         }
     }
 
-    fun submitScore(isFinal: Boolean) {
+    private fun submitScore(isFinal: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             val state = _uiState.value

@@ -74,13 +74,14 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(backendUser) {
-        profileViewModel.initUser(backendUser)
+        // Inicializáljuk a profilt az Auth modulból érkező userrel
+        profileViewModel.onEvent(ProfileEvent.InitOwnUser(backendUser))
     }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
             snackbarHostState.showSnackbar(it)
-            profileViewModel.clearError()
+            profileViewModel.onEvent(ProfileEvent.ClearError)
         }
     }
 
@@ -88,13 +89,12 @@ fun ProfileScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                profileViewModel.refreshProfile()
+                // Visszatéréskor automatikusan frissítjük az adatokat
+                profileViewModel.onEvent(ProfileEvent.RefreshProfile)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     var showMenu by remember { mutableStateOf(false) }
@@ -202,7 +202,10 @@ fun ProfileScreen(
                     options = uiState.availableSeasons,
                     selectedOption = uiState.availableSeasons.find { it.first == uiState.selectedSeasonId },
                     optionLabeler = { translateSeasonName(it.second) },
-                    onOptionSelected = { profileViewModel.selectSeason(it?.first) },
+
+                    // Esemény küldése
+                    onOptionSelected = { profileViewModel.onEvent(ProfileEvent.SelectSeason(it?.first)) },
+
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -269,7 +272,7 @@ fun ProfileScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        profileViewModel.updateUser(editFirstName, editLastName)
+                        profileViewModel.onEvent(ProfileEvent.UpdateProfileData(editFirstName, editLastName))
                         showEditDialog = false
                     },
                     enabled = editFirstName.isNotBlank() && editLastName.isNotBlank() && !uiState.isLoading
