@@ -92,8 +92,22 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 }
 
                 "MARKET_INQUIRY" -> {
-                    val title = data["title"] ?: "Érdeklődés felszerelésre!"
-                    val body = data["body"] ?: "Valakit érdekel a piacon lévő ütőd!"
+                    val title = data["title"] ?: getString(R.string.interested_in_equipment)
+                    val body = data["body"] ?: getString(R.string.someone_interested_your_racket)
+                    showNotification(title, body, null)
+                }
+
+                "TEAM_ADDED" -> {
+                    val teamName = data["teamName"]
+                    val title = getString(R.string.added_to_team_fcm_title, teamName)
+                    val body = getString(R.string.added_to_team_fcm_body, teamName)
+                    showNotification(title, body, null)
+                }
+
+                "TEAM_REMOVED" -> {
+                    val teamName = data["teamName"]
+                    val title = getString(R.string.kicked_from_team_fcm_title, teamName)
+                    val body = getString(R.string.kicked_from_team_fcm_body, teamName)
                     showNotification(title, body, null)
                 }
 

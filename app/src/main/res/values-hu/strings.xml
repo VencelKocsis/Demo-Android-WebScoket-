@@ -200,4 +200,10 @@
     <string name="market">Piac</string>
     <string name="offer_for_sale">Eladásra kínálom</string>
     <string name="racket_appears_on_market">Az ütő megjelenik a Piacon, ahol más játékosok érdeklődhetnek iránta.</string>
+    <string name="interested_in_equipment">Érdeklődés felszerelésre!</string>
+    <string name="someone_interested_your_racket">someone_interested_your_racket</string>
+    <string name="added_to_team_fcm_title">Felvettek a %1$s csapatba!</string>
+    <string name="added_to_team_fcm_body">Mostantól tagja vagy a %1$s csapatnak.</string>
+    <string name="kicked_from_team_fcm_title">Kirúgrak a %1$s csapatból!</string>
+    <string name="kicked_from_team_fcm_body">Mostantól nem vagy tagja a %1$s csapatnak.</string>
 </resources>

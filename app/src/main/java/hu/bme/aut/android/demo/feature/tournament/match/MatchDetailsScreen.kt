@@ -78,6 +78,7 @@ import hu.bme.aut.android.demo.ui.common.MatchStatusChip
 import hu.bme.aut.android.demo.ui.theme.ErrorRed
 import hu.bme.aut.android.demo.ui.theme.ProgressPink
 import hu.bme.aut.android.demo.ui.theme.ProgressPinkDark
+import hu.bme.aut.android.demo.ui.theme.RacketBlue
 import hu.bme.aut.android.demo.ui.theme.SuccessGreen
 import hu.bme.aut.android.demo.ui.theme.SuccessGreenSolid
 import hu.bme.aut.android.demo.util.addMatchToCalendar
@@ -325,11 +326,14 @@ fun MatchDetailsScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(56.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = ProgressPinkDark)
+                                            colors = ButtonDefaults.buttonColors(containerColor = RacketBlue)
                                         ) {
                                             Text(if (match.status == "finished") stringResource(R.string.detailed_results) else stringResource(
                                                 R.string.to_live_match
-                                            ), fontWeight = FontWeight.Bold)
+                                            ),
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.Black
+                                            )
                                         }
                                     }
                                     else if (match.status == "scheduled") {

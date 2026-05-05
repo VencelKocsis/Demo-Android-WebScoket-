@@ -2,8 +2,6 @@ package hu.bme.aut.android.demo.domain.auth.usecases
 
 import com.google.firebase.auth.FirebaseUser
 import hu.bme.aut.android.demo.domain.auth.repository.AuthRepository
-import hu.bme.aut.android.demo.domain.auth.usecase.SignInUserUseCase
-import hu.bme.aut.android.demo.domain.auth.usecase.SignOutUserUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

@@ -200,4 +200,10 @@
     <string name="market">Market</string>
     <string name="offer_for_sale">Offer for sale</string>
     <string name="racket_appears_on_market">The racket will appear on the Market, where other players may be interested in it.</string>
+    <string name="interested_in_equipment">Interested in equipment!</string>
+    <string name="someone_interested_your_racket">Someone is interested in your racket on the market!</string>
+    <string name="added_to_team_fcm_title">You\'ve been accepted to the %1$s team!</string>
+    <string name="added_to_team_fcm_body">You are now a member of the %1$s team.</string>
+    <string name="kicked_from_team_fcm_title">You were kicked out of the %1$s team!</string>
+    <string name="kicked_from_team_fcm_body">You are no longer a member of the %1$s team.</string>
 </resources>
